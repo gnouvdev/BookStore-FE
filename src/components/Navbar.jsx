@@ -1,10 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { HiBars3CenterLeft } from "react-icons/hi2";
+import { Link, useLocation } from "react-router-dom";
 import { IoSearchOutline } from "react-icons/io5";
-import { FaRegUser } from "react-icons/fa6";
-import { FaRegHeart } from "react-icons/fa6";
-import { FaCartShopping } from "react-icons/fa6";
+import { FaRegUser, FaRegHeart, FaCartShopping } from "react-icons/fa6";
 import avatarImg from "../assets/avatar.png";
 import logo from "../assets/books/logo.png";
 import { useSelector } from "react-redux";
@@ -19,33 +16,68 @@ const navigation = [
 const Navbar = () => {
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
   const cartItems = useSelector((state) => state.cart.cartItems);
-
   const currentuser = true;
+  const location = useLocation();
+
+  const isActive = (path) =>
+    location.pathname === path ? "text-primary font-semibold" : "";
 
   return (
     <header className="max-w-screen-2xl mx-auto px-4 py-6">
       <nav className="flex justify-between items-center">
-        {/* //left */}
+        {/* Left side */}
         <div className="flex items-center md:gap-10">
           <Link to="/">
-          <img className="w-16 object-cover ml-8" src={logo} alt="" />
-
+            <img className="w-16 object-cover ml-8" src={logo} alt="Logo" />
           </Link>
-          {/*  search input */}
+
+          {/* Search input */}
           <div className="relative sm:w-72 w-40">
             <IoSearchOutline className="absolute inline-block left-3 inset-y-2" />
             <input
               type="text"
               placeholder="Search here"
               className="bg-[#EAEAEA] w-full py-1 md:px-8 px-6 rounded-md focus:outline"
-            ></input>
+            />
           </div>
-          <Link to="/">Home</Link>
-          <Link to="/product">Product</Link>
-          <Link to="/product/business">Business</Link>
-          
+
+          {/* Navigation Links */}
+          <Link to="/" className={`hover:text-primary ${isActive("/")}`}>
+            Home
+          </Link>
+          <Link
+            to="/product"
+            className={`hover:text-primary ${isActive("/product")}`}
+          >
+            Product
+          </Link>
+          <Link
+            to="/product/business"
+            className={`hover:text-primary ${isActive("/product/business")}`}
+          >
+            Business
+          </Link>
+          <Link
+            to="/product/fiction"
+            className={`hover:text-primary ${isActive("/product/fiction")}`}
+          >
+            Fiction
+          </Link>
+          <Link
+            to="/product/adventure"
+            className={`hover:text-primary ${isActive("/product/adventure")}`}
+          >
+            Adventure
+          </Link>
+          <Link
+            to="/product/manga"
+            className={`hover:text-primary ${isActive("/product/manga")}`}
+          >
+            Manga
+          </Link>
         </div>
-        {/* //right */}
+
+        {/* Right side */}
         <div className="relative flex items-center md:space-x-2">
           <div>
             {currentuser ? (
@@ -53,13 +85,14 @@ const Navbar = () => {
                 <button onClick={() => setisDropdownOpen(!isDropdownOpen)}>
                   <img
                     src={avatarImg}
-                    alt=""
+                    alt="Avatar"
                     className={`size-7 rounded-full ${
                       currentuser ? "ring-2 ring-blue-600" : ""
                     }`}
                   />
                 </button>
-                {/* show dropdown */}
+
+                {/* Show dropdown */}
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-40">
                     <ul className="py-2">
@@ -88,18 +121,21 @@ const Navbar = () => {
           </div>
 
           <button className="hidden sm:block">
-            {" "}
             <FaRegHeart className="size-6" />
           </button>
+
           <Link
             to="/cart"
             className="bg-primary p-1 sm:px-6 px-2 flex items-center rounded-sm"
           >
             <FaCartShopping />
-            {
-              cartItems.length > 0 ?  <span className="text-sm font-semibold sm:ml-1">{cartItems.length}</span> : <span className="text-sm font-semibold sm:ml-1">0</span>
-            }
-           
+            {cartItems.length > 0 ? (
+              <span className="text-sm font-semibold sm:ml-1">
+                {cartItems.length}
+              </span>
+            ) : (
+              <span className="text-sm font-semibold sm:ml-1">0</span>
+            )}
           </Link>
         </div>
       </nav>

@@ -36,9 +36,9 @@ const BookCard = ({ book }) => {
           <p className="text-gray-500 text-sm mb-3 line-clamp-3 h-[60px] w-48">
             {book?.description}
           </p>
-          <p className="font-medium mb-3 text-sm">
+          <p className="font-medium mb-3 text-xl text-red-600">
             ${book?.newPrice}{" "}
-            <span className="line-through font-normal ml-2 text-xs">
+            <span className="line-through font-normal ml-2 text-xs text-black">
               $ {book?.oldPrice}
             </span>
           </p>

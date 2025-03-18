@@ -2,21 +2,22 @@ import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { getImgUrl } from '../../utils/getImgUrl';
-import { clearCart, removeFromCart } from '../../redux/features/cart/cartSlice';
+import { clearCart, removeFromCart, increaseQuantity, decreaseQuantity } from '../../redux/features/cart/cartSlice';
 
 const CartPage = () => {
     const cartItems = useSelector(state => state.cart.cartItems);
-    const dispatch =  useDispatch()
+    const dispatch = useDispatch()
 
-    const totalPrice =  cartItems.reduce((acc, item) => acc + item.newPrice, 0).toFixed(2);
+    const totalPrice = cartItems.reduce((acc, item) => acc + item.newPrice * item.quantity, 0).toFixed(2);
 
     const handleRemoveFromCart = (product) => {
         dispatch(removeFromCart(product))
     }
 
-    const handleClearCart  = () => {
+    const handleClearCart = () => {
         dispatch(clearCart())
     }
+
     return (
         <>
             <div className="flex mt-12 h-full flex-col overflow-hidden bg-white shadow-xl">
@@ -26,24 +27,23 @@ const CartPage = () => {
                         <div className="ml-3 flex h-7 items-center ">
                             <button
                                 type="button"
-                                onClick={handleClearCart }
-                                className="relative -m-2 py-1 px-2 bg-red-500 text-white rounded-md hover:bg-secondary transition-all duration-200  "
+                                onClick={handleClearCart}
+                                className="relative -m-2 py-1 px-2 bg-red-500 text-white rounded-md hover:bg-secondary transition-all duration-200"
                             >
-                                <span className="">Clear Cart</span>
+                                <span>Clear Cart</span>
                             </button>
                         </div>
                     </div>
 
                     <div className="mt-8">
                         <div className="flow-root">
-
                             {
                                 cartItems.length > 0 ? (
                                     <ul role="list" className="-my-6 divide-y divide-gray-200">
                                         {
                                             cartItems.map((product) => (
                                                 <li key={product?._id} className="flex py-6">
-                                                    <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
+                                                    <div className="h-[120px] w-[79px] flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                                                         <img
                                                             alt=""
                                                             src={`${getImgUrl(product?.coverImage)}`}
@@ -57,17 +57,20 @@ const CartPage = () => {
                                                                 <h3>
                                                                     <Link to='/'>{product?.title}</Link>
                                                                 </h3>
-                                                                <p className="sm:ml-4">${product?.newPrice}</p>
+                                                                <p className="sm:ml-4">${product?.newPrice * product.quantity}</p>
                                                             </div>
                                                             <p className="mt-1 text-sm text-gray-500 capitalize"><strong>Category: </strong>{product?.category}</p>
                                                         </div>
                                                         <div className="flex flex-1 flex-wrap items-end justify-between space-y-2 text-sm">
-                                                            <p className="text-gray-500"><strong>Qty:</strong> 1</p>
-
+                                                            <div className="flex items-center">
+                                                                <button onClick={() => dispatch(decreaseQuantity(product._id))} className="px-2 py-1 bg-gray-200 rounded">-</button>
+                                                                <p className="mx-2 text-gray-900">{product.quantity}</p>
+                                                                <button onClick={() => dispatch(increaseQuantity(product._id))} className="px-2 py-1 bg-gray-200 rounded">+</button>
+                                                            </div>
                                                             <div className="flex">
                                                                 <button
-                                                                onClick={() => handleRemoveFromCart(product)}
-                                                                type="button" className="font-medium text-indigo-600 hover:text-indigo-500">
+                                                                    onClick={() => handleRemoveFromCart(product)}
+                                                                    type="button" className="font-medium text-indigo-600 hover:text-indigo-500">
                                                                     Remove
                                                                 </button>
                                                             </div>
@@ -76,14 +79,9 @@ const CartPage = () => {
                                                 </li>
                                             ))
                                         }
-
-
-
                                     </ul>
                                 ) : (<p>No product found!</p>)
                             }
-
-
                         </div>
                     </div>
                 </div>
@@ -107,7 +105,6 @@ const CartPage = () => {
                             or
                             <button
                                 type="button"
-
                                 className="font-medium text-indigo-600 hover:text-indigo-500 ml-1"
                             >
                                 Continue Shopping

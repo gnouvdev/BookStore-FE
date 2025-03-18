@@ -66,6 +66,10 @@ const router = createBrowserRouter([
         path: "/product/business",
         element: <GridBooks genre={"business"}/>,
       },
+      {
+        path: "/product/manga",
+        element: <GridBooks genre={"manga"}/>,
+      }
     ],
   },
 ]);

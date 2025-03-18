@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { FiShoppingCart } from "react-icons/fi";
 import { data, useParams } from "react-router-dom";
 
@@ -13,13 +13,22 @@ import GenreBooks from "../../components/GenreBooks";
 
 const SingleBook = () => {
   const { id } = useParams();
-
   const { data: book, isLoading, isError } = useFetchBookByIdQuery(id);
-
   const dispatch = useDispatch();
+  const [quantity, setQuantity] = useState(1);
 
   const handleAddToCart = (product) => {
-    dispatch(addToCart(product));
+    dispatch(addToCart({ ...product, quantity }));
+  };
+
+  const handleIncrease = () => {
+    setQuantity((prev) => prev + 1);
+  };
+
+  const handleDecrease = () => {
+    if (quantity > 1) {
+      setQuantity((prev) => prev - 1);
+    }
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -35,7 +44,7 @@ const SingleBook = () => {
         />
 
         {/* Right: Book Details */}
-        <div className=" w-full flex flex-col justify-between">
+        <div className="w-full flex flex-col justify-between">
           <div>
             <h1 className="text-5xl font-bold mb-2 uppercase">{book?.title}</h1>
             <p className="text-gray-700 text-sm mb-2">
@@ -70,6 +79,23 @@ const SingleBook = () => {
                 ? book.description.slice(0, 200) + "..."
                 : book?.description}
             </p>
+
+            {/* Quantity Selector */}
+            <div className="flex items-center gap-4 mb-6">
+              <button
+                onClick={handleDecrease}
+                className="px-3 py-1 bg-gray-300 text-lg rounded"
+              >
+                -
+              </button>
+              <span className="text-xl font-semibold">{quantity}</span>
+              <button
+                onClick={handleIncrease}
+                className="px-3 py-1 bg-gray-300 text-lg rounded"
+              >
+                +
+              </button>
+            </div>
           </div>
 
           {/* Add to Cart Button */}
