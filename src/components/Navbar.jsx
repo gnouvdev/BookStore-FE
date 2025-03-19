@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { IoSearchOutline } from "react-icons/io5";
 import { FaRegUser, FaRegHeart, FaCartShopping } from "react-icons/fa6";
 import avatarImg from "../assets/avatar.png";
 import logo from "../assets/books/logo.png";
 import { useSelector } from "react-redux";
+import { useAuth } from "./../context/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard" },
@@ -14,10 +15,30 @@ const navigation = [
 ];
 
 const Navbar = () => {
-  const [isDropdownOpen, setisDropdownOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const cartItems = useSelector((state) => state.cart.cartItems);
-  const currentuser = true;
+  const { currentUser, logout } = useAuth();
   const location = useLocation();
+  const token = localStorage.getItem("token");
+
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+  };
 
   const isActive = (path) =>
     location.pathname === path ? "text-primary font-semibold" : "";
@@ -79,40 +100,51 @@ const Navbar = () => {
 
         {/* Right side */}
         <div className="relative flex items-center md:space-x-2">
-          <div>
-            {currentuser ? (
+          <div className="relative" ref={dropdownRef}>
+            {currentUser ? (
               <>
-                <button onClick={() => setisDropdownOpen(!isDropdownOpen)}>
+                <button onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                   <img
                     src={avatarImg}
-                    alt="Avatar"
+                    alt=""
                     className={`size-7 rounded-full ${
-                      currentuser ? "ring-2 ring-blue-600" : ""
+                      currentUser ? "ring-2 ring-blue-500" : ""
                     }`}
                   />
                 </button>
-
-                {/* Show dropdown */}
+                {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-40">
+                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-50">
                     <ul className="py-2">
                       {navigation.map((item) => (
                         <li
                           key={item.name}
-                          onClick={() => setisDropdownOpen(false)}
+                          onClick={() => setIsDropdownOpen(false)}
                         >
                           <Link
                             to={item.href}
-                            className="block px-4 py-2 text-sm hover:bg-gray-300"
+                            className="block px-4 py-2 text-sm hover:bg-gray-100"
                           >
                             {item.name}
                           </Link>
                         </li>
                       ))}
+                      <li>
+                        <button
+                          onClick={handleLogout}
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                        >
+                          Logout
+                        </button>
+                      </li>
                     </ul>
                   </div>
                 )}
               </>
+            ) : token ? (
+              <Link to="/dashboard" className="border-b-2 border-primary">
+                Dashboard
+              </Link>
             ) : (
               <Link to="/login">
                 <FaRegUser className="size-6" />
