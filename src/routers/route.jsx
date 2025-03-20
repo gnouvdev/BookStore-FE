@@ -8,6 +8,10 @@ import Checkout from "../pages/books/Checkout";
 import SingleBook from "../pages/books/SingleBook";
 import GenreBooks from "../components/GenreBooks";
 import GridBooks from "../components/GridBooks";
+import PrivateRoute from "./PrivateRoute";
+
+import OrderPage from "../pages/books/OrderPage";
+import ThanksPage from "./../pages/thanksPage/ThanksPage";
 
 const router = createBrowserRouter([
   {
@@ -19,8 +23,12 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: "/order",
-        element: <div>Orders</div>,
+        path: "/orders",
+        element: <OrderPage />,
+      },
+      {
+        path: "/orders/thanks",
+        element: <ThanksPage />,
       },
       {
         path: "/about",
@@ -40,7 +48,11 @@ const router = createBrowserRouter([
       },
       {
         path: "/checkout",
-        element: <Checkout />,
+        element: (
+          <PrivateRoute>
+            <Checkout />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/books/:id",
@@ -48,28 +60,28 @@ const router = createBrowserRouter([
       },
       {
         path: "/product",
-        element: <GridBooks genre={"full"}/>,
+        element: <GridBooks genre={"full"} />,
       },
       {
         path: "/product/fiction",
-        element: <GridBooks genre={"fiction"}/>,
+        element: <GridBooks genre={"fiction"} />,
       },
       {
         path: "/product/horror",
-        element: <GridBooks genre={"horror"}/>,
+        element: <GridBooks genre={"horror"} />,
       },
       {
         path: "/product/adventure",
-        element: <GridBooks genre={"adventure"}/>,
+        element: <GridBooks genre={"adventure"} />,
       },
       {
         path: "/product/business",
-        element: <GridBooks genre={"business"}/>,
+        element: <GridBooks genre={"business"} />,
       },
       {
         path: "/product/manga",
-        element: <GridBooks genre={"manga"}/>,
-      }
+        element: <GridBooks genre={"manga"} />,
+      },
     ],
   },
 ]);
