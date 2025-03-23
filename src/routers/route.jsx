@@ -12,6 +12,13 @@ import PrivateRoute from "./PrivateRoute";
 
 import OrderPage from "../pages/books/OrderPage";
 import ThanksPage from "./../pages/thanksPage/ThanksPage";
+import AdminRoute from "../../../../Sample/build-full-stack-book-store-mern-app/frontend/src/routers/AdminRoute";
+import AdminLogin from './../components/AdminLogin';
+import DashboardLayout from "../pages/dashBoard/DashboardLayout";
+import Dashboard from './../pages/dashBoard/Dashboard';
+import AddBook from './../pages/dashBoard/addBook/AddBook';
+import UpdateBook from './../pages/dashBoard/EditBook/UpdateBook';
+import ManageBooks from './../pages/dashBoard/manageBooks/ManageBooks';
 
 const router = createBrowserRouter([
   {
@@ -81,6 +88,48 @@ const router = createBrowserRouter([
       {
         path: "/product/manga",
         element: <GridBooks genre={"manga"} />,
+      },
+    ],
+  },
+  {
+    path:"/admin",
+    element:<AdminLogin/>
+  },
+  {
+    path: "/dashboard",
+    element: <AdminRoute><DashboardLayout/></AdminRoute>,
+    children: [
+      {
+        path: "",
+        element: (
+          <AdminRoute>
+            <Dashboard/>
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "add-new-book",
+        element: (
+          <AdminRoute>
+            <AddBook/>
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "edit-book/:id",
+        element: (
+          <AdminRoute>
+            <UpdateBook/>
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "manage-books",
+        element: (
+          <AdminRoute>
+            <ManageBooks/>
+          </AdminRoute>
+        ),
       },
     ],
   },
