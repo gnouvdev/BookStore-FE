@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { IoSearchOutline } from "react-icons/io5";
 import { FaRegUser, FaRegHeart, FaCartShopping } from "react-icons/fa6";
 import avatarImg from "../assets/avatar.png";
@@ -15,6 +15,8 @@ const navigation = [
 ];
 
 const Navbar = () => {
+  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const cartItems = useSelector((state) => state.cart.cartItems);
   const { currentUser, logout } = useAuth();
@@ -22,7 +24,11 @@ const Navbar = () => {
   const token = localStorage.getItem("token");
 
   const dropdownRef = useRef(null);
-
+  const handleSearch = () => {
+    if (query.trim()) {
+      navigate(`/search?query=${query}`);
+    }
+  };
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -54,10 +60,13 @@ const Navbar = () => {
 
           {/* Search input */}
           <div className="relative sm:w-72 w-40">
-            <IoSearchOutline className="absolute inline-block left-3 inset-y-2" />
+          <button onClick={handleSearch}><IoSearchOutline className="absolute inline-block left-3 inset-y-2" /></button>
             <input
               type="text"
-              placeholder="Search here"
+              placeholder="Nhập tên sách..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               className="bg-[#EAEAEA] w-full py-1 md:px-8 px-6 rounded-md focus:outline"
             />
           </div>

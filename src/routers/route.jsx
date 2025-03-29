@@ -19,6 +19,7 @@ import Dashboard from './../pages/dashBoard/Dashboard';
 import AddBook from './../pages/dashBoard/addBook/AddBook';
 import UpdateBook from './../pages/dashBoard/EditBook/UpdateBook';
 import ManageBooks from './../pages/dashBoard/manageBooks/ManageBooks';
+import SearchBook from "../pages/books/SearchBook";
 
 const router = createBrowserRouter([
   {
@@ -89,6 +90,10 @@ const router = createBrowserRouter([
         path: "/product/manga",
         element: <GridBooks genre={"manga"} />,
       },
+      {
+        path: "/search",
+        element: <SearchBook/>,
+      }
     ],
   },
   {

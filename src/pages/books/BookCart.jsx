@@ -1,6 +1,6 @@
 import React from "react";
 import { FiShoppingCart } from "react-icons/fi";
-import { getImgUrl } from "../../utils/getImgUrl";
+
 import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { addToCart } from "../../redux/features/cart/cartSlice";
@@ -19,7 +19,7 @@ const BookCard = ({ book }) => {
         <div className="h-56 w-40 flex-shrink-0 border rounded-md overflow-hidden">
           <Link to={`/books/${book._id}`}>
             <img
-              src={`${getImgUrl(book?.coverImage)}`}
+              src={book?.coverImage}
               alt={book?.title}
               className="w-full h-full object-cover p-2 cursor-pointer hover:scale-105 transition-all duration-200"
             />

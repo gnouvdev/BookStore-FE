@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FiShoppingCart } from "react-icons/fi";
 import { data, useParams } from "react-router-dom";
 
-import { getImgUrl } from "../../utils/getImgUrl";
+
 import { useDispatch } from "react-redux";
 import { addToCart } from "../../redux/features/cart/cartSlice";
 import { useFetchBookByIdQuery } from "../../redux/features/books/booksApi";
@@ -16,7 +16,7 @@ const SingleBook = () => {
   const { data: book, isLoading, isError } = useFetchBookByIdQuery(id);
   const dispatch = useDispatch();
   const [quantity, setQuantity] = useState(1);
-
+  console.log("book",book);
   const handleAddToCart = (product) => {
     dispatch(addToCart({ ...product, quantity }));
   };
@@ -38,7 +38,7 @@ const SingleBook = () => {
       <div className="w-full shadow-md flex flex-col md:flex-row gap-8 p-6 bg-white rounded-lg mb-5">
         {/* Left: Book Image */}
         <img
-          src={getImgUrl(book?.coverImage)}
+          src={book?.coverImage}
           alt={book?.title}
           className="object-cover w-[300px] h-[370px] rounded-lg shadow-lg"
         />

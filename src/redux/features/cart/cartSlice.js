@@ -11,8 +11,10 @@ const cartSlice = createSlice({
     reducers: {
         addToCart: (state, action) => {
             const existingItem = state.cartItems.find(item => item._id === action.payload._id);
-            const quantityToAdd = action.payload.quantity || 1; // Đảm bảo quantity có giá trị hợp lệ
-
+            
+            // Luôn thêm ít nhất 1 sản phẩm, không lấy quantity từ payload (vì đó là số lượng trong kho)
+            const quantityToAdd = action.payload.quantityToAdd || 1;
+        
             if (existingItem) {
                 existingItem.quantity += quantityToAdd;
                 Swal.fire({
@@ -33,6 +35,7 @@ const cartSlice = createSlice({
                 });
             }
         },
+        
         removeFromCart: (state, action) => {
             state.cartItems = state.cartItems.filter(item => item._id !== action.payload);
         },

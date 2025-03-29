@@ -1,66 +1,98 @@
-import React, { useEffect } from 'react'
-import InputField from '../addBook/InputField'
-import SelectField from '../addBook/SelectField'
-import { useForm } from 'react-hook-form';
-import { useParams } from 'react-router-dom';
-import { useFetchBookByIdQuery, useUpdateBookMutation } from '../../../redux/features/books/booksApi';
-import Loading from '../../../components/Loading';
-import Swal from 'sweetalert2';
-import axios from 'axios';
-import getBaseUrl from '../../../utils/baseURL';
+import React, { useEffect, useState } from "react";
+import InputField from "../addBook/InputField";
+import SelectField from "../addBook/SelectField";
+import { useForm } from "react-hook-form";
+import { data, useParams } from "react-router-dom";
+import {
+  useFetchBookByIdQuery,
+  useUpdateBookMutation,
+} from "../../../redux/features/books/booksApi";
+import Loading from "../../../components/Loading";
+import Swal from "sweetalert2";
+import axios from "axios";
+import getBaseUrl from "../../../utils/baseURL";
+import { toast } from 'react-hot-toast';
+import { uploadToCloudinary } from "../../../utils/uploadService";
 
 const UpdateBook = () => {
   const { id } = useParams();
-  const { data: bookData, isLoading, isError, refetch } = useFetchBookByIdQuery(id);
+  const {
+    data: bookData,
+    isLoading,
+    isError,
+    refetch,
+  } = useFetchBookByIdQuery(id);
   // console.log(bookData)
+  // image
+  const [coverImage, setCoverImage] = useState("");
+
   const [updateBook] = useUpdateBookMutation();
   const { register, handleSubmit, setValue, reset } = useForm();
   useEffect(() => {
     if (bookData) {
-      setValue('title', bookData.title);
-      setValue('description', bookData.description);
-      setValue('category', bookData?.category);
-      setValue('trending', bookData.trending);
-      setValue('oldPrice', bookData.oldPrice);
-      setValue('newPrice', bookData.newPrice);
-      setValue('coverImage', bookData.coverImage)
+      setValue("title", bookData.title);
+      setValue("author", bookData.author);
+      setValue("description", bookData.description);
+      setValue("category", bookData?.category);
+      setValue("trending", bookData.trending);
+      setValue("oldPrice", bookData.oldPrice);
+      setValue("newPrice", bookData.newPrice);
+      setValue("quantity", bookData.quantity);
+      setValue("coverImage", bookData.coverImage);
     }
-  }, [bookData, setValue])
+  }, [bookData, setValue]);
 
   const onSubmit = async (data) => {
-    const updateBookData = {
-      title: data.title,
-      description: data.description,
-      category: data.category,
-      trending: data.trending,
-      oldPrice: Number(data.oldPrice),
-      newPrice: Number(data.newPrice),
-      coverImage: data.coverImage || bookData.coverImage,
+    if (!bookData || !bookData._id) {
+      toast.error("Book data is missing. Cannot update.");
+      return;
+    }
+  
+    const updatedBookData = {
+      ...data,
+      coverImage: coverImage || bookData.coverImage, // Đảm bảo ảnh không bị undefined
     };
+  
     try {
-      await axios.put(`${getBaseUrl()}/api/books/edit/${id}`, updateBookData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      await updateBook({ id: bookData._id, ...updatedBookData }).unwrap();
       Swal.fire({
         title: "Book Updated",
-        text: "Your book is updated successfully!",
+        text: "Your book details have been updated successfully!",
         icon: "success",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, It's Okay!"
       });
-      await refetch()
+      reset();
     } catch (error) {
-      console.log("Failed to update book.");
-      alert("Failed to update book.");
+      console.error("Update failed:", error);
+      toast.error("Failed to update book. Please try again.");
     }
-  }
-  if (isLoading) return <Loading />
-  if (isError) return <div>Error fetching book data</div>
+  };
+  
+
+
+  console.log(bookData)
+
+  //upload book
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    try {
+      const url = await uploadToCloudinary(file);
+      if (url) {
+        setCoverImage(url);
+        setValue("coverImage", url); // Cập nhật giá trị trong form
+        toast.success("Image uploaded successfully!");
+      } else {
+        toast.error("Failed to upload image.");
+      }
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      toast.error("An error occurred while uploading the image.");
+    }
+  };
+  
+
+  if (isLoading) return <Loading />;
+  if (isError) return <div>Error fetching book data</div>;
   return (
     <div className="max-w-lg mx-auto md:p-6 p-3 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Update Book</h2>
@@ -72,7 +104,12 @@ const UpdateBook = () => {
           placeholder="Enter book title"
           register={register}
         />
-
+        <InputField
+          label="Author"
+          name="author"
+          placeholder="Enter book title"
+          register={register}
+        />
         <InputField
           label="Description"
           name="description"
@@ -85,12 +122,13 @@ const UpdateBook = () => {
           label="Category"
           name="category"
           options={[
-            { value: '', label: 'Choose A Category' },
-            { value: 'business', label: 'Business' },
-            { value: 'technology', label: 'Technology' },
-            { value: 'fiction', label: 'Fiction' },
-            { value: 'horror', label: 'Horror' },
-            { value: 'adventure', label: 'Adventure' },
+            { value: "", label: "Choose A Category" },
+            { value: "business", label: "Business" },
+            { value: "technology", label: "Technology" },
+            { value: "fiction", label: "Fiction" },
+            { value: "horror", label: "Horror" },
+            { value: "adventure", label: "Adventure" },
+            { value: "manga", label: "Manga" },
           ]}
           register={register}
         />
@@ -98,10 +136,12 @@ const UpdateBook = () => {
           <label className="inline-flex items-center">
             <input
               type="checkbox"
-              {...register('trending')}
+              {...register("trending")}
               className="rounded text-blue-600 focus:ring focus:ring-offset-2 focus:ring-blue-500"
             />
-            <span className="ml-2 text-sm font-semibold text-gray-700">Trending</span>
+            <span className="ml-2 text-sm font-semibold text-gray-700">
+              Trending
+            </span>
           </label>
         </div>
 
@@ -120,21 +160,50 @@ const UpdateBook = () => {
           placeholder="New Price"
           register={register}
         />
-
         <InputField
+          label="Quantity"
+          name="quantity"
+          type="number"
+          placeholder="Quantity"
+          register={register}
+        />
+
+        {/* <InputField
           label="Cover Image URL"
           name="coverImage"
           type="text"
           placeholder="Cover Image URL"
           register={register}
-        />
-
-        <button type="submit" className="w-full py-2 bg-blue-500 text-white font-bold rounded-md">
+        /> */}
+        <div className="mb-4">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Cover Image
+          </label>
+          <input
+            type="file"
+            onChange={handleImageUpload}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            accept="image/*"
+          />
+          {bookData.coverImage && (
+            <div className="mt-2">
+              <img
+                src={bookData.coverImage}
+                alt="Cover Preview"
+                className="max-w-full h-40"
+              />
+            </div>
+          )}
+        </div>
+        <button
+          type="submit"
+          className="w-full py-2 bg-blue-500 text-white font-bold rounded-md"
+        >
           Update Book
         </button>
       </form>
     </div>
-  )
-}
+  );
+};
 
-export default UpdateBook
+export default UpdateBook;
