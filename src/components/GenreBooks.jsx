@@ -21,7 +21,7 @@ const GenreBooks = ({ genre }) => {
     genre === "full"
       ? books
       : books.filter(
-          (book) => book.category?.toLowerCase() === genre.toLowerCase()
+          (book) => book.category?.name.toLowerCase() === genre.toLowerCase()
         );
 
   return (

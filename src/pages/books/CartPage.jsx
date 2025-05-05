@@ -15,7 +15,7 @@ const CartPage = () => {
   // Kiểm tra newPrice và quantity trước khi nhân
   const totalPrice = cartItems
     .reduce((acc, item) => {
-      const price = item.newPrice || 0; // Tránh lỗi undefined
+      const price = item.price?.newPrice || 0; // Tránh lỗi undefined
       const quantity = item.quantity || 1; // Đảm bảo quantity luôn có giá trị
       return acc + price * quantity;
     }, 0)
@@ -65,13 +65,13 @@ const CartPage = () => {
                       <div className="ml-4 flex flex-1 flex-col">
                         <div>
                           <div className="flex flex-wrap justify-between text-base font-medium text-gray-900">
-                            <h3>
+                            <h3 className="text-xl font-semibold text-gray-900 mb-2 truncate w-48">
                               <Link to="/">{product?.title}</Link>
                             </h3>
                             <p className="sm:ml-4">
                               $
-                              {product?.newPrice && product.quantity
-                                ? (product.newPrice * product.quantity).toFixed(
+                              {product?.price?.newPrice && product.quantity
+                                ? (product.price?.newPrice * product.quantity).toFixed(
                                     2
                                   )
                                 : "0.00"}
@@ -79,7 +79,11 @@ const CartPage = () => {
                           </div>
                           <p className="mt-1 text-sm text-gray-500 capitalize">
                             <strong>Category: </strong>
-                            {product?.category}
+                            {product?.category?.name || "Unknown"}
+                          </p>
+                          <p className="mt-1 text-sm text-gray-500 capitalize">
+                            <strong>Author: </strong>
+                            {product?.author?.name || "Unknown"}
                           </p>
                         </div>
                         <div className="flex flex-1 flex-wrap items-end justify-between space-y-2 text-sm">

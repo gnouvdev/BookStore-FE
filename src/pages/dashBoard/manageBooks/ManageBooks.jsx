@@ -1,108 +1,112 @@
-import React from 'react'
-import { useDeleteBookMutation, useFetchAllBooksQuery } from '../../../redux/features/books/booksApi';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect } from "react";
+     import {
+       useFetchAllBooksQuery,
+       useDeleteBookMutation,
+     } from "../../../redux/features/books/booksApi";
+     import { Link } from "react-router-dom";
+     import { toast } from "react-hot-toast";
 
-const ManageBooks = () => {
-    const navigate = useNavigate();
+     const ManageBooks = () => {
+       const { data: books, isLoading, isError, refetch } = useFetchAllBooksQuery();
+       const [deleteBook] = useDeleteBookMutation();
 
-    const {data: books, refetch} = useFetchAllBooksQuery()
+       useEffect(() => {
+         if (isError) {
+           console.error("Error fetching books");
+           toast.error("Failed to load books.");
+         }
+       }, [isError]);
 
-    const [deleteBook] = useDeleteBookMutation()
+       const handleDelete = async (id) => {
+         if (window.confirm("Are you sure you want to delete this book?")) {
+           try {
+             await deleteBook(id).unwrap();
+             toast.success("Book deleted successfully!");
+             refetch(); // Refresh the list after deletion
+           } catch (error) {
+             console.error("Failed to delete book:", error);
+             toast.error("Failed to delete book. Please try again.");
+           }
+         }
+       };
 
-    // Handle deleting a book
-    const handleDeleteBook = async (id) => {
-        try {
-            await deleteBook(id).unwrap();
-            alert('Book deleted successfully!');
-            refetch();
+       const handleRefresh = () => {
+         refetch();
+         toast.success("Book list refreshed!");
+       };
 
-        } catch (error) {
-            console.error('Failed to delete book:', error.message);
-            alert('Failed to delete book. Please try again.');
-        }
-    };
+       if (isLoading) return <div>Loading...</div>;
+       if (isError) return <div>Error fetching book data</div>;
 
-    // Handle navigating to Edit Book page
-    const handleEditClick = (id) => {
-        navigate(`dashboard/edit-book/${id}`);
-    };
-  return (
-    <section className="py-1 bg-blueGray-50">
-    <div className="w-full xl:w-8/12 mb-12 xl:mb-0 px-4 mx-auto mt-24">
-        <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded ">
-            <div className="rounded-t mb-0 px-4 py-3 border-0">
-                <div className="flex flex-wrap items-center">
-                    <div className="relative w-full px-4 max-w-full flex-grow flex-1">
-                        <h3 className="font-semibold text-base text-blueGray-700">All Books</h3>
-                    </div>
-                    <div className="relative w-full px-4 max-w-full flex-grow flex-1 text-right">
-                        <button className="bg-indigo-500 text-white active:bg-indigo-600 text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150" type="button">See all</button>
-                    </div>
-                </div>
-            </div>
+       return (
+         <div className="max-w-7xl mx-auto p-6">
+           <div className="flex justify-between items-center mb-4">
+             <h1 className="text-2xl font-bold">Manage Books</h1>
+             <button
+               onClick={handleRefresh}
+               className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+             >
+               Refresh List
+             </button>
+           </div>
+           <table className="table-auto w-full border-collapse border border-gray-300">
+             <thead>
+               <tr>
+                 <th className="border border-gray-300 px-4 py-2">#</th>
+                 <th className="border border-gray-300 px-4 py-2">Image</th>
+                 <th className="border border-gray-300 px-4 py-2">Title</th>
+                 <th className="border border-gray-300 px-4 py-2">Author</th>
+                 <th className="border border-gray-300 px-4 py-2">Category</th>
+                 <th className="border border-gray-300 px-4 py-2">Price</th>
+                 <th className="border border-gray-300 px-4 py-2">Actions</th>
+               </tr>
+             </thead>
+             <tbody>
+               {books &&
+                 books.map((book, index) => (
+                   <tr key={book._id}>
+                     <td className="border border-gray-300 px-4 py-2">
+                       {index + 1}
+                     </td>
+                     <td className="border border-gray-300 px-4 py-2">
+                       <img
+                         src={book.coverImage || "https://via.placeholder.com/100"}
+                         alt={book.title}
+                         className="w-16 h-19 object-cover"
+                       />
+                     </td>
+                     <td className="border border-gray-300 px-4 py-2">
+                       {book.title}
+                     </td>
+                     <td className="border border-gray-300 px-4 py-2">
+                       {book.author?.name || "Unknown"}
+                     </td>
+                     <td className="border border-gray-300 px-4 py-2">
+                       {book.category?.name || "Unknown"}
+                     </td>
+                     <td className="border border-gray-300 px-4 py-2">
+                       ${book.price?.newPrice || "N/A"}
+                     </td>
+                     <td className="border border-gray-300 px-4 py-2 space-x-2">
+                       <Link
+                         to={`/dashboard/edit-book/${book._id}`}
+                         className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                       >
+                         Edit
+                       </Link>
+                       <button
+                         onClick={() => handleDelete(book._id)}
+                         className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                       >
+                         Delete
+                       </button>
+                     </td>
+                   </tr>
+                 ))}
+             </tbody>
+           </table>
+         </div>
+       );
+     };
 
-            <div className="block w-full overflow-x-auto">
-                <table className="items-center bg-transparent w-full border-collapse ">
-                    <thead>
-                        <tr>
-                            <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                #
-                            </th>
-                            <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                Book Title
-                            </th>
-                            <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                Category
-                            </th>
-                            <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                Price
-                            </th>
-                            <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {
-                            books && books.map((book, index) => (
-                                <tr key={index}>
-                                <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left text-blueGray-700 ">
-                                   {index + 1}
-                                </th>
-                                <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 ">
-                                    {book.title}
-                                </td>
-                                <td className="border-t-0 px-6 align-center border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                                  {book.category}
-                                </td>
-                                <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-
-                                    ${book.newPrice}
-                                </td>
-                                <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 space-x-4">
-
-                                    <Link to={`/dashboard/edit-book/${book._id}`} className="font-medium text-indigo-600 hover:text-indigo-700 mr-2 hover:underline underline-offset-2">
-                                        Edit
-                                    </Link>
-                                    <button 
-                                    onClick={() => handleDeleteBook(book._id)}
-                                    className="font-medium bg-red-500 py-1 px-4 rounded-full text-white mr-2">Delete</button>
-                                </td>
-                            </tr> 
-                            ))
-                        }
-         
-
-                    </tbody>
-
-                </table>
-            </div>
-        </div>
-    </div>
-
-</section>
-  )
-}
-
-export default ManageBooks
+     export default ManageBooks;

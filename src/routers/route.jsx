@@ -20,6 +20,14 @@ import AddBook from './../pages/dashBoard/addBook/AddBook';
 import UpdateBook from './../pages/dashBoard/EditBook/UpdateBook';
 import ManageBooks from './../pages/dashBoard/manageBooks/ManageBooks';
 import SearchBook from "../pages/books/SearchBook";
+import ManageCategories from './../pages/dashBoard/manageCategories/ManageCategories';
+import EditCategory from './../pages/dashBoard/manageCategories/EditCategory';
+import ManageAuthors from './../pages/dashBoard/manageAuthors/ManageAuthors';
+import ManageUsers from './../pages/dashBoard/manageUsers/ManageUsers';
+import Profile from './../pages/user/profile';
+import ManageOrders from './../pages/dashBoard/manageOrders/ManageOrders';
+
+
 
 const router = createBrowserRouter([
   {
@@ -93,6 +101,10 @@ const router = createBrowserRouter([
       {
         path: "/search",
         element: <SearchBook/>,
+      },
+      {
+        path: "/profile",
+        element: <Profile/>,
       }
     ],
   },
@@ -136,6 +148,46 @@ const router = createBrowserRouter([
           </AdminRoute>
         ),
       },
+      {
+        path: "manage-categories",
+        element: (
+          <AdminRoute>
+            <ManageCategories/>
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "manage-authors",
+        element: (
+          <AdminRoute>
+            <ManageAuthors/>
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "edit-category/:id",
+        element: (
+          <AdminRoute>
+            <EditCategory/>
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "manage-users",
+        element: (
+          <AdminRoute>
+            <ManageUsers/>
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "manage-orders",
+        element: (
+          <AdminRoute>
+            <ManageOrders/>
+          </AdminRoute>
+        ),
+      }
     ],
   },
 ]);

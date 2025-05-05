@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import getBaseUrl from "../../../utils/baseURL";
+import { configureStore } from "@reduxjs/toolkit";
 
 const ordersApi = createApi({
   reducerPath: "ordersApi",
@@ -27,5 +28,13 @@ const ordersApi = createApi({
 });
 
 export const { useCreateOrderMutation, useGetOrderByEmailQuery } = ordersApi;
+
+export const store = configureStore({
+  reducer: {
+    [ordersApi.reducerPath]: ordersApi.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(ordersApi.middleware),
+});
 
 export default ordersApi;

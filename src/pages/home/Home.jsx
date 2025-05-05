@@ -13,11 +13,13 @@ const Home = () => {
       <Recommended />
       <GenreBooks genre={"Fiction"} />
       <MiniBanner genre1={"Business1"} genre2={"Business2"} />
-      <GenreBooks genre={"Business"} />
+      <GenreBooks genre={"Bussines"} />
       <MiniBanner genre1={"Horror1"} genre2={"Horror2"} />
       <GenreBooks genre={"Horror"} />
       <MiniBanner genre1={"Adventure1"} genre2={"Adventure2"} />
       <GenreBooks genre={"Adventure"} />
+      <MiniBanner genre1={"Horror1"} genre2={"Horror2"} />
+      <GenreBooks genre={"Manga"} />
       {/* <TopSales /> */}
     
       <News />

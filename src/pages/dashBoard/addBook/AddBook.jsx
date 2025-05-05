@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import InputField from "./InputField";
-import SelectField from "./SelectField";
 import { useForm } from "react-hook-form";
 import { useAddBookMutation } from "../../../redux/features/books/booksApi";
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
 import { uploadToCloudinary } from "../../../utils/uploadService";
+import axios from "axios";
+import AsyncSelect from "react-select/async"; // Import AsyncSelect
+import debounce from "lodash/debounce"; // Hoặc sử dụng hàm debounce tự định nghĩa
 
 const AddBook = () => {
   const {
@@ -14,43 +16,57 @@ const AddBook = () => {
     formState: { errors },
     reset,
   } = useForm();
-  // const [imageFile, setimageFile] = useState(null);
-  const [addBook, { isLoading, isError }] = useAddBookMutation();
+
+  const [addBook, { isLoading }] = useAddBookMutation();
   const [coverImage, setCoverImage] = useState("");
-  // const [imageFileName, setimageFileName] = useState("");
-  const onSubmit = async (data) => {
-    const newBookData = {
-      ...data,
-      coverImage: coverImage,
+  const [selectedAuthor, setSelectedAuthor] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [tags, setTags] = useState(""); // State để lưu tags
+  const [language, setLanguage] = useState("Tiếng Anh"); // State để lưu ngôn ngữ
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/categories"
+        );
+        console.log("Categories fetched:", response.data); // Kiểm tra dữ liệu trả về
+        setCategories(
+          response.data.map((category) => ({
+            value: category._id,
+            label: category.name,
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        toast.error("Failed to load categories.");
+      }
     };
+
+    fetchCategories();
+  }, []);
+
+  const debouncedLoadOptions = debounce(async (inputValue) => {
+    if (!inputValue) return [];
+
     try {
-      await addBook(newBookData).unwrap();
-      Swal.fire({
-        title: "Book added",
-        text: "Your book is uploaded successfully!",
-        icon: "success",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, It's Okay!",
-      });
-      reset();
-      setCoverImage("");
+      const response = await axios.get(
+        `http://localhost:5000/api/authors/search?name=${inputValue}`
+      );
+
+      if (response.data && Array.isArray(response.data)) {
+        return response.data.map((author) => ({
+          value: author._id,
+          label: author.name,
+        }));
+      }
+      return [];
     } catch (error) {
-      console.error(error);
-      alert("Failed to add book. Please try again.");
+      console.error("Error loading author options:", error);
+      return [];
     }
-  };
+  }, 300);
 
-  // const handleFileChange = (e) => {
-  //   const file = e.target.files[0];
-  //   if (file) {
-  //     setimageFile(file);
-  //     setimageFileName(file.name);
-  //   }
-  // };
-
-  //upload Anh
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -68,28 +84,76 @@ const AddBook = () => {
       toast.error("An error occurred while uploading the image.");
     }
   };
-  return (
-    <div className="max-w-lg   mx-auto md:p-6 p-3 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Add New Book</h2>
 
-      {/* Form starts here */}
-      <form onSubmit={handleSubmit(onSubmit)} className="">
-        {/* Reusable Input Field for Title */}
+  const handleTagsChange = (event) => {
+    setTags(event.target.value);
+  };
+
+  const handleLanguageChange = (event) => {
+    setLanguage(event.target.value);
+  };
+
+  const onSubmit = async (data) => {
+    const newBookData = {
+      ...data,
+      coverImage: coverImage,
+      author: selectedAuthor ? selectedAuthor.value : null,
+      category: data.category,
+      tags: tags.split(",").map((tag) => tag.trim()), // Chuyển chuỗi tags thành mảng
+      language: language,
+      price: {
+        oldPrice: parseFloat(data.oldPrice), // Đưa oldPrice vào đối tượng price
+        newPrice: parseFloat(data.newPrice), // Đưa newPrice vào đối tượng price
+      },
+    };
+
+    console.log("Data being sent to API:", newBookData); // Kiểm tra dữ liệu
+
+    try {
+      await addBook(newBookData).unwrap();
+      Swal.fire({
+        title: "Book added",
+        text: "Your book is uploaded successfully!",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
+      reset();
+      setCoverImage("");
+      setSelectedAuthor(null);
+      setTags("");
+      setLanguage("Tiếng Anh");
+    } catch (error) {
+      console.error("Error adding book:", error); // Log lỗi chi tiết
+      alert("Failed to add book. Please try again.");
+    }
+  };
+
+  return (
+    <div className="max-w-lg mx-auto md:p-6 p-3 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">Add New Book</h2>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <InputField
           label="Title"
           name="title"
           placeholder="Enter book title"
           register={register}
         />
-        {/* author */}
-        <InputField
-          label="Author"
-          name="author"
-          placeholder="Enter book author"
-          register={register}
-        />
 
-        {/* Reusable Textarea for Description */}
+        <div className="mb-4">
+          <label className="block text-sm font-semibold text-gray-700">
+            Author
+          </label>
+          <AsyncSelect
+            cacheOptions
+            loadOptions={debouncedLoadOptions}
+            defaultOptions
+            onChange={setSelectedAuthor}
+            value={selectedAuthor}
+            placeholder="Select or search author"
+            isClearable
+          />
+        </div>
+
         <InputField
           label="Description"
           name="description"
@@ -98,24 +162,57 @@ const AddBook = () => {
           register={register}
         />
 
-        {/* Reusable Select Field for Category */}
-        <SelectField
-          label="Category"
-          name="category"
-          options={[
-            { value: "", label: "Choose A Category" },
-            { value: "business", label: "Business" },
-            { value: "technology", label: "Technology" },
-            { value: "fiction", label: "Fiction" },
-            { value: "horror", label: "Horror" },
-            { value: "adventure", label: "Adventure" },
-            { value: "manga", label: "Manga" }
-            // Add more options as needed
-          ]}
-          register={register}
-        />
+        <div className="mb-4">
+          <label className="block text-sm font-semibold text-gray-700">
+            Category
+          </label>
+          <select
+            {...register("category", { required: true })}
+            className="form-select"
+          >
+            <option value="">Select a category</option>
+            {categories.length > 0 ? (
+              categories.map((category) => (
+                <option key={category.value} value={category.value}>
+                  {category.label}
+                </option>
+              ))
+            ) : (
+              <option disabled>Loading categories...</option>
+            )}
+          </select>
+          {errors.category && (
+            <p className="text-red-500 text-sm mt-1">Category is required.</p>
+          )}
+        </div>
 
-        {/* Trending Checkbox */}
+        <div className="mb-4">
+          <label className="block text-sm font-semibold text-gray-700">
+            Tags
+          </label>
+          <input
+            type="text"
+            value={tags}
+            onChange={handleTagsChange}
+            placeholder="Enter tags (comma-separated)"
+            className="form-input"
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-semibold text-gray-700">
+            Language
+          </label>
+          <select
+            value={language}
+            onChange={handleLanguageChange}
+            className="form-select"
+          >
+            <option value="Tiếng Anh">Tiếng Anh</option>
+            <option value="Tiếng Việt">Tiếng Việt</option>
+          </select>
+        </div>
+
         <div className="mb-4">
           <label className="inline-flex items-center">
             <input
@@ -129,7 +226,6 @@ const AddBook = () => {
           </label>
         </div>
 
-        {/* Old Price */}
         <InputField
           label="Old Price"
           name="oldPrice"
@@ -138,7 +234,6 @@ const AddBook = () => {
           register={register}
         />
 
-        {/* New Price */}
         <InputField
           label="New Price"
           name="newPrice"
@@ -146,15 +241,15 @@ const AddBook = () => {
           placeholder="New Price"
           register={register}
         />
-        {/* quantity */}
+
         <InputField
-          label="Quantity "
-          name="quantity "
+          label="Quantity"
+          name="quantity"
           type="number"
           placeholder="Quantity"
           register={register}
         />
-        {/* Cover Image Upload */}
+
         <div className="mb-4">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Cover Image
@@ -176,16 +271,11 @@ const AddBook = () => {
           )}
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           className="w-full py-2 bg-green-500 text-white font-bold rounded-md"
         >
-          {isLoading ? (
-            <span className="">Adding.. </span>
-          ) : (
-            <span>Add Book</span>
-          )}
+          {isLoading ? "Adding..." : "Add Book"}
         </button>
       </form>
     </div>

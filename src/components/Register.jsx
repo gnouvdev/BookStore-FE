@@ -6,23 +6,30 @@ import { useState } from "react";
 import { toast } from "react-hot-toast";
 
 const Register = () => {
-  const [message, setMessage] = useState("");
-  const { registerUser, signInWithGoogle } = useAuth();
+  const { registerUser, signInWithGoogle, currentUser } = useAuth(); // Lấy currentUser từ context
   const navigate = useNavigate();
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Register user
   const onSubmit = async (data) => {
+    console.log("Form Data:", data); // Log dữ liệu form để kiểm tra
     try {
-      await registerUser(data.email, data.password);
+      await registerUser(data.email, data.password, data.fullName);
       toast.success("User registered successfully!");
-      navigate("/");
+      navigate("/"); // Điều hướng đến trang chính
     } catch (error) {
-      toast.error("Please provide a valid email and password");
+      if (error.code === "auth/email-already-in-use") {
+        toast.error("This email is already registered. Please log in.");
+      } else if (error.code === "auth/weak-password") {
+        toast.error("Password is too weak. Please use a stronger password.");
+      } else {
+        toast.error("Registration failed. Please try again.");
+      }
       console.error(error);
     }
   };
@@ -46,30 +53,80 @@ const Register = () => {
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+            <label
+              className="block text-gray-700 text-sm font-bold mb-2"
+              htmlFor="fullName"
+            >
+              Full Name
+            </label>
+            <input
+              {...register("fullName", { required: "Full Name is required" })}
+              type="text"
+              id="fullName"
+              placeholder="Full Name"
+              className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow"
+            />
+            {errors.fullName && (
+              <p className="text-red-500 text-xs italic">
+                {errors.fullName.message}
+              </p>
+            )}
+          </div>
+
+          <div className="mb-4">
+            <label
+              className="block text-gray-700 text-sm font-bold mb-2"
+              htmlFor="email"
+            >
               Email
             </label>
             <input
-              {...register("email", { required: true })}
+              {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/,
+                  message: "Invalid email format",
+                },
+              })}
               type="email"
               id="email"
               placeholder="Email Address"
               className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow"
             />
+            {errors.email && (
+              <p className="text-red-500 text-xs italic">
+                {errors.email.message}
+              </p>
+            )}
           </div>
+
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+            <label
+              className="block text-gray-700 text-sm font-bold mb-2"
+              htmlFor="password"
+            >
               Password
             </label>
             <input
-              {...register("password", { required: true })}
+              {...register("password", {
+                required: "Password is required",
+                minLength: {
+                  value: 6,
+                  message: "Password must be at least 6 characters long",
+                },
+              })}
               type="password"
               id="password"
               placeholder="Password"
               className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow"
             />
+            {errors.password && (
+              <p className="text-red-500 text-xs italic">
+                {errors.password.message}
+              </p>
+            )}
           </div>
-          {message && <p className="text-red-500 text-xs italic mb-3">{message}</p>}
+
           <div>
             <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded focus:outline-none">
               Register
@@ -95,7 +152,9 @@ const Register = () => {
           </button>
         </div>
 
-        <p className="mt-5 text-center text-gray-500 text-xs">©2025 Book Store. All rights reserved.</p>
+        <p className="mt-5 text-center text-gray-500 text-xs">
+          ©2025 Book Store. All rights reserved.
+        </p>
       </div>
     </div>
   );

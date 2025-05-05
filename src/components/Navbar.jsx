@@ -8,7 +8,7 @@ import { useSelector } from "react-redux";
 import { useAuth } from "./../context/AuthContext";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard" },
+  { name: "Profile", href: "/profile" },
   { name: "Orders", href: "/orders" },
   { name: "Cart Page", href: "/cart" },
   { name: "Check Out", href: "/checkout" },
@@ -43,7 +43,11 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = () => {
-    logout();
+    if (logout) {
+      logout();
+    } else {
+      console.error("Logout function is not defined");
+    }
   };
 
   const isActive = (path) =>
@@ -60,7 +64,9 @@ const Navbar = () => {
 
           {/* Search input */}
           <div className="relative sm:w-72 w-40">
-          <button onClick={handleSearch}><IoSearchOutline className="absolute inline-block left-3 inset-y-2" /></button>
+            <button onClick={handleSearch}>
+              <IoSearchOutline className="absolute inline-block left-3 inset-y-2" />
+            </button>
             <input
               type="text"
               placeholder="Nhập tên sách..."
@@ -114,14 +120,11 @@ const Navbar = () => {
               <>
                 <button onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                   <img
-                    src={avatarImg}
-                    alt=""
-                    className={`size-7 rounded-full ${
-                      currentUser ? "ring-2 ring-blue-500" : ""
-                    }`}
+                    src={currentUser.photoURL || "user.png"} // Sử dụng ảnh từ `currentUser.photoURL` hoặc ảnh mặc định
+                    alt="User Avatar"
+                    className="size-7 rounded-full ring-2 ring-blue-500"
                   />
                 </button>
-                {/* Dropdown Menu */}
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-50">
                     <ul className="py-2">
@@ -150,10 +153,6 @@ const Navbar = () => {
                   </div>
                 )}
               </>
-            ) : token ? (
-              <Link to="/dashboard" className="border-b-2 border-primary">
-                Dashboard
-              </Link>
             ) : (
               <Link to="/login">
                 <FaRegUser className="size-6" />

@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { FiShoppingCart } from "react-icons/fi";
-import { data, useParams } from "react-router-dom";
-
-
+import { useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { addToCart } from "../../redux/features/cart/cartSlice";
 import { useFetchBookByIdQuery } from "../../redux/features/books/booksApi";
@@ -16,9 +14,9 @@ const SingleBook = () => {
   const { data: book, isLoading, isError } = useFetchBookByIdQuery(id);
   const dispatch = useDispatch();
   const [quantity, setQuantity] = useState(1);
-  console.log("book",book);
+
   const handleAddToCart = (product) => {
-    dispatch(addToCart({ ...product, quantity }));
+    dispatch(addToCart({ ...product, quantityToAdd: quantity })); // Truyền số lượng đã chọn
   };
 
   const handleIncrease = () => {
@@ -33,6 +31,7 @@ const SingleBook = () => {
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error happending to load book info</div>;
+
   return (
     <div className="w-full container mx-auto">
       <div className="w-full shadow-md flex flex-col md:flex-row gap-8 p-6 bg-white rounded-lg mb-5">
@@ -48,7 +47,7 @@ const SingleBook = () => {
           <div>
             <h1 className="text-5xl font-bold mb-2 uppercase">{book?.title}</h1>
             <p className="text-gray-700 text-sm mb-2">
-              <strong>Author:</strong> {book?.author}
+              <strong>Author:</strong> {book?.author?.name || "Unknown"}
             </p>
 
             {/* Rating */}
@@ -63,12 +62,12 @@ const SingleBook = () => {
               {new Date(book?.createdAt).toLocaleDateString()}
             </p>
             <p className="text-gray-700 mb-2 capitalize">
-              <strong>Category:</strong> {book?.category}
+              <strong>Category:</strong> {book?.category?.name || "Unknown"}
             </p>
             <p className="font-medium mb-3 text-5xl text-red-500">
-              ${book?.newPrice}{" "}
+              ${book?.price?.newPrice}{" "}
               <span className="line-through font-normal ml-2 text-xl">
-                $ {book?.oldPrice}
+                ${book?.price?.oldPrice}
               </span>
             </p>
 
@@ -121,7 +120,7 @@ const SingleBook = () => {
           <span>In other provinces, receive goods from 2-5 days</span>
         </div>
       </div>
-      <GenreBooks genre={book?.category} />
+      <GenreBooks genre={book?.category?.name} />
     </div>
   );
 };

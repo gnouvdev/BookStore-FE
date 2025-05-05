@@ -5,6 +5,10 @@ import React, { useEffect, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { HiViewGridAdd } from "react-icons/hi";
 import { MdOutlineManageHistory } from "react-icons/md";
+import { FaBook } from "react-icons/fa";
+import { BsFileEarmarkPersonFill } from "react-icons/bs";
+import { FaLuggageCart } from "react-icons/fa";
+
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
@@ -69,7 +73,8 @@ const DashboardLayout = () => {
               className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
             >
               <span className="sr-only">Add Book</span>
-              <HiViewGridAdd className="h-6 w-6" />
+              <FaBook className="h-6 w-6" />
+
             </Link>
             <Link
               to="/dashboard/manage-books"
@@ -77,6 +82,37 @@ const DashboardLayout = () => {
             >
               <span className="sr-only">Documents</span>
               <MdOutlineManageHistory className="h-6 w-6" />
+            </Link>
+            <Link
+              to="/dashboard/manage-categories"
+              className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
+            >
+              <span className="sr-only">Category</span>
+              <HiViewGridAdd className="h-6 w-6" />
+            </Link>
+            <Link
+              to="/dashboard/manage-authors"
+              className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
+            >
+              <span className="sr-only">Manage Author</span>
+              <BsFileEarmarkPersonFill className="h-6 w-6" />
+
+            </Link>
+            <Link
+              to="/dashboard/manage-users"
+              className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
+            >
+              <span className="sr-only">Manage User</span>
+              <BsFileEarmarkPersonFill className="h-6 w-6" />
+
+            </Link>
+            <Link
+              to="/dashboard/manage-orders"
+              className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
+            >
+              <span className="sr-only">Manage Order</span>
+              <FaLuggageCart className="h-6 w-6" />
+
             </Link>
           </nav>
           <div className="inline-flex items-center justify-center h-20 w-20 border-t border-gray-700">

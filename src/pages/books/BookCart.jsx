@@ -1,6 +1,5 @@
 import React from "react";
 import { FiShoppingCart } from "react-icons/fi";
-
 import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { addToCart } from "../../redux/features/cart/cartSlice";
@@ -19,7 +18,7 @@ const BookCard = ({ book }) => {
         <div className="h-56 w-40 flex-shrink-0 border rounded-md overflow-hidden">
           <Link to={`/books/${book._id}`}>
             <img
-              src={book?.coverImage}
+              src={book?.coverImage || "https://via.placeholder.com/150"}
               alt={book?.title}
               className="w-full h-full object-cover p-2 cursor-pointer hover:scale-105 transition-all duration-200"
             />
@@ -37,11 +36,12 @@ const BookCard = ({ book }) => {
             {book?.description}
           </p>
           <p className="font-medium mb-3 text-xl text-red-600">
-            ${book?.newPrice}{" "}
+            ${book?.price?.newPrice}{" "}
             <span className="line-through font-normal ml-2 text-xs text-black">
-              $ {book?.oldPrice}
+              $ {book?.price?.oldPrice}
             </span>
           </p>
+
         </div>
       </div>
 

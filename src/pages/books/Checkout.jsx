@@ -7,20 +7,22 @@ import Swal from "sweetalert2";
 import { useCreateOrderMutation } from "../../redux/features/orders/ordersApi";
 
 const CheckoutPage = () => {
-  const cartItems = useSelector((state) => state.cart.cartItems);
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
 
-  // Tính tổng số lượng sản phẩm trong giỏ hàng
-  const totalQuantity = cartItems.reduce(
-    (total, item) => total + item.quantity,
-    0
-  );
+  // Chuyển hướng nếu chưa đăng nhập
+  if (!currentUser) {
+    navigate("/login");
+    return null;
+  }
+
+  const cartItems = useSelector((state) => state.cart.cartItems);
 
   // Tính tổng giá trị đơn hàng
   const totalPrice = cartItems
     .reduce((acc, item) => acc + item.newPrice * item.quantity, 0)
     .toFixed(2);
 
-  const { currentUser } = useAuth();
   const {
     register,
     handleSubmit,
@@ -28,7 +30,6 @@ const CheckoutPage = () => {
   } = useForm();
 
   const [createOrder, { isLoading }] = useCreateOrderMutation();
-  const navigate = useNavigate();
   const [isChecked, setIsChecked] = useState(false);
 
   const onSubmit = async (data) => {
@@ -71,30 +72,30 @@ const CheckoutPage = () => {
           <h2 className="font-semibold text-xl text-gray-600 mb-2">Checkout</h2>
           <p className="text-gray-500 mb-2">Total Price: ${totalPrice}</p>
           <div className="bg-white rounded shadow-lg p-4 px-4 md:p-8 mb-6">
-  <h2 className="font-semibold text-xl text-gray-600 mb-4">Sản phẩm</h2>
-  <div className="space-y-4">
-    {cartItems.map((item) => (
-      <div
-        key={item._id}
-        className="flex items-center gap-4 border-b pb-4 last:border-b-0"
-      >
-        <img
-          src={item.coverImage} // Đảm bảo `image` có trong dữ liệu
-          alt={item.title}
-          className="w-16 h-24 object-cover rounded"
-        />
-        <div className="flex-1">
-          <h3 className="text-lg font-medium">{item.title}</h3>
-          <p className="text-gray-500">Số lượng: {item.quantity}</p>
-          <p className="text-gray-600 font-semibold">
-            Giá: ${item.newPrice} x {item.quantity} = $
-            {(item.newPrice * item.quantity).toFixed(2)}
-          </p>
-        </div>
-      </div>
-    ))}
-  </div>
-</div>
+            <h2 className="font-semibold text-xl text-gray-600 mb-4">Sản phẩm</h2>
+            <div className="space-y-4">
+              {cartItems.map((item) => (
+                <div
+                  key={item._id}
+                  className="flex items-center gap-4 border-b pb-4 last:border-b-0"
+                >
+                  <img
+                    src={item.coverImage}
+                    alt={item.title}
+                    className="w-16 h-24 object-cover rounded"
+                  />
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium">{item.title}</h3>
+                    <p className="text-gray-500">Số lượng: {item.quantity}</p>
+                    <p className="text-gray-600 font-semibold">
+                      Giá: ${item.newPrice} x {item.quantity} = $
+                      {(item.newPrice * item.quantity).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           <div className="bg-white rounded shadow-lg p-4 px-4 md:p-8 mb-6">
             <form
