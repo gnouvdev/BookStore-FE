@@ -17,7 +17,7 @@ const Profile = () => {
       country: "",
       zip: "",
     },
-    photo: "",
+    photoURL: "",
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,14 +42,22 @@ const Profile = () => {
           }
         );
         console.log("Profile data:", response.data);
-        setProfile(response.data.user);
+        if (response.data.user) {
+          setProfile(response.data.user);
+        } else {
+          throw new Error("No user data received");
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
-        if (error.response && error.response.status === 403) {
-          toast.error("Session expired. Please log in again.");
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          window.location.href = "/login";
+        if (error.response) {
+          if (error.response.status === 401) {
+            toast.error("Session expired. Please log in again.");
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "/login";
+          } else {
+            toast.error(error.response.data?.message || "Failed to load profile data.");
+          }
         } else {
           toast.error("Failed to load profile data.");
         }
@@ -73,10 +81,10 @@ const Profile = () => {
           country: profile.address?.country || "",
           zip: profile.address?.zip || "",
         },
-        photo: profile.photo || "",
+        photoURL: profile.photoURL || currentUser?.photoURL || "",
       });
     }
-  }, [profile]);
+  }, [profile, currentUser]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -103,7 +111,7 @@ const Profile = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      let photoUrl = formData.photo;
+      let photoUrl = formData.photoURL;
 
       if (selectedFile) {
         photoUrl = await uploadToCloudinary(selectedFile);
@@ -114,11 +122,11 @@ const Profile = () => {
         }
       }
 
-      console.log("Update profile payload:", { ...formData, photo: photoUrl });
+      console.log("Update profile payload:", { ...formData, photoURL: photoUrl });
 
       const response = await axios.put(
         "http://localhost:5000/api/users/profile",
-        { ...formData, photo: photoUrl },
+        { ...formData, photoURL: photoUrl },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -128,12 +136,37 @@ const Profile = () => {
 
       console.log("Update profile response:", response.data);
 
+      // Cập nhật profile state
       setProfile(response.data.user);
+      
+      // Cập nhật formData
       setFormData((prev) => ({
         ...prev,
-        photo: response.data.user.photo,
+        photoURL: response.data.user.photoURL,
       }));
-      setCurrentUser(response.data.user);
+
+      // Cập nhật currentUser trong AuthContext
+      const updatedUser = {
+        ...currentUser,
+        photoURL: response.data.user.photoURL || photoUrl,
+        fullName: response.data.user.fullName,
+        address: response.data.user.address,
+        displayName: response.data.user.fullName,
+        email: response.data.user.email,
+        uid: currentUser.uid,
+        role: currentUser.role
+      };
+
+      console.log("Updated user object:", updatedUser);
+      setCurrentUser(updatedUser);
+
+      // Cập nhật localStorage
+      const userToStore = {
+        ...updatedUser,
+        token: localStorage.getItem("token")
+      };
+      localStorage.setItem("user", JSON.stringify(userToStore));
+
       toast.success("Profile updated successfully!");
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -172,6 +205,7 @@ const Profile = () => {
               value={formData.email}
               onChange={handleChange}
               className="w-full border rounded p-2"
+              disabled
             />
           </div>
           <div>
@@ -244,12 +278,17 @@ const Profile = () => {
       </div>
       <div className="w-full md:w-1/2 flex flex-col items-center">
         <img
-          src={profile.photo || "https://via.placeholder.com/100"}
+          src={formData.photoURL || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"}
           alt="User Avatar"
-          className="w-24 h-24 rounded-full border-2 border-gray-300"
+          className="w-24 h-24 rounded-full border-2 border-gray-300 object-cover"
+          onError={(e) => {
+            console.log("Error loading avatar, using default");
+            e.target.onerror = null;
+            e.target.src = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+          }}
         />
-        <h2 className="text-xl font-semibold mt-4">{profile.fullName || "N/A"}</h2>
-        <p className="text-gray-600">{profile.email || "N/A"}</p>
+        <h2 className="text-xl font-semibold mt-4">{formData.fullName || "N/A"}</h2>
+        <p className="text-gray-600">{formData.email || "N/A"}</p>
       </div>
     </div>
   );

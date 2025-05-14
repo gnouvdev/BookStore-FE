@@ -1,54 +1,65 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import baseUrl from "../../../utils/baseURL";
 
-export const usersApi = createApi({
-  reducerPath: "usersApi",
+export const userApi = createApi({
+  reducerPath: "userApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api",
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      console.log("Token sent in headers:", token); // Log để debug
+    baseUrl: baseUrl,
+    prepareHeaders: (headers, { getState }) => {
+      const token = getState().auth.token;
       if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      } else {
-        console.warn("No token found in localStorage");
+        headers.set("authorization", `Bearer ${token}`);
       }
       return headers;
     },
   }),
+  tagTypes: ["Users"],
   endpoints: (builder) => ({
-    fetchAllUsers: builder.query({
+    getUsers: builder.query({
       query: () => "/users",
+      providesTags: ["Users"],
     }),
-    fetchUserById: builder.query({
-      query: (id) => `/users/${id}`,
+    searchUsers: builder.query({
+      query: (query) => `/users/search?query=${query}`,
+      providesTags: ["Users"],
     }),
-    addUser: builder.mutation({
-      query: (newUser) => ({
-        url: "/users/create",
-        method: "POST",
-        body: newUser,
+    getUserProfile: builder.query({
+      query: () => "/users/profile",
+      providesTags: ["Users"],
+    }),
+    updateProfile: builder.mutation({
+      query: (data) => ({
+        url: "/users/profile",
+        method: "PUT",
+        body: data,
       }),
+      invalidatesTags: ["Users"],
     }),
     updateUser: builder.mutation({
-      query: ({ id, ...updatedUser }) => ({
+      query: ({ id, ...data }) => ({
         url: `/users/${id}`,
         method: "PUT",
-        body: updatedUser,
+        body: data,
       }),
+      invalidatesTags: ["Users"],
     }),
     deleteUser: builder.mutation({
       query: (id) => ({
         url: `/users/${id}`,
         method: "DELETE",
       }),
+      invalidatesTags: ["Users"],
     }),
   }),
 });
 
 export const {
-  useFetchAllUsersQuery,
-  useFetchUserByIdQuery,
-  useAddUserMutation,
+  useGetUsersQuery,
+  useSearchUsersQuery,
+  useGetUserProfileQuery,
+  useUpdateProfileMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
-} = usersApi;
+} = userApi;
+
+export default userApi;

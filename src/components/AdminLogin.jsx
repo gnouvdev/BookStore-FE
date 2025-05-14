@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
-import getBaseUrl from "../utils/baseURL";
+import baseUrl from "../utils/baseURL";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
@@ -26,7 +26,7 @@ const AdminLogin = () => {
 
     try {
       const response = await axios.post(
-        `${getBaseUrl()}/api/users/admin`,
+        `${baseUrl}/users/admin`,
         { email, password },
         {
           headers: {

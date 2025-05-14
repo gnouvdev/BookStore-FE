@@ -1,82 +1,96 @@
 import { createSlice } from "@reduxjs/toolkit";
 import Swal from "sweetalert2";
-import { Toaster } from "react-hot-toast";
+
 const initialState = {
   cartItems: [],
+  totalAmount: 0,
 };
 
 const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
-    addToCart: (state, action) => {
-      const existingItem = state.cartItems.find(
-        (item) => item._id === action.payload._id
-      );
-
-      // Sử dụng quantityToAdd từ payload, mặc định là 1 nếu không có
-      const quantityToAdd = action.payload.quantityToAdd || 1;
-
-      if (existingItem) {
-        existingItem.quantity += quantityToAdd; // Tăng số lượng sản phẩm đã có trong giỏ hàng
-        Swal.fire({
-          position: "center",
-          icon: "success",
-          title: "Increased Quantity in Cart",
-          showConfirmButton: false,
-          timer: 1000,
-        });
-      } else {
-        state.cartItems.push({ ...action.payload, quantity: quantityToAdd }); // Thêm sản phẩm mới với số lượng đã chọn
-        Swal.fire({
-          position: "center",
-          icon: "success",
-          title: "Product Added to Cart",
-          showConfirmButton: false,
-          timer: 1000,
-        });
-      }
-    },
-
-    removeFromCart: (state, action) => {
-      state.cartItems = state.cartItems.filter(
-        (item) => item._id !== action.payload
-      );
-    },
-    increaseQuantity: (state, action) => {
-      const existingItem = state.cartItems.find(
-        (item) => item._id === action.payload
-      );
-      if (existingItem) {
-        existingItem.quantity += 1;
-      }
-    },
-    decreaseQuantity: (state, action) => {
-      const existingItem = state.cartItems.find(
-        (item) => item._id === action.payload
-      );
-      if (existingItem) {
-        if (existingItem.quantity > 1) {
-          existingItem.quantity -= 1;
-        } else {
-          state.cartItems = state.cartItems.filter(
-            (item) => item._id !== action.payload
-          );
-        }
-      }
+    setCart: (state, action) => {
+      state.cartItems = action.payload.items;
+      state.totalAmount = action.payload.totalAmount;
     },
     clearCart: (state) => {
       state.cartItems = [];
+      state.totalAmount = 0;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addMatcher(
+        (action) => action.type.includes("cartApi/executeQuery/fulfilled"),
+        (state, action) => {
+          if (action.meta.arg.endpointName === "getCart") {
+            state.cartItems = action.payload.items;
+            state.totalAmount = action.payload.totalAmount;
+          }
+        }
+      )
+      .addMatcher(
+        (action) => action.type.includes("cartApi/executeMutation/fulfilled"),
+        (state, action) => {
+          if (action.meta.arg.endpointName === "addToCart") {
+            state.cartItems = action.payload.cart.items.map((item) => ({
+              bookId: item.bookId._id,
+              title: item.bookId.title,
+              coverImage: item.bookId.coverImage,
+              price: item.price,
+              quantity: item.quantity,
+            }));
+            state.totalAmount = action.payload.cart.items.reduce(
+              (sum, item) => sum + item.price * item.quantity,
+              0
+            );
+            Swal.fire({
+              position: "center",
+              icon: "success",
+              title: action.payload.cart.items.some(
+                (item) => item.quantity > 1
+              )
+                ? "Increased Quantity in Cart"
+                : "Product Added to Cart",
+              showConfirmButton: false,
+              timer: 1000,
+            });
+          }
+          if (action.meta.arg.endpointName === "removeFromCart") {
+            state.cartItems = action.payload.cart.items.map((item) => ({
+              bookId: item.bookId._id,
+              title: item.bookId.title,
+              coverImage: item.bookId.coverImage,
+              price: item.price,
+              quantity: item.quantity,
+            }));
+            state.totalAmount = action.payload.cart.items.reduce(
+              (sum, item) => sum + item.price * item.quantity,
+              0
+            );
+          }
+          if (action.meta.arg.endpointName === "updateCartItemQuantity") {
+            state.cartItems = action.payload.cart.items.map((item) => ({
+              bookId: item.bookId._id,
+              title: item.bookId.title,
+              coverImage: item.bookId.coverImage,
+              price: item.price,
+              quantity: item.quantity,
+            }));
+            state.totalAmount = action.payload.cart.items.reduce(
+              (sum, item) => sum + item.price * item.quantity,
+              0
+            );
+          }
+          if (action.meta.arg.endpointName === "clearCart") {
+            state.cartItems = [];
+            state.totalAmount = 0;
+          }
+        }
+      );
   },
 });
 
-// Export actions
-export const {
-  addToCart,
-  removeFromCart,
-  increaseQuantity,
-  decreaseQuantity,
-  clearCart,
-} = cartSlice.actions;
+export const { setCart, clearCart, updateCartItemQuantity, removeFromCart } = cartSlice.actions;
 export default cartSlice.reducer;

@@ -1,21 +1,44 @@
 import React from "react";
 import { FiShoppingCart } from "react-icons/fi";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { addToCart } from "../../redux/features/cart/cartSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { useAddToCartMutation } from "../../redux/features/cart/cartApi";
+import { addToWishlist, removeFromWishlist } from "../../redux/features/wishlist/wishlistSlice";
+import { useTranslation } from "react-i18next";
 
 const BookCard = ({ book }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
+  const wishlistItems = useSelector((state) => state.wishlist.wishlistItems);
+  const isInWishlist = wishlistItems.some((item) => item._id === book._id);
+  const [addToCart, { isLoading }] = useAddToCartMutation();
 
-  const handleAddToCart = (product) => {
-    dispatch(addToCart(product));
+  const handleAddToCart = async () => {
+    try {
+      await addToCart({
+        bookId: book._id,
+        quantity: 1,
+      }).unwrap();
+      console.log("Added to cart:", book._id);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+    }
+  };
+
+  const handleWishlistToggle = () => {
+    if (isInWishlist) {
+      dispatch(removeFromWishlist(book._id));
+    } else {
+      dispatch(addToWishlist(book));
+    }
   };
 
   return (
-    <div className="bg-gray-100 rounded-xl p-4 mx-8 shadow-md w-60 max-w-xs h-full flex flex-col justify-between">
+    <div className="bg-gray-200 rounded-xl p-4 mx-8 shadow-md w-60 max-w-xs h-full flex flex-col justify-between">
       <div className="flex flex-col items-center gap-3 h-full">
         {/* Hình ảnh sách */}
-        <div className="h-56 w-40 flex-shrink-0 border rounded-md overflow-hidden">
+        <div className="h-56 w-40 flex-shrink-0 border rounded-md overflow-hidden relative">
           <Link to={`/books/${book._id}`}>
             <img
               src={book?.coverImage || "https://via.placeholder.com/150"}
@@ -23,6 +46,16 @@ const BookCard = ({ book }) => {
               className="w-full h-full object-cover p-2 cursor-pointer hover:scale-105 transition-all duration-200"
             />
           </Link>
+          <button
+            onClick={handleWishlistToggle}
+            className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+          >
+            {isInWishlist ? (
+              <FaHeart className="text-red-500 text-xl" />
+            ) : (
+              <FaRegHeart className="text-gray-500 text-xl" />
+            )}
+          </button>
         </div>
 
         {/* Thông tin sách */}
@@ -32,26 +65,27 @@ const BookCard = ({ book }) => {
               {book?.title}
             </h3>
           </Link>
-          <p className="text-gray-500 text-sm mb-3 line-clamp-3 h-[60px] w-48">
+          <p className="text-gray-500 text-sm mb-3 line-clamp-1 w-48">
             {book?.description}
           </p>
+
           <p className="font-medium mb-3 text-xl text-red-600">
-            ${book?.price?.newPrice}{" "}
+            {book?.price?.newPrice.toLocaleString("vi-VN")} đ
             <span className="line-through font-normal ml-2 text-xs text-black">
-              $ {book?.price?.oldPrice}
+              {book?.price?.oldPrice.toLocaleString("vi-VN")}đ
             </span>
           </p>
-
         </div>
       </div>
 
       {/* Nút Thêm vào giỏ hàng */}
       <button
-        onClick={() => handleAddToCart(book)}
-        className="bg-primary text-black px-4 py-2 text-sm rounded-lg flex items-center gap-1 hover:bg-blue-900 transition w-full"
+        onClick={handleAddToCart}
+        disabled={isLoading}
+        className="bg-primary text-black px-4 py-2 text-sm rounded-lg flex items-center gap-1 hover:bg-blue-900 transition w-full disabled:opacity-50"
       >
         <FiShoppingCart />
-        <span>Add to Cart</span>
+        <span>{t("books.addToCart")}</span>
       </button>
     </div>
   );

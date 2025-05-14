@@ -1,42 +1,65 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import baseUrl from "../../../utils/baseURL";
 
 export const categoriesApi = createApi({
   reducerPath: "categoriesApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:5000/api" }), // Thay đổi URL nếu cần
+  baseQuery: fetchBaseQuery({
+    baseUrl: baseUrl,
+    prepareHeaders: (headers, { getState }) => {
+      const token = getState().auth.token;
+      if (token) {
+        headers.set("authorization", `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }),
+  tagTypes: ["Categories"],
   endpoints: (builder) => ({
-    fetchAllCategories: builder.query({
+    getCategories: builder.query({
       query: () => "/categories",
+      providesTags: ["Categories"],
     }),
-    fetchCategoryById: builder.query({
+    getCategoryById: builder.query({
       query: (id) => `/categories/${id}`,
+      providesTags: (result, error, id) => [{ type: "Categories", id }],
+    }),
+    searchCategories: builder.query({
+      query: (name) => `/categories/search?name=${name}`,
+      providesTags: ["Categories"],
     }),
     addCategory: builder.mutation({
-      query: (newCategory) => ({
+      query: (data) => ({
         url: "/categories/create",
         method: "POST",
-        body: newCategory,
+        body: data,
       }),
+      invalidatesTags: ["Categories"],
     }),
     updateCategory: builder.mutation({
-      query: ({ id, ...updatedCategory }) => ({
+      query: ({ id, ...data }) => ({
         url: `/categories/edit/${id}`,
         method: "PUT",
-        body: updatedCategory,
+        body: data,
       }),
+      invalidatesTags: ["Categories"],
     }),
     deleteCategory: builder.mutation({
       query: (id) => ({
         url: `/categories/${id}`,
         method: "DELETE",
       }),
+      invalidatesTags: ["Categories"],
     }),
   }),
 });
 
 export const {
-  useFetchAllCategoriesQuery,
-  useFetchCategoryByIdQuery,
+  useGetCategoriesQuery,
+  useGetCategoryByIdQuery,
+  useSearchCategoriesQuery,
   useAddCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
 } = categoriesApi;
+
+export default categoriesApi;

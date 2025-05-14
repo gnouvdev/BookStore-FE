@@ -6,68 +6,117 @@ import { useAuth } from "./../context/AuthContext";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { setToken } from "../firebase/tokenStorage";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 
 const Login = () => {
-  const [message, setMessage] = useState("");
-  const { loginUser, googleLogin } = useAuth();
+  const { loginUser, signInWithGoogle, setCurrentUser } = useAuth();
   const navigate = useNavigate();
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = async (data) => {
-    if (!data.email || !data.password) {
-      toast.error("Email và mật khẩu là bắt buộc");
-      return;
+  // Hàm helper để lấy thông tin người dùng từ profile API
+  const fetchUserProfile = async (token) => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/users/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log("Profile API response:", response.data);
+      return response.data.user;
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      return null;
+    }
+  };
+
+  // Hàm helper để tạo đối tượng người dùng sạch
+  const createCleanUserObject = (user, profileData, role) => {
+    const { email, uid, photoURL: firebasePhotoURL } = user;
+    
+    let finalPhotoURL = null;
+    if (profileData?.photoURL) {
+      finalPhotoURL = profileData.photoURL;
+    } else if (firebasePhotoURL) {
+      finalPhotoURL = firebasePhotoURL;
+    } else {
+      finalPhotoURL = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
     }
 
+    return {
+      email,
+      uid,
+      role,
+      photoURL: finalPhotoURL,
+      displayName: profileData?.fullName || user.displayName || null,
+      fullName: profileData?.fullName || null,
+      address: profileData?.address || null
+    };
+  };
+
+  // Login user
+  const onSubmit = async (data) => {
+    console.log("Form Data:", data);
+    setIsSubmitting(true);
     try {
-      const user = await loginUser(data.email, data.password);
-      if (!user || !user.getIdToken) {
-        throw new Error("Invalid user object returned from login");
-      }
-
+      // 1. Đăng nhập với Firebase
+      const result = await loginUser(data.email, data.password);
+      const user = result.user;
+      
+      // 2. Lấy token từ Firebase
       const idToken = await user.getIdToken();
-      console.log("Firebase idToken:", idToken); // Log để debug
+      console.log("Firebase idToken:", idToken);
 
-      // Gửi idToken đến backend
+      // 3. Đăng nhập với backend
       const response = await axios.post(
         "http://localhost:5000/api/auth/login",
         { idToken }
       );
 
       const { token, role = "user" } = response.data;
-      if (role !== "user" && role !== "admin") {
-        throw new Error("Invalid role for this login");
-      }
-
-      console.log("JWT token:", token); // Log để debug
-      setToken(token);
+      console.log("JWT token:", token);
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify({ email: data.email, role }));
+
+      // 4. Lấy thông tin người dùng từ profile API
+      const profileData = await fetchUserProfile(token);
+      console.log("Profile data:", profileData);
+      
+      // 5. Tạo đối tượng người dùng sạch
+      const cleanUser = createCleanUserObject(user, profileData, role);
+      console.log("Clean user object:", cleanUser);
+      
+      // 6. Lưu vào localStorage
+      localStorage.setItem("user", JSON.stringify(cleanUser));
+      
+      // 7. Cập nhật currentUser trong AuthContext
+      setCurrentUser(cleanUser);
+      
       toast.success("Đăng nhập thành công!");
-      navigate(role === "admin" ? "/dashboard" : "/profile");
+      navigate("/profile");
     } catch (error) {
-      console.error("Lỗi đăng nhập:", error);
-      const errorMessage =
-        error.response?.data?.message || error.message || "Email hoặc mật khẩu không hợp lệ";
-      toast.error(errorMessage);
-      setMessage("Đăng nhập thất bại, vui lòng thử lại!");
+      console.error("Login error:", error);
+      if (error.code === "auth/user-not-found") {
+        toast.error("Email chưa được đăng ký. Vui lòng đăng ký trước.");
+      } else if (error.code === "auth/wrong-password") {
+        toast.error("Mật khẩu không đúng. Vui lòng thử lại.");
+      } else {
+        toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
+  // Google sign-in
+  const handleGoogleSignIn = async () => {
     try {
-      const user = await googleLogin();
-      if (!user || !user.getIdToken) {
-        throw new Error("Invalid user object returned from Google login");
-      }
-
+      const result = await signInWithGoogle();
+      const user = result.user;
       const idToken = await user.getIdToken();
-      console.log("Google idToken:", idToken); // Log để debug
+      console.log("Google idToken:", idToken);
 
       const response = await axios.post(
         "http://localhost:5000/api/auth/google",
@@ -75,29 +124,35 @@ const Login = () => {
       );
 
       const { token, role = "user" } = response.data;
-      if (role !== "user" && role !== "admin") {
-        throw new Error("Invalid role for this login");
-      }
-
-      console.log("JWT token:", token); // Log để debug
-      setToken(token);
+      console.log("JWT token:", token);
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify({ email: user.email, role }));
+
+      // Lấy thông tin người dùng từ profile API
+      const profileData = await fetchUserProfile(token);
+      console.log("Profile data:", profileData);
+      
+      // Tạo đối tượng người dùng sạch
+      const cleanUser = createCleanUserObject(user, profileData, role);
+      console.log("Clean user object:", cleanUser);
+      
+      // Lưu vào localStorage
+      localStorage.setItem("user", JSON.stringify(cleanUser));
+      
+      // Cập nhật currentUser trong AuthContext
+      setCurrentUser(cleanUser);
+      
       toast.success("Đăng nhập bằng Google thành công!");
-      navigate(role === "admin" ? "/dashboard" : "/profile");
+      navigate("/profile");
     } catch (error) {
-      console.error("Lỗi đăng nhập Google:", error);
-      const errorMessage =
-        error.response?.data?.message || "Đăng nhập bằng Google thất bại";
-      toast.error(errorMessage);
-      setMessage("Đăng nhập thất bại, vui lòng thử lại!");
+      console.error("Google sign-in error:", error);
+      toast.error("Đăng nhập bằng Google thất bại!");
     }
   };
 
   return (
     <div className="h-[calc(100vh-120px)] flex justify-center items-center">
       <div className="w-full max-w-sm mx-auto bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        <h2 className="text-xl font-semibold mb-4">Vui lòng đăng nhập</h2>
+        <h2 className="text-xl font-semibold mb-4">Đăng nhập</h2>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-4">
@@ -108,16 +163,25 @@ const Login = () => {
               Email
             </label>
             <input
-              {...register("email", { required: "Email là bắt buộc" })}
+              {...register("email", {
+                required: "Vui lòng nhập email",
+                pattern: {
+                  value: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/,
+                  message: "Email không hợp lệ",
+                },
+              })}
               type="email"
               id="email"
               placeholder="Địa chỉ email"
               className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow"
             />
             {errors.email && (
-              <p className="text-red-500 text-xs italic">{errors.email.message}</p>
+              <p className="text-red-500 text-xs italic">
+                {errors.email.message}
+              </p>
             )}
           </div>
+
           <div className="mb-4">
             <label
               className="block text-gray-700 text-sm font-bold mb-2"
@@ -126,39 +190,47 @@ const Login = () => {
               Mật khẩu
             </label>
             <input
-              {...register("password", { required: "Mật khẩu là bắt buộc" })}
+              {...register("password", {
+                required: "Vui lòng nhập mật khẩu",
+                minLength: {
+                  value: 6,
+                  message: "Mật khẩu phải có ít nhất 6 ký tự",
+                },
+              })}
               type="password"
               id="password"
               placeholder="Mật khẩu"
               className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow"
             />
             {errors.password && (
-              <p className="text-red-500 text-xs italic">{errors.password.message}</p>
+              <p className="text-red-500 text-xs italic">
+                {errors.password.message}
+              </p>
             )}
           </div>
-          {message && (
-            <p className="text-red-500 text-xs italic mb-3">{message}</p>
-          )}
+
           <div>
-            <button
+            <button 
               type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded focus:outline-none"
+              disabled={isSubmitting}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded focus:outline-none disabled:opacity-50"
             >
-              Đăng nhập
+              {isSubmitting ? "Đang xử lý..." : "Đăng nhập"}
             </button>
           </div>
         </form>
 
         <p className="align-baseline font-medium mt-4 text-sm">
-          Chưa có tài khoản? Vui lòng{" "}
+          Chưa có tài khoản?{" "}
           <Link to="/register" className="text-blue-500 hover:text-blue-700">
             Đăng ký
           </Link>
         </p>
 
+        {/* Google sign-in */}
         <div className="mt-4">
           <button
-            onClick={handleGoogleLogin}
+            onClick={handleGoogleSignIn}
             className="w-full flex flex-wrap gap-1 items-center justify-center bg-secondary hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none"
           >
             <FaGoogle className="mr-2" />

@@ -9,10 +9,10 @@ import SingleBook from "../pages/books/SingleBook";
 import GenreBooks from "../components/GenreBooks";
 import GridBooks from "../components/GridBooks";
 import PrivateRoute from "./PrivateRoute";
+import AdminRoute from "./AdminRoute";
 
 import OrderPage from "../pages/books/OrderPage";
 import ThanksPage from "./../pages/thanksPage/ThanksPage";
-import AdminRoute from "../../../../Sample/build-full-stack-book-store-mern-app/frontend/src/routers/AdminRoute";
 import AdminLogin from './../components/AdminLogin';
 import DashboardLayout from "../pages/dashBoard/DashboardLayout";
 import Dashboard from './../pages/dashBoard/Dashboard';
@@ -26,6 +26,9 @@ import ManageAuthors from './../pages/dashBoard/manageAuthors/ManageAuthors';
 import ManageUsers from './../pages/dashBoard/manageUsers/ManageUsers';
 import Profile from './../pages/user/profile';
 import ManageOrders from './../pages/dashBoard/manageOrders/ManageOrders';
+import Recommended from "../pages/home/Recommended";
+import BookRecommendations from './../components/BookRecommendations';
+import WishlistPage from "../pages/wishlist/WishlistPage";
 
 
 
@@ -58,10 +61,14 @@ const router = createBrowserRouter([
         path: "/register",
         element: <Register />,
       },
-      {
-        path: "/cart",
-        element: <CartPage />,
-      },
+        {
+          path: "/cart",
+          element: <CartPage />,
+        },
+        {
+          path: "/wishlist",
+          element: <WishlistPage />,
+        },
       {
         path: "/checkout",
         element: (
@@ -80,7 +87,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/product/fiction",
-        element: <GridBooks genre={"fiction"} />,
+        element:<GridBooks genre={"fiction"} />,
       },
       {
         path: "/product/horror",
@@ -91,8 +98,8 @@ const router = createBrowserRouter([
         element: <GridBooks genre={"adventure"} />,
       },
       {
-        path: "/product/business",
-        element: <GridBooks genre={"business"} />,
+        path: "/product/bussines",
+        element: <GridBooks genre={"bussines"} />,
       },
       {
         path: "/product/manga",

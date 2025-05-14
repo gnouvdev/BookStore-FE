@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import InputField from "./InputField";
 import { useForm } from "react-hook-form";
 import { useAddBookMutation } from "../../../redux/features/books/booksApi";
+import { useGetCategoriesQuery } from "../../../redux/features/categories/categoriesApi";
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
 import { uploadToCloudinary } from "../../../utils/uploadService";
@@ -18,40 +19,23 @@ const AddBook = () => {
   } = useForm();
 
   const [addBook, { isLoading }] = useAddBookMutation();
+  const { data: categoriesData, isLoading: isLoadingCategories } = useGetCategoriesQuery();
   const [coverImage, setCoverImage] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState(null);
-  const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState(""); // State để lưu tags
   const [language, setLanguage] = useState("Tiếng Anh"); // State để lưu ngôn ngữ
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/api/categories"
-        );
-        console.log("Categories fetched:", response.data); // Kiểm tra dữ liệu trả về
-        setCategories(
-          response.data.map((category) => ({
-            value: category._id,
-            label: category.name,
-          }))
-        );
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        toast.error("Failed to load categories.");
-      }
-    };
-
-    fetchCategories();
-  }, []);
+  const categories = categoriesData?.map((category) => ({
+    value: category._id,
+    label: category.name,
+  })) || [];
 
   const debouncedLoadOptions = debounce(async (inputValue) => {
     if (!inputValue) return [];
 
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/authors/search?name=${inputValue}`
+        `${baseUrl}/authors/search?name=${inputValue}`
       );
 
       if (response.data && Array.isArray(response.data)) {
@@ -60,9 +44,11 @@ const AddBook = () => {
           label: author.name,
         }));
       }
+      console.error("Invalid authors data format:", response.data);
       return [];
     } catch (error) {
       console.error("Error loading author options:", error);
+      toast.error(error.response?.data?.message || "Failed to load authors");
       return [];
     }
   }, 300);
@@ -99,6 +85,7 @@ const AddBook = () => {
       coverImage: coverImage,
       author: selectedAuthor ? selectedAuthor.value : null,
       category: data.category,
+      publish: data.publish,
       tags: tags.split(",").map((tag) => tag.trim()), // Chuyển chuỗi tags thành mảng
       language: language,
       price: {
@@ -161,7 +148,13 @@ const AddBook = () => {
           type="textarea"
           register={register}
         />
-
+        <InputField
+          label="Nhà xuất bản"
+          name="publish"
+          placeholder="Enter book description"
+          type="textarea"
+          register={register}
+        />
         <div className="mb-4">
           <label className="block text-sm font-semibold text-gray-700">
             Category

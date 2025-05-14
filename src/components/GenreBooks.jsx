@@ -7,15 +7,17 @@ import "swiper/css/navigation";
 
 // import required modules
 import { Pagination, Navigation } from "swiper/modules";
-import { useFetchAllBooksQuery } from "../redux/features/books/booksApi";
+import { useGetBooksQuery } from "../redux/features/books/booksApi";
 import BookCard from "../pages/books/BookCart";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const GenreBooks = ({ genre }) => {
-  const { data: books = [], isLoading, error } = useFetchAllBooksQuery();
+  const { data: books = [], isLoading, error } = useGetBooksQuery();
+  const { t } = useTranslation();
 
-  if (isLoading) return <p>Loading books...</p>;
-  if (error) return <p className="text-red-500">Failed to load books</p>;
+  if (isLoading) return <p>{t('books.loading')}</p>;
+  if (error) return <p className="text-red-500">{t('books.error')}</p>;
 
   const filteredBooks =
     genre === "full"
@@ -25,16 +27,16 @@ const GenreBooks = ({ genre }) => {
         );
 
   return (
-    <div className="py-16 px-1 pt-4">
+    <div className="py-16 px-1 pt-4 mx-16">
       <div className="flex justify-between mx-8 ">
         <h2 className="text-2xl font-semibold mb-6 uppercase">
-          {genre === "full" ? "All Books" : `${genre} Books`}
+          {genre === "full" ? t('books.allBooks') : t(`books.${genre}Books`)}
         </h2>
         <Link
           to={`/product/${genre.toLowerCase()}`}
           className="hover:underline"
         >
-          View all
+          {t('common.view all')}
         </Link>
       </div>
 
@@ -46,10 +48,10 @@ const GenreBooks = ({ genre }) => {
           spaceBetween={10}
           navigation={true}
           breakpoints={{
-            640: { slidesPerView: 2, spaceBetween: 10 },
-            768: { slidesPerView: 3, spaceBetween: 10 },
-            1024: { slidesPerView: 4, spaceBetween: 10 },
-            1180: { slidesPerView: 5, spaceBetween: 10 },
+            640: { slidesPerView: 2, spaceBetween: 5 },
+            768: { slidesPerView: 3, spaceBetween: 5 },
+            1024: { slidesPerView: 4, spaceBetween: 5 },
+            1180: { slidesPerView: 5, spaceBetween: 5 },
           }}
           modules={[Pagination, Navigation]}
           className="mySwiper"

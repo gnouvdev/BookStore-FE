@@ -1,0 +1,80 @@
+/* Range Slider Styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #3b82f6;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: -7px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #3b82f6;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Price Range Container */
+.price-range-container {
+  position: relative;
+  height: 20px;
+  margin: 20px 0;
+}
+
+/* Price Display */
+.price-display {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+/* Track Styles */
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 2px;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 2px;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Active Range */
+.range-slider-active {
+  position: absolute;
+  height: 2px;
+  background: #3b82f6;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 1;
+} 

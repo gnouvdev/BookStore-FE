@@ -1,87 +1,44 @@
-import React, { useEffect, useState } from "react";
-import BookCart from "../books/BookCart";
-import { Swiper, SwiperSlide } from "swiper/react";
+import React from "react";
+import { Link } from "react-router-dom";
+import { useGetBooksQuery } from "../../redux/features/books/booksApi";
 
-// Import Swiper styles
-import "swiper/css";
-import "swiper/css/pagination";
-import "swiper/css/navigation";
+const TopSellers = () => {
+  const { data: books = [] } = useGetBooksQuery();
 
-// import required modules
-import { Pagination, Navigation } from "swiper/modules";
-import { useFetchAllBooksQuery } from "../../redux/features/books/booksApi";
+  // Sort books by sales or rating to get top sellers
+  const topSellers = [...books]
+    .sort((a, b) => (b.sales || 0) - (a.sales || 0))
+    .slice(0, 4);
 
-
-const categories = [
-  "choose a genre",
-  "Business",
-  "Fiction",
-  "Horror",
-  "Adventure",
-];
-const TopSales = () => {
-  const [selectedCategory, setSelectedCategory] = useState("Choose a genre");
-  const { data: books = [] } = useFetchAllBooksQuery();
-
-  const filteredBooks =
-    selectedCategory === "Choose a genre"
-      ? books
-      : books.filter(
-          (book) => book.category === selectedCategory.toLowerCase()
-        );
-  console.log(filteredBooks);
   return (
-    <div className="py-10">
-      <h2 className="text-3xl font-semibold mb-6">Top Sellers</h2>
-      {/* category filter */}
-      <div className="mb-8 flex items-center">
-        <select
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          name="category"
-          id="category"
-          className="border bg-[#EAEAEA] border-gray-300 rounded-md px-4 py-2 focus:outline-none"
-        >
-          {categories.map((category, index) => (
-            <option key={index} value={category}>
-              {category}
-            </option>
+    <section className="py-12 bg-gray-50">
+      <div className="container mx-auto px-4">
+        <h2 className="text-3xl font-bold text-center mb-8">Top Sellers</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {topSellers.map((book) => (
+            <Link
+              key={book._id}
+              to={`/books/${book._id}`}
+              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+            >
+              <img
+                src={book.coverImage}
+                alt={book.title}
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-4">
+                <h3 className="font-semibold text-lg mb-2">{book.title}</h3>
+                <p className="text-gray-600 mb-2">{book.author}</p>
+                <p className="text-blue-600 font-bold">
+                  ${book.price?.newPrice?.toFixed(2)}
+                </p>
+              </div>
+            </Link>
           ))}
-        </select>
+        </div>
       </div>
-      <Swiper
-        slidesPerView={1}
-        spaceBetween={30}
-        navigation={true}
-        breakpoints={{
-          640: {
-            slidesPerView: 1,
-            spaceBetween: 20,
-          },
-          768: {
-            slidesPerView: 2,
-            spaceBetween: 40,
-          },
-          1024: {
-            slidesPerView: 2,
-            spaceBetween: 50,
-          },
-          1180: {
-            slidesPerView: 3,
-            spaceBetween: 50,
-          },
-        }}
-        modules={[Pagination, Navigation]}
-        className="mySwiper"
-      >
-        {filteredBooks.length > 0 &&
-          filteredBooks.map((book, index) => (
-            <SwiperSlide key={index}>
-              <BookCart book={book} />
-            </SwiperSlide>
-          ))}
-      </Swiper>
-    </div>
+    </section>
   );
 };
 
-export default TopSales;
+export default TopSellers;

@@ -1,26 +1,45 @@
 import { configureStore } from "@reduxjs/toolkit";
-import cartReducer from "./features/cart/cartSlice";
-import booksApi from "./features/books/booksApi";
-import ordersApi from "./features/orders/ordersApi";
+import { setupListeners } from "@reduxjs/toolkit/query";
+import { booksApi } from "./features/books/booksApi";
+import { ordersApi } from "./features/orders/ordersApi";
+import { authorsApi } from "./features/authors/authorsApi";
 import { categoriesApi } from "./features/categories/categoriesApi";
-import { authorsApi } from "./features/Author/authorApi";
-import { usersApi } from "./features/users/userApi";
+import { usersApi } from "./features/users/usersApi";
+import authReducer from "./features/auth/authSlice";
+import cartReducer from "./features/cart/cartSlice";
+import { userApi } from "./features/users/userApi";
+import recommendationsApi from "./features/recommendations/recommendationsApi";
+import wishlistReducer from './features/wishlist/wishlistSlice';
+import paymentsApi from "./features/payments/paymentsApi";
+import { cartApi } from './features/cart/cartApi';
 
 export const store = configureStore({
   reducer: {
+    auth: authReducer,
     cart: cartReducer,
+    wishlist: wishlistReducer,
     [booksApi.reducerPath]: booksApi.reducer,
     [ordersApi.reducerPath]: ordersApi.reducer,
-    [categoriesApi.reducerPath]: categoriesApi.reducer,
     [authorsApi.reducerPath]: authorsApi.reducer,
+    [categoriesApi.reducerPath]: categoriesApi.reducer,
     [usersApi.reducerPath]: usersApi.reducer,
+    [userApi.reducerPath]: userApi.reducer,
+    [recommendationsApi.reducerPath]: recommendationsApi.reducer,
+    [paymentsApi.reducerPath]: paymentsApi.reducer,
+    [cartApi.reducerPath]: cartApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       booksApi.middleware,
       ordersApi.middleware,
-      categoriesApi.middleware,
       authorsApi.middleware,
-      usersApi.middleware
+      categoriesApi.middleware,
+      usersApi.middleware,
+      userApi.middleware,
+      recommendationsApi.middleware,
+      paymentsApi.middleware,
+      cartApi.middleware
     ),
 });
+
+setupListeners(store.dispatch);

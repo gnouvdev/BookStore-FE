@@ -1,4 +1,3 @@
-const getBaseUrl = () => {
-  return "http://localhost:5000";
-};
-export default getBaseUrl;
+const baseUrl = "http://localhost:5000/api";
+
+export default baseUrl;

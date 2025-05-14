@@ -1,14 +1,44 @@
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Swal from "sweetalert2";
 import { useCreateOrderMutation } from "../../redux/features/orders/ordersApi";
+import { clearCart } from "../../redux/features/cart/cartSlice";
+import {
+  useGetPaymentMethodsQuery,
+  useCreateVNPayUrlMutation,
+} from "../../redux/features/payments/paymentsApi";
 
 const CheckoutPage = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const cartItems = useSelector((state) => state.cart.cartItems);
+  const [createOrder, { isLoading }] = useCreateOrderMutation();
+  const [isChecked, setIsChecked] = useState(false);
+  const { data: paymentMethodsData, isLoading: isLoadingPayments } =
+    useGetPaymentMethodsQuery();
+  const paymentMethods = paymentMethodsData?.data || [];
+  const [createVNPayUrl] = useCreateVNPayUrlMutation();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      name: currentUser?.displayName || "",
+      email: currentUser?.email || "",
+      city: currentUser?.address?.city || "",
+      country: currentUser?.address?.country || "",
+      state: currentUser?.address?.state || "",
+      zipcode: currentUser?.address?.zipcode || "",
+      phone: currentUser?.phone || "",
+    },
+  });
 
   // Chuyển hướng nếu chưa đăng nhập
   if (!currentUser) {
@@ -16,87 +46,152 @@ const CheckoutPage = () => {
     return null;
   }
 
-  const cartItems = useSelector((state) => state.cart.cartItems);
-
   // Tính tổng giá trị đơn hàng
-  const totalPrice = cartItems
-    .reduce((acc, item) => acc + item.newPrice * item.quantity, 0)
-    .toFixed(2);
+  const totalPrice = cartItems.reduce((acc, item) => {
+    const price = item.price || 0;
+    const quantity = item.quantity || 1;
+    return acc + price * quantity;
+  }, 0);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
-
-  const [createOrder, { isLoading }] = useCreateOrderMutation();
-  const [isChecked, setIsChecked] = useState(false);
+  const handlePaymentMethodSelect = (method) => {
+    setSelectedPayment(method);
+  };
 
   const onSubmit = async (data) => {
-    const newOrder = {
+    if (!cartItems.length) {
+      Swal.fire({
+        title: "Error",
+        text: "Your cart is empty!",
+        icon: "error",
+      });
+      return;
+    }
+
+    if (!selectedPayment) {
+      Swal.fire({
+        title: "Error",
+        text: "Please select a payment method!",
+        icon: "error",
+      });
+      return;
+    }
+
+    console.log("Current user:", currentUser);
+    console.log("Cart items:", cartItems);
+    console.log("Selected payment:", selectedPayment);
+
+    const orderData = {
+      user: currentUser.uid,
       name: data.name,
       email: currentUser?.email,
       address: {
         city: data.city,
-        country: data.country,
-        state: data.state,
-        zipcode: data.zipcode,
+        country: data.country || "",
+        state: data.state || "",
+        zipcode: data.zipcode || "",
       },
-      phone: data.phone,
-      products: cartItems.map((item) => ({
-        productId: item._id,
-        quantity: item.quantity,
-      })),
-      totalPrice: parseFloat(totalPrice),
+      phone: parseInt(data.phone) || 0,
+      productIds: cartItems.map((item) => item._id || item.bookId),
+      totalPrice: totalPrice,
+      paymentMethod: selectedPayment._id,
+      status: "pending",
+      paymentStatus: "pending",
+      orderStatus: "pending",
+      paymentDetails: {
+        paymentAmount: totalPrice,
+        paymentCurrency: "VND",
+      },
     };
 
+    console.log("Order data to be sent:", orderData);
+
     try {
-      await createOrder(newOrder).unwrap();
-      Swal.fire({
-        title: "Order Confirmed",
-        text: "Your order has been placed successfully!",
-        icon: "success",
-      });
-      navigate("/orders/thanks");
+      if (selectedPayment.code === "VNPAY") {
+        console.log("Processing VNPay payment");
+        // Create order first
+        const order = await createOrder(orderData).unwrap();
+        console.log("Order created for VNPay:", order);
+        // Then create VNPay URL
+        const response = await createVNPayUrl({
+          orderId: order._id,
+          amount: totalPrice,
+        }).unwrap();
+        console.log("VNPay URL created:", response);
+        window.location.href = response.paymentUrl;
+      } else if (selectedPayment.code === "COD") {
+        console.log("Processing COD payment");
+        // Just create order for COD
+        const order = await createOrder(orderData).unwrap();
+        console.log("Order created for COD:", order);
+        dispatch(clearCart());
+        Swal.fire({
+          title: "Order Confirmed",
+          text: "Your order has been placed successfully!",
+          icon: "success",
+        });
+        navigate("/orders/thanks");
+      }
     } catch (error) {
-      console.error("Error placing order", error);
-      alert("Failed to place the order");
+      console.error("Error processing order:", error);
+      console.error("Error details:", {
+        status: error.status,
+        data: error.data,
+        message: error.message,
+      });
+      Swal.fire({
+        title: "Error",
+        text: error?.data?.message || "Failed to process the order",
+        icon: "error",
+      });
     }
   };
 
-  if (isLoading) return <div>Loading....</div>;
+  if (isLoading || isLoadingPayments)
+    return <div className="container mx-auto p-6">Loading...</div>;
+
   return (
     <section className="min-h-screen p-6 bg-gray-100 flex items-center justify-center">
       <div className="container max-w-screen-lg mx-auto">
-        <div>
-          <h2 className="font-semibold text-xl text-gray-600 mb-2">Checkout</h2>
-          <p className="text-gray-500 mb-2">Total Price: ${totalPrice}</p>
-          <div className="bg-white rounded shadow-lg p-4 px-4 md:p-8 mb-6">
-            <h2 className="font-semibold text-xl text-gray-600 mb-4">Sản phẩm</h2>
+        <h2 className="font-semibold text-xl text-gray-600 mb-2">Checkout</h2>
+        <div className="flex flex-col gap-4">
+          {/* Products Section */}
+          <div className="bg-white rounded w-full shadow-lg p-4 px-4 md:p-8 mb-6">
+            <h2 className="font-semibold text-xl text-gray-600 mb-4">
+              Products
+            </h2>
             <div className="space-y-4">
-              {cartItems.map((item) => (
-                <div
-                  key={item._id}
-                  className="flex items-center gap-4 border-b pb-4 last:border-b-0"
-                >
-                  <img
-                    src={item.coverImage}
-                    alt={item.title}
-                    className="w-16 h-24 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium">{item.title}</h3>
-                    <p className="text-gray-500">Số lượng: {item.quantity}</p>
-                    <p className="text-gray-600 font-semibold">
-                      Giá: ${item.newPrice} x {item.quantity} = $
-                      {(item.newPrice * item.quantity).toFixed(2)}
-                    </p>
+              {cartItems.length > 0 ? (
+                cartItems.map((item) => (
+                  <div
+                    key={item._id || item.bookId}
+                    className="flex items-center gap-4 border-b pb-4 last:border-b-0"
+                  >
+                    <img
+                      src={item.coverImage}
+                      alt={item.title}
+                      className="w-16 h-24 object-cover rounded"
+                    />
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium">{item.title}</h3>
+                      <p className="text-gray-500">Quantity: {item.quantity}</p>
+                      <p className="text-gray-600 font-semibold">
+                        Price: {item.price?.toLocaleString("vi-VN") || "0.00"} x{" "}
+                        {item.quantity} =
+                        {(item.price * item.quantity).toLocaleString("vi-VN")}đ
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p>Your cart is empty.</p>
+              )}
             </div>
+            <p className="mt-4 text-right font-semibold">
+              Total Price: {totalPrice.toLocaleString("vi-VN")}đ
+            </p>
           </div>
 
+          {/* Form Section */}
           <div className="bg-white rounded shadow-lg p-4 px-4 md:p-8 mb-6">
             <form
               onSubmit={handleSubmit(onSubmit)}
@@ -111,48 +206,57 @@ const CheckoutPage = () => {
                   <div className="md:col-span-5">
                     <label>Full Name</label>
                     <input
-                      {...register("name", { required: true })}
+                      {...register("name", {
+                        required: "Full Name is required",
+                      })}
                       type="text"
                       className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
                     />
+                    {errors.name && (
+                      <p className="text-red-600 text-xs">
+                        {errors.name.message}
+                      </p>
+                    )}
                   </div>
                   <div className="md:col-span-5">
                     <label>Email</label>
                     <input
                       type="text"
                       disabled
-                      defaultValue={currentUser?.email}
+                      value={currentUser?.email}
                       className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
                     />
                   </div>
                   <div className="md:col-span-5">
                     <label>Phone</label>
                     <input
-                      {...register("phone", { required: true })}
+                      {...register("phone", { required: "Phone is required" })}
                       type="number"
                       className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
                     />
+                    {errors.phone && (
+                      <p className="text-red-600 text-xs">
+                        {errors.phone.message}
+                      </p>
+                    )}
                   </div>
                   <div className="md:col-span-3">
-                    <label>Address</label>
-                    <input
-                      {...register("address", { required: true })}
-                      type="text"
-                      className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
                     <label>City</label>
                     <input
-                      {...register("city", { required: true })}
+                      {...register("city", { required: "City is required" })}
                       type="text"
                       className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
                     />
+                    {errors.city && (
+                      <p className="text-red-600 text-xs">
+                        {errors.city.message}
+                      </p>
+                    )}
                   </div>
                   <div className="md:col-span-2">
                     <label>Country</label>
                     <input
-                      {...register("country", { required: true })}
+                      {...register("country")}
                       type="text"
                       className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
                     />
@@ -160,7 +264,7 @@ const CheckoutPage = () => {
                   <div className="md:col-span-2">
                     <label>State</label>
                     <input
-                      {...register("state", { required: true })}
+                      {...register("state")}
                       type="text"
                       className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
                     />
@@ -168,10 +272,66 @@ const CheckoutPage = () => {
                   <div className="md:col-span-1">
                     <label>Zipcode</label>
                     <input
-                      {...register("zipcode", { required: true })}
+                      {...register("zipcode")}
                       type="text"
                       className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
                     />
+                  </div>
+                  <div className="md:col-span-5">
+                    <label className="block mb-2">Payment Method</label>
+                    {isLoadingPayments ? (
+                      <div>Loading payment methods...</div>
+                    ) : (
+                      <div className="flex gap-4">
+                        {paymentMethods.map((method) => (
+                          <label
+                            key={method._id}
+                            className={`flex items-center gap-2 border rounded-lg p-2 cursor-pointer transition-all ${
+                              selectedPayment?._id === method._id
+                                ? "border-blue-500 bg-blue-50"
+                                : "border-gray-200 hover:border-blue-300"
+                            } ${
+                              !method.isActive
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value={method._id}
+                              checked={selectedPayment?._id === method._id}
+                              onChange={() =>
+                                method.isActive &&
+                                handlePaymentMethodSelect(method)
+                              }
+                              disabled={!method.isActive}
+                              className="w-4 h-4 text-blue-600"
+                            />
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={method.icon}
+                                alt={method.name}
+                                className="w-6 h-6 object-contain"
+                              />
+                              <div>
+                                <h3 className="text-sm font-medium">
+                                  {method.name}
+                                </h3>
+                                <p className="text-xs text-gray-500">
+                                  {method.description}
+                                </p>
+                              </div>
+                            </div>
+                            {!method.isActive && (
+                              <span className="text-xs text-red-500 ml-2">
+                                Coming Soon
+                              </span>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="md:col-span-5 mt-3">
                     <input
@@ -193,10 +353,10 @@ const CheckoutPage = () => {
                   </div>
                   <div className="md:col-span-5 text-right">
                     <button
-                      disabled={!isChecked}
-                      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                      disabled={!isChecked || isLoading || !selectedPayment}
+                      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
                     >
-                      Place an Order
+                      {isLoading ? "Placing Order..." : "Place an Order"}
                     </button>
                   </div>
                 </div>

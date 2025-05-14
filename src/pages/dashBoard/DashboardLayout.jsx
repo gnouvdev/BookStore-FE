@@ -1,7 +1,5 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
 
-// import Loading from '../../components/Loading';
+import React, {  } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { HiViewGridAdd } from "react-icons/hi";
 import { MdOutlineManageHistory } from "react-icons/md";
@@ -10,8 +8,10 @@ import { BsFileEarmarkPersonFill } from "react-icons/bs";
 import { FaLuggageCart } from "react-icons/fa";
 
 
+
 const DashboardLayout = () => {
   const navigate = useNavigate();
+ 
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/");
@@ -28,7 +28,7 @@ const DashboardLayout = () => {
         </a>
         <div className="flex-grow flex flex-col justify-between text-gray-500 bg-gray-800">
           <nav className="flex flex-col mx-4 my-6 space-y-4">
-            <a
+          <a
               href="#"
               className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
             >
@@ -48,6 +48,7 @@ const DashboardLayout = () => {
                 />
               </svg>
             </a>
+
             <Link
               to="/dashboard"
               className="inline-flex items-center justify-center py-3 text-purple-600 bg-white rounded-lg"
@@ -74,50 +75,49 @@ const DashboardLayout = () => {
             >
               <span className="sr-only">Add Book</span>
               <FaBook className="h-6 w-6" />
-
             </Link>
             <Link
               to="/dashboard/manage-books"
               className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
             >
-              <span className="sr-only">Documents</span>
+              <span className="sr-only">Manage Books</span>
               <MdOutlineManageHistory className="h-6 w-6" />
             </Link>
             <Link
               to="/dashboard/manage-categories"
               className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
             >
-              <span className="sr-only">Category</span>
+              <span className="sr-only">Manage Categories</span>
               <HiViewGridAdd className="h-6 w-6" />
             </Link>
             <Link
               to="/dashboard/manage-authors"
               className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
             >
-              <span className="sr-only">Manage Author</span>
+              <span className="sr-only">Manage Authors</span>
               <BsFileEarmarkPersonFill className="h-6 w-6" />
-
             </Link>
             <Link
               to="/dashboard/manage-users"
               className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
             >
-              <span className="sr-only">Manage User</span>
+              <span className="sr-only">Manage Users</span>
               <BsFileEarmarkPersonFill className="h-6 w-6" />
-
             </Link>
             <Link
               to="/dashboard/manage-orders"
               className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
             >
-              <span className="sr-only">Manage Order</span>
+              <span className="sr-only">Manage Orders</span>
               <FaLuggageCart className="h-6 w-6" />
-
             </Link>
           </nav>
           <div className="inline-flex items-center justify-center h-20 w-20 border-t border-gray-700">
-            <button className="p-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg">
-              <span className="sr-only">Settings</span>
+            <button
+              onClick={handleLogout}
+              className="p-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
+            >
+              <span className="sr-only">Logout</span>
               <svg
                 aria-hidden="true"
                 fill="none"
@@ -129,13 +129,7 @@ const DashboardLayout = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                 />
               </svg>
             </button>
@@ -161,37 +155,19 @@ const DashboardLayout = () => {
               />
             </svg>
           </button>
-          <div className="relative w-full max-w-md sm:-ml-2">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="absolute h-6 w-6 mt-2.5 ml-2 text-gray-400"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <input
-              type="text"
-              role="search"
-              placeholder="Search..."
-              className="py-2 pl-10 pr-4 w-full border-4 border-transparent placeholder-gray-400 focus:bg-gray-50 rounded-lg"
-            />
-          </div>
           <div className="flex flex-shrink-0 items-center ml-auto">
             <button className="inline-flex items-center p-2 hover:bg-gray-100 focus:bg-gray-100 rounded-lg">
               <span className="sr-only">User Menu</span>
               <div className="hidden md:flex md:flex-col md:items-end md:leading-tight">
-                <span className="font-semibold">Pham Quoc Vuong</span>
+              <span className="font-semibold">Pham Quoc Vuong</span>
                 <span className="text-sm text-gray-600">Admin</span>
+
               </div>
               <span className="h-12 w-12 ml-2 sm:ml-3 mr-2 bg-gray-100 rounded-full overflow-hidden">
                 <img
-                  src="https://hoathinh4k3.top/wp-content/uploads/2025/01/007xgN06gy1hxj7l2rmqwj31o12yo4qq-1.jpg"
-                  alt="user profile photo"
+                                    src="https://hoathinh4k3.top/wp-content/uploads/2025/01/007xgN06gy1hxj7l2rmqwj31o12yo4qq-1.jpg"
+                                    alt="user profile photo"
+                  
                   className="h-full w-full object-cover"
                 />
               </span>
@@ -207,9 +183,10 @@ const DashboardLayout = () => {
                   clipRule="evenodd"
                 />
               </svg>
+
             </button>
             <div className="border-l pl-3 ml-3 space-x-1">
-              <button className="relative p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:bg-gray-100 focus:text-gray-600 rounded-full">
+            <button className="relative p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:bg-gray-100 focus:text-gray-600 rounded-full">
                 <span className="sr-only">Notifications</span>
                 <span className="absolute top-0 right-0 h-2 w-2 mt-1 mr-2 bg-red-500 rounded-full"></span>
                 <span className="absolute top-0 right-0 h-2 w-2 mt-1 mr-2 bg-red-500 rounded-full animate-ping"></span>
@@ -228,6 +205,7 @@ const DashboardLayout = () => {
                   />
                 </svg>
               </button>
+
               <button
                 onClick={handleLogout}
                 className="relative p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:bg-gray-100 focus:text-gray-600 rounded-full"
@@ -251,55 +229,8 @@ const DashboardLayout = () => {
             </div>
           </div>
         </header>
-        <main className="p-6 sm:p-10 space-y-6 ">
-          <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row justify-between">
-            <div className="mr-6">
-              <h1 className="text-4xl font-semibold mb-2">Dashboard</h1>
-              <h2 className="text-gray-600 ml-0.5">Book Store Inventory</h2>
-            </div>
-            <div className="flex flex-col md:flex-row items-start justify-end -mb-3">
-              <Link
-                to="/dashboard/manage-books"
-                className="inline-flex px-5 py-3 text-purple-600 hover:text-purple-700 focus:text-purple-700 hover:bg-purple-100 focus:bg-purple-100 border border-purple-600 rounded-md mb-3"
-              >
-                <svg
-                  aria-hidden="true"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  className="flex-shrink-0 h-5 w-5 -ml-1 mt-0.5 mr-2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-                Manage Books
-              </Link>
-              <Link
-                to="/dashboard/add-new-book"
-                className="inline-flex px-5 py-3 text-white bg-purple-600 hover:bg-purple-700 focus:bg-purple-700 rounded-md ml-6 mb-3"
-              >
-                <svg
-                  aria-hidden="true"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  className="flex-shrink-0 h-6 w-6 text-white -ml-1 mr-2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                Add New Book
-              </Link>
-            </div>
-          </div>
+        
+        <main className="p-6 sm:p-10 space-y-6">
           <Outlet />
         </main>
       </div>

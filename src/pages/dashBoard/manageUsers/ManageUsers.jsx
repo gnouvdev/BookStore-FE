@@ -1,20 +1,29 @@
-import React from "react";
+import React, { useState } from "react";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import {
-  useFetchAllUsersQuery,
+  useGetUsersQuery,
   useDeleteUserMutation,
+  useSearchUsersQuery,
 } from "../../../redux/features/users/userApi";
+import Loading from "../../../components/Loading";
 
 const ManageUsers = () => {
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  
   const {
     data: usersData,
     isLoading,
     isError,
     error,
     refetch,
-  } = useFetchAllUsersQuery();
+  } = useGetUsersQuery();
+
+  const { data: searchResults } = useSearchUsersQuery(searchQuery, {
+    skip: !searchQuery,
+  });
+
   const [deleteUser] = useDeleteUserMutation();
 
   // Xử lý lỗi xác thực
@@ -35,10 +44,10 @@ const ManageUsers = () => {
     return <div>Error loading users: {error?.data?.message || "Unknown error"}</div>;
   }
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <Loading />;
 
   // Kiểm tra dữ liệu trả về
-  const users = usersData?.users || [];
+  const users = searchQuery ? (searchResults?.users || []) : (usersData?.users || []);
 
   // Hàm xử lý xóa user
   const handleDeleteUser = async (userId) => {
@@ -72,16 +81,37 @@ const ManageUsers = () => {
     });
   };
 
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   return (
     <section className="py-1 bg-blueGray-50">
       <div className="w-full xl:w-8/12 mb-12 xl:mb-0 px-4 mx-auto mt-24">
         <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded">
           <div className="rounded-t mb-0 px-4 py-3 border-0">
-            <div className="flex flex-wrap items-center">
+            <div className="flex flex-wrap items-center justify-between">
               <div className="relative w-full px-4 max-w-full flex-grow flex-1">
                 <h3 className="font-semibold text-base text-blueGray-700">
                   All Users
                 </h3>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             </div>
           </div>

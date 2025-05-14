@@ -6,6 +6,8 @@ import avatarImg from "../assets/avatar.png";
 import logo from "../assets/books/logo.png";
 import { useSelector } from "react-redux";
 import { useAuth } from "./../context/AuthContext";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const navigation = [
   { name: "Profile", href: "/profile" },
@@ -19,9 +21,16 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const cartItems = useSelector((state) => state.cart.cartItems);
+  const wishlistItems = useSelector((state) => state.wishlist.wishlistItems);
   const { currentUser, logout } = useAuth();
   const location = useLocation();
   const token = localStorage.getItem("token");
+  const { t } = useTranslation();
+
+  // Debug currentUser
+  useEffect(() => {
+    console.log("Current User:", currentUser);
+  }, [currentUser]);
 
   const dropdownRef = useRef(null);
   const handleSearch = () => {
@@ -29,6 +38,7 @@ const Navbar = () => {
       navigate(`/search?query=${query}`);
     }
   };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -53,6 +63,31 @@ const Navbar = () => {
   const isActive = (path) =>
     location.pathname === path ? "text-primary font-semibold" : "";
 
+  // Hàm kiểm tra và trả về URL ảnh avatar
+  const getAvatarUrl = () => {
+    console.log("Getting avatar URL for user:", currentUser);
+    
+    // Kiểm tra từ currentUser trước
+    if (currentUser?.photoURL) {
+      console.log("Using photoURL from currentUser:", currentUser.photoURL);
+      return currentUser.photoURL;
+    }
+
+    // Sau đó kiểm tra từ localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      if (userData.photoURL) {
+        console.log("Using photoURL from localStorage:", userData.photoURL);
+        return userData.photoURL;
+      }
+    }
+
+    // Cuối cùng sử dụng ảnh mặc định
+    console.log("Using default avatar");
+    return avatarImg;
+  };
+
   return (
     <header className="max-w-screen-2xl mx-auto px-4 py-6">
       <nav className="flex justify-between items-center">
@@ -69,7 +104,7 @@ const Navbar = () => {
             </button>
             <input
               type="text"
-              placeholder="Nhập tên sách..."
+              placeholder={t('common.search')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -79,37 +114,37 @@ const Navbar = () => {
 
           {/* Navigation Links */}
           <Link to="/" className={`hover:text-primary ${isActive("/")}`}>
-            Home
+            {t('common.home')}
           </Link>
           <Link
             to="/product"
             className={`hover:text-primary ${isActive("/product")}`}
           >
-            Product
+            {t('common.books')}
           </Link>
           <Link
-            to="/product/business"
+            to="/product/bussines"
             className={`hover:text-primary ${isActive("/product/business")}`}
           >
-            Business
+            {t('common.bussines')}
           </Link>
           <Link
             to="/product/fiction"
             className={`hover:text-primary ${isActive("/product/fiction")}`}
           >
-            Fiction
+            {t('common.fiction')}
           </Link>
           <Link
             to="/product/adventure"
             className={`hover:text-primary ${isActive("/product/adventure")}`}
           >
-            Adventure
+            {t('common.adventure')}
           </Link>
           <Link
             to="/product/manga"
             className={`hover:text-primary ${isActive("/product/manga")}`}
           >
-            Manga
+            {t('common.manga')}
           </Link>
         </div>
 
@@ -120,9 +155,14 @@ const Navbar = () => {
               <>
                 <button onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                   <img
-                    src={currentUser.photoURL || "user.png"} // Sử dụng ảnh từ `currentUser.photoURL` hoặc ảnh mặc định
+                    src={getAvatarUrl()}
                     alt="User Avatar"
-                    className="size-7 rounded-full ring-2 ring-blue-500"
+                    className="size-7 rounded-full ring-2 ring-blue-500 object-cover"
+                    onError={(e) => {
+                      console.log("Error loading avatar, using default");
+                      e.target.onerror = null;
+                      e.target.src = avatarImg;
+                    }}
                   />
                 </button>
                 {isDropdownOpen && (
@@ -137,7 +177,7 @@ const Navbar = () => {
                             to={item.href}
                             className="block px-4 py-2 text-sm hover:bg-gray-100"
                           >
-                            {item.name}
+                            {t(`common.${item.name.toLowerCase()}`)}
                           </Link>
                         </li>
                       ))}
@@ -146,7 +186,7 @@ const Navbar = () => {
                           onClick={handleLogout}
                           className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                         >
-                          Logout
+                          {t('common.logout')}
                         </button>
                       </li>
                     </ul>
@@ -160,9 +200,14 @@ const Navbar = () => {
             )}
           </div>
 
-          <button className="hidden sm:block">
+          <Link to="/wishlist" className="relative">
             <FaRegHeart className="size-6" />
-          </button>
+            {wishlistItems.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {wishlistItems.length}
+              </span>
+            )}
+          </Link>
 
           <Link
             to="/cart"
@@ -177,6 +222,7 @@ const Navbar = () => {
               <span className="text-sm font-semibold sm:ml-1">0</span>
             )}
           </Link>
+          <LanguageSwitcher />
         </div>
       </nav>
     </header>
