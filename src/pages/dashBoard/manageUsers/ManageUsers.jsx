@@ -11,7 +11,7 @@ import Loading from "../../../components/Loading";
 const ManageUsers = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   const {
     data: usersData,
     isLoading,
@@ -37,17 +37,21 @@ const ManageUsers = () => {
       }).then(() => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        navigate("/admin-login");
+        navigate("/admin");
       });
       return null;
     }
-    return <div>Error loading users: {error?.data?.message || "Unknown error"}</div>;
+    return (
+      <div>Error loading users: {error?.data?.message || "Unknown error"}</div>
+    );
   }
 
   if (isLoading) return <Loading />;
 
   // Kiểm tra dữ liệu trả về
-  const users = searchQuery ? (searchResults?.users || []) : (usersData?.users || []);
+  const users = searchQuery
+    ? searchResults?.users || []
+    : usersData?.users || [];
 
   // Hàm xử lý xóa user
   const handleDeleteUser = async (userId) => {

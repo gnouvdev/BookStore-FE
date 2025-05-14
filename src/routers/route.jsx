@@ -13,24 +13,22 @@ import AdminRoute from "./AdminRoute";
 
 import OrderPage from "../pages/books/OrderPage";
 import ThanksPage from "./../pages/thanksPage/ThanksPage";
-import AdminLogin from './../components/AdminLogin';
+import AdminLogin from "./../components/AdminLogin";
 import DashboardLayout from "../pages/dashBoard/DashboardLayout";
-import Dashboard from './../pages/dashBoard/Dashboard';
-import AddBook from './../pages/dashBoard/addBook/AddBook';
-import UpdateBook from './../pages/dashBoard/EditBook/UpdateBook';
-import ManageBooks from './../pages/dashBoard/manageBooks/ManageBooks';
+import Dashboard from "./../pages/dashBoard/Dashboard";
+import AddBook from "./../pages/dashBoard/addBook/AddBook";
+import UpdateBook from "./../pages/dashBoard/EditBook/UpdateBook";
+import ManageBooks from "./../pages/dashBoard/manageBooks/ManageBooks";
 import SearchBook from "../pages/books/SearchBook";
-import ManageCategories from './../pages/dashBoard/manageCategories/ManageCategories';
-import EditCategory from './../pages/dashBoard/manageCategories/EditCategory';
-import ManageAuthors from './../pages/dashBoard/manageAuthors/ManageAuthors';
-import ManageUsers from './../pages/dashBoard/manageUsers/ManageUsers';
-import Profile from './../pages/user/profile';
-import ManageOrders from './../pages/dashBoard/manageOrders/ManageOrders';
+import ManageCategories from "./../pages/dashBoard/manageCategories/ManageCategories";
+import EditCategory from "./../pages/dashBoard/manageCategories/EditCategory";
+import ManageAuthors from "./../pages/dashBoard/manageAuthors/ManageAuthors";
+import ManageUsers from "./../pages/dashBoard/manageUsers/ManageUsers";
+import Profile from "./../pages/user/profile";
+import ManageOrders from "./../pages/dashBoard/manageOrders/ManageOrders";
 import Recommended from "../pages/home/Recommended";
-import BookRecommendations from './../components/BookRecommendations';
+import BookRecommendations from "./../components/BookRecommendations";
 import WishlistPage from "../pages/wishlist/WishlistPage";
-
-
 
 const router = createBrowserRouter([
   {
@@ -43,7 +41,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/orders",
-        element:   (
+        element: (
           <PrivateRoute>
             <OrderPage />
           </PrivateRoute>
@@ -52,9 +50,9 @@ const router = createBrowserRouter([
       {
         path: "/orders/thanks",
         element: (
-        <PrivateRoute>
-          <ThanksPage />
-        </PrivateRoute>
+          <PrivateRoute>
+            <ThanksPage />
+          </PrivateRoute>
         ),
       },
       {
@@ -69,18 +67,18 @@ const router = createBrowserRouter([
         path: "/register",
         element: <Register />,
       },
-        {
-          path: "/cart",
-          element: <CartPage />,
-        },
-        {
-          path: "/wishlist",
-          element:(
-             <PrivateRoute>
-              <WishlistPage />
-             </PrivateRoute>
-          ),
-        },
+      {
+        path: "/cart",
+        element: <CartPage />,
+      },
+      {
+        path: "/wishlist",
+        element: (
+          <PrivateRoute>
+            <WishlistPage />
+          </PrivateRoute>
+        ),
+      },
       {
         path: "/checkout",
         element: (
@@ -99,7 +97,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/product/fiction",
-        element:<GridBooks genre={"fiction"} />,
+        element: <GridBooks genre={"fiction"} />,
       },
       {
         path: "/product/horror",
@@ -119,21 +117,21 @@ const router = createBrowserRouter([
       },
       {
         path: "/search",
-        element: <SearchBook/>,
+        element: <SearchBook />,
       },
       {
         path: "/profile",
         element: (
           <PrivateRoute>
-              <Profile/>
+            <Profile />
           </PrivateRoute>
         ),
-      }
+      },
     ],
   },
   {
-    path:"/admin",
-    element:<AdminLogin/>
+    path: "/admin",
+    element: <AdminLogin />,
   },
   {
     path: "/dashboard",
