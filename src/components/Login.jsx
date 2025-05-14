@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "./../context/AuthContext";
 import { toast } from "react-hot-toast";
 import axios from "axios";
-import { setToken } from "../firebase/tokenStorage";
+
 
 const Login = () => {
   const { loginUser, signInWithGoogle, setCurrentUser } = useAuth();
@@ -95,7 +95,7 @@ const Login = () => {
       setCurrentUser(cleanUser);
       
       toast.success("Đăng nhập thành công!");
-      navigate("/profile");
+      navigate("/");
     } catch (error) {
       console.error("Login error:", error);
       if (error.code === "auth/user-not-found") {

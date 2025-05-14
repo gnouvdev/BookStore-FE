@@ -43,11 +43,19 @@ const router = createBrowserRouter([
       },
       {
         path: "/orders",
-        element: <OrderPage />,
+        element:   (
+          <PrivateRoute>
+            <OrderPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/orders/thanks",
-        element: <ThanksPage />,
+        element: (
+        <PrivateRoute>
+          <ThanksPage />
+        </PrivateRoute>
+        ),
       },
       {
         path: "/about",
@@ -67,7 +75,11 @@ const router = createBrowserRouter([
         },
         {
           path: "/wishlist",
-          element: <WishlistPage />,
+          element:(
+             <PrivateRoute>
+              <WishlistPage />
+             </PrivateRoute>
+          ),
         },
       {
         path: "/checkout",
@@ -111,7 +123,11 @@ const router = createBrowserRouter([
       },
       {
         path: "/profile",
-        element: <Profile/>,
+        element: (
+          <PrivateRoute>
+              <Profile/>
+          </PrivateRoute>
+        ),
       }
     ],
   },

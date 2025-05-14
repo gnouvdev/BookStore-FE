@@ -10,6 +10,8 @@ import {
   useGetPaymentMethodsQuery,
   useCreateVNPayUrlMutation,
 } from "../../redux/features/payments/paymentsApi";
+import { useGetCurrentUserQuery } from "../../redux/features/users/userApi";
+import baseUrl from "../../utils/baseURL";
 
 const CheckoutPage = () => {
   const { currentUser } = useAuth();
@@ -19,10 +21,22 @@ const CheckoutPage = () => {
   const cartItems = useSelector((state) => state.cart.cartItems);
   const [createOrder, { isLoading }] = useCreateOrderMutation();
   const [isChecked, setIsChecked] = useState(false);
-  const { data: paymentMethodsData, isLoading: isLoadingPayments } =
-    useGetPaymentMethodsQuery();
+  const {
+    data: paymentMethodsData,
+    isLoading: isLoadingPayments,
+    error: paymentError,
+  } = useGetPaymentMethodsQuery();
+  const {
+    data: userData,
+    isLoading: isLoadingUser,
+    error: userError,
+  } = useGetCurrentUserQuery();
   const paymentMethods = paymentMethodsData?.data || [];
   const [createVNPayUrl] = useCreateVNPayUrlMutation();
+
+  console.log("Payment methods error:", paymentError);
+  console.log("User data error:", userError);
+  console.log("Cart items:", cartItems);
 
   const {
     register,
@@ -40,13 +54,11 @@ const CheckoutPage = () => {
     },
   });
 
-  // Chuyển hướng nếu chưa đăng nhập
   if (!currentUser) {
     navigate("/login");
     return null;
   }
 
-  // Tính tổng giá trị đơn hàng
   const totalPrice = cartItems.reduce((acc, item) => {
     const price = item.price || 0;
     const quantity = item.quantity || 1;
@@ -55,6 +67,45 @@ const CheckoutPage = () => {
 
   const handlePaymentMethodSelect = (method) => {
     setSelectedPayment(method);
+  };
+
+  const validateStock = async () => {
+    for (const item of cartItems) {
+      try {
+        const bookId = item._id || item.bookId;
+        console.log(`Fetching book: ${baseUrl}/books/${bookId}`);
+        console.log(`Using token: ${localStorage.getItem("token")}`);
+        const response = await fetch(`${baseUrl}/books/${bookId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        console.log(`Response status: ${response.status}`);
+        if (!response.ok) {
+          const text = await response.text();
+          console.error(`Error response for book ${bookId}:`, text);
+          throw new Error(
+            `Failed to fetch book: ${response.status} ${response.statusText}`
+          );
+        }
+        const book = await response.json();
+        console.log(`Book data:`, book);
+        const bookData = book.data || book;
+        if (!bookData || typeof bookData.quantity === "undefined") {
+          throw new Error(`Invalid book data for ${bookId}: Missing quantity`);
+        }
+        if (bookData.quantity < item.quantity) {
+          throw new Error(`Insufficient stock for ${bookData.title || bookId}`);
+        }
+      } catch (error) {
+        console.error(
+          `Stock validation failed for ${item._id || item.bookId}:`,
+          error
+        );
+        throw new Error(`Stock validation failed: ${error.message}`);
+      }
+    }
+    return true;
   };
 
   const onSubmit = async (data) => {
@@ -76,53 +127,100 @@ const CheckoutPage = () => {
       return;
     }
 
-    console.log("Current user:", currentUser);
-    console.log("Cart items:", cartItems);
-    console.log("Selected payment:", selectedPayment);
-
-    const orderData = {
-      user: currentUser.uid,
-      name: data.name,
-      email: currentUser?.email,
-      address: {
-        city: data.city,
-        country: data.country || "",
-        state: data.state || "",
-        zipcode: data.zipcode || "",
-      },
-      phone: parseInt(data.phone) || 0,
-      productIds: cartItems.map((item) => item._id || item.bookId),
-      totalPrice: totalPrice,
-      paymentMethod: selectedPayment._id,
-      status: "pending",
-      paymentStatus: "pending",
-      orderStatus: "pending",
-      paymentDetails: {
-        paymentAmount: totalPrice,
-        paymentCurrency: "VND",
-      },
-    };
-
-    console.log("Order data to be sent:", orderData);
+    if (!userData?.data?._id) {
+      Swal.fire({
+        title: "Error",
+        text: "User data not loaded. Please try again.",
+        icon: "error",
+      });
+      return;
+    }
 
     try {
+      console.log("Validating stock...");
+      await validateStock();
+
+      const orderItems = cartItems.map((item) => ({
+        productId: item._id || item.bookId,
+        quantity: item.quantity || 1,
+      }));
+
+      console.log("Order items:", orderItems);
+      console.log("User data:", userData.data);
+      console.log("Shipping info:", {
+        name: data.name,
+        email: currentUser?.email,
+        phone: data.phone,
+        address: {
+          city: data.city,
+          country: data.country,
+          state: data.state,
+          zipcode: data.zipcode,
+        },
+      });
+
       if (selectedPayment.code === "VNPAY") {
-        console.log("Processing VNPay payment");
-        // Create order first
-        const order = await createOrder(orderData).unwrap();
-        console.log("Order created for VNPay:", order);
-        // Then create VNPay URL
-        const response = await createVNPayUrl({
-          orderId: order._id,
-          amount: totalPrice,
-        }).unwrap();
-        console.log("VNPay URL created:", response);
-        window.location.href = response.paymentUrl;
+        try {
+          console.log("Creating VNPay payment URL...");
+          const vnpayData = {
+            orderItems,
+            user: userData.data,
+            shippingInfo: {
+              name: data.name,
+              email: currentUser?.email,
+              phone: data.phone,
+              address: {
+                city: data.city,
+                country: data.country || "",
+                state: data.state || "",
+                zipcode: data.zipcode || "",
+              },
+            },
+            paymentMethodId: selectedPayment._id,
+          };
+          console.log("VNPay data:", vnpayData);
+          const response = await createVNPayUrl(vnpayData).unwrap();
+          console.log("VNPay response:", response);
+          if (response.paymentUrl) {
+            console.log("Redirecting to VNPay:", response.paymentUrl);
+            window.location.href = response.paymentUrl;
+          } else {
+            throw new Error("No payment URL received from VNPay");
+          }
+        } catch (error) {
+          console.error("VNPay Error:", error);
+          Swal.fire({
+            title: "Payment Error",
+            text: error.data?.message || "Failed to create VNPay payment. Please try again.",
+            icon: "error",
+          });
+        }
       } else if (selectedPayment.code === "COD") {
-        console.log("Processing COD payment");
-        // Just create order for COD
+        const orderData = {
+          user: userData.data._id,
+          name: data.name,
+          email: currentUser?.email,
+          address: {
+            city: data.city,
+            country: data.country || "",
+            state: data.state || "",
+            zipcode: data.zipcode || "",
+          },
+          phone: data.phone || "",
+          productIds: orderItems,
+          totalPrice: totalPrice,
+          paymentMethod: selectedPayment._id,
+          status: "pending",
+          paymentStatus: "pending",
+          paymentDetails: {
+            paymentAmount: totalPrice,
+            paymentCurrency: "VND",
+          },
+        };
+
+        console.log("Calling createOrder for COD...");
         const order = await createOrder(orderData).unwrap();
-        console.log("Order created for COD:", order);
+        console.log("Order created:", order);
         dispatch(clearCart());
         Swal.fire({
           title: "Order Confirmed",
@@ -130,35 +228,46 @@ const CheckoutPage = () => {
           icon: "success",
         });
         navigate("/orders/thanks");
+      } else {
+        throw new Error("Unsupported payment method");
       }
     } catch (error) {
-      console.error("Error processing order:", error);
-      console.error("Error details:", {
+      console.error("API Error:", {
+        message: error.message,
         status: error.status,
         data: error.data,
-        message: error.message,
+        response: error.response?.data,
       });
+      let errorMessage = "Failed to process the order";
+      if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error?.status === "FETCH_ERROR") {
+        errorMessage = "Network error. Please check your connection.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
       Swal.fire({
         title: "Error",
-        text: error?.data?.message || "Failed to process the order",
+        text: errorMessage,
         icon: "error",
       });
     }
   };
 
-  if (isLoading || isLoadingPayments)
+  if (isLoading || isLoadingPayments || isLoadingUser)
     return <div className="container mx-auto p-6">Loading...</div>;
+
+  const supportedMethods = paymentMethods.filter(
+    (method) => method.isActive && ["COD", "VNPAY"].includes(method.code)
+  );
 
   return (
     <section className="min-h-screen p-6 bg-gray-100 flex items-center justify-center">
       <div className="container max-w-screen-lg mx-auto">
         <h2 className="font-semibold text-xl text-gray-600 mb-2">Checkout</h2>
         <div className="flex flex-col gap-4">
-          {/* Products Section */}
           <div className="bg-white rounded w-full shadow-lg p-4 px-4 md:p-8 mb-6">
-            <h2 className="font-semibold text-xl text-gray-600 mb-4">
-              Products
-            </h2>
+            <h2 className="font-semibold text-xl text-gray-600 mb-4">Products</h2>
             <div className="space-y-4">
               {cartItems.length > 0 ? (
                 cartItems.map((item) => (
@@ -175,8 +284,8 @@ const CheckoutPage = () => {
                       <h3 className="text-lg font-medium">{item.title}</h3>
                       <p className="text-gray-500">Quantity: {item.quantity}</p>
                       <p className="text-gray-600 font-semibold">
-                        Price: {item.price?.toLocaleString("vi-VN") || "0.00"} x{" "}
-                        {item.quantity} =
+                        Price: {(item.price || 0).toLocaleString("vi-VN")} x{" "}
+                        {item.quantity} ={" "}
                         {(item.price * item.quantity).toLocaleString("vi-VN")}đ
                       </p>
                     </div>
@@ -190,8 +299,6 @@ const CheckoutPage = () => {
               Total Price: {totalPrice.toLocaleString("vi-VN")}đ
             </p>
           </div>
-
-          {/* Form Section */}
           <div className="bg-white rounded shadow-lg p-4 px-4 md:p-8 mb-6">
             <form
               onSubmit={handleSubmit(onSubmit)}
@@ -230,8 +337,14 @@ const CheckoutPage = () => {
                   <div className="md:col-span-5">
                     <label>Phone</label>
                     <input
-                      {...register("phone", { required: "Phone is required" })}
-                      type="number"
+                      {...register("phone", {
+                        required: "Phone is required",
+                        pattern: {
+                          value: /^\+?\d{10,15}$/,
+                          message: "Invalid phone number",
+                        },
+                      })}
+                      type="text"
                       className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
                     />
                     {errors.phone && (
@@ -282,18 +395,14 @@ const CheckoutPage = () => {
                     {isLoadingPayments ? (
                       <div>Loading payment methods...</div>
                     ) : (
-                      <div className="flex gap-4">
-                        {paymentMethods.map((method) => (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {supportedMethods.map((method) => (
                           <label
                             key={method._id}
-                            className={`flex items-center gap-2 border rounded-lg p-2 cursor-pointer transition-all ${
+                            className={`flex items-center gap-2 border rounded-lg p-4 cursor-pointer transition-all ${
                               selectedPayment?._id === method._id
                                 ? "border-blue-500 bg-blue-50"
                                 : "border-gray-200 hover:border-blue-300"
-                            } ${
-                              !method.isActive
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
                             }`}
                           >
                             <input
@@ -301,18 +410,14 @@ const CheckoutPage = () => {
                               name="paymentMethod"
                               value={method._id}
                               checked={selectedPayment?._id === method._id}
-                              onChange={() =>
-                                method.isActive &&
-                                handlePaymentMethodSelect(method)
-                              }
-                              disabled={!method.isActive}
+                              onChange={() => handlePaymentMethodSelect(method)}
                               className="w-4 h-4 text-blue-600"
                             />
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
                               <img
                                 src={method.icon}
                                 alt={method.name}
-                                className="w-6 h-6 object-contain"
+                                className="w-8 h-8 object-contain"
                               />
                               <div>
                                 <h3 className="text-sm font-medium">
@@ -323,11 +428,6 @@ const CheckoutPage = () => {
                                 </p>
                               </div>
                             </div>
-                            {!method.isActive && (
-                              <span className="text-xs text-red-500 ml-2">
-                                Coming Soon
-                              </span>
-                            )}
                           </label>
                         ))}
                       </div>

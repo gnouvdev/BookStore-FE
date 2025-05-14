@@ -43,14 +43,6 @@ export const ordersApi = createApi({
       },
       invalidatesTags: ["Orders"],
     }),
-    updateOrderStatus: builder.mutation({
-      query: ({ id, status }) => ({
-        url: `/orders/${id}/status`,
-        method: "PUT",
-        body: { status },
-      }),
-      invalidatesTags: ["Orders"],
-    }),
     deleteOrder: builder.mutation({
       query: (id) => ({
         url: `/orders/${id}`,
@@ -58,7 +50,14 @@ export const ordersApi = createApi({
       }),
       invalidatesTags: ["Orders"],
     }),
-    
+    updateOrderStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `/orders/${id}/status`,
+        method: "PUT",
+        body: { status },
+      }),
+      invalidatesTags: ["Orders"],
+    })
   }),
 
 });

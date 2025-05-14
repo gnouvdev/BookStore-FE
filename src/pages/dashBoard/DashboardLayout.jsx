@@ -1,20 +1,33 @@
-
-import React, {  } from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import React from "react";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { HiViewGridAdd } from "react-icons/hi";
 import { MdOutlineManageHistory } from "react-icons/md";
 import { FaBook } from "react-icons/fa";
 import { BsFileEarmarkPersonFill } from "react-icons/bs";
 import { FaLuggageCart } from "react-icons/fa";
-
-
+import { FaUserTie } from "react-icons/fa6";
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
- 
+  const location = useLocation();
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/");
+  };
+
+  // Function to check if a path is active
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
+  // Function to get menu item classes
+  const getMenuItemClasses = (path) => {
+    const baseClasses =
+      "inline-flex items-center justify-center py-3 rounded-lg";
+    return isActive(path)
+      ? `${baseClasses} text-purple-600 bg-white`
+      : `${baseClasses} hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700`;
   };
 
   return (
@@ -28,31 +41,7 @@ const DashboardLayout = () => {
         </a>
         <div className="flex-grow flex flex-col justify-between text-gray-500 bg-gray-800">
           <nav className="flex flex-col mx-4 my-6 space-y-4">
-          <a
-              href="#"
-              className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
-            >
-              <span className="sr-only">Folders</span>
-              <svg
-                aria-hidden="true"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                className="h-6 w-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                />
-              </svg>
-            </a>
-
-            <Link
-              to="/dashboard"
-              className="inline-flex items-center justify-center py-3 text-purple-600 bg-white rounded-lg"
-            >
+            <Link to="/dashboard" className={getMenuItemClasses("/dashboard")}>
               <span className="sr-only">Dashboard</span>
               <svg
                 aria-hidden="true"
@@ -71,42 +60,42 @@ const DashboardLayout = () => {
             </Link>
             <Link
               to="/dashboard/add-new-book"
-              className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
+              className={getMenuItemClasses("/dashboard/add-new-book")}
             >
               <span className="sr-only">Add Book</span>
               <FaBook className="h-6 w-6" />
             </Link>
             <Link
               to="/dashboard/manage-books"
-              className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
+              className={getMenuItemClasses("/dashboard/manage-books")}
             >
               <span className="sr-only">Manage Books</span>
               <MdOutlineManageHistory className="h-6 w-6" />
             </Link>
             <Link
               to="/dashboard/manage-categories"
-              className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
+              className={getMenuItemClasses("/dashboard/manage-categories")}
             >
               <span className="sr-only">Manage Categories</span>
               <HiViewGridAdd className="h-6 w-6" />
             </Link>
             <Link
               to="/dashboard/manage-authors"
-              className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
+              className={getMenuItemClasses("/dashboard/manage-authors")}
             >
               <span className="sr-only">Manage Authors</span>
               <BsFileEarmarkPersonFill className="h-6 w-6" />
             </Link>
             <Link
               to="/dashboard/manage-users"
-              className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
+              className={getMenuItemClasses("/dashboard/manage-users")}
             >
               <span className="sr-only">Manage Users</span>
-              <BsFileEarmarkPersonFill className="h-6 w-6" />
+              <FaUserTie className="h-6 w-6" />
             </Link>
             <Link
               to="/dashboard/manage-orders"
-              className="inline-flex items-center justify-center py-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
+              className={getMenuItemClasses("/dashboard/manage-orders")}
             >
               <span className="sr-only">Manage Orders</span>
               <FaLuggageCart className="h-6 w-6" />
@@ -159,15 +148,13 @@ const DashboardLayout = () => {
             <button className="inline-flex items-center p-2 hover:bg-gray-100 focus:bg-gray-100 rounded-lg">
               <span className="sr-only">User Menu</span>
               <div className="hidden md:flex md:flex-col md:items-end md:leading-tight">
-              <span className="font-semibold">Pham Quoc Vuong</span>
+                <span className="font-semibold">Pham Quoc Vuong</span>
                 <span className="text-sm text-gray-600">Admin</span>
-
               </div>
               <span className="h-12 w-12 ml-2 sm:ml-3 mr-2 bg-gray-100 rounded-full overflow-hidden">
                 <img
-                                    src="https://hoathinh4k3.top/wp-content/uploads/2025/01/007xgN06gy1hxj7l2rmqwj31o12yo4qq-1.jpg"
-                                    alt="user profile photo"
-                  
+                  src="https://hoathinh4k3.top/wp-content/uploads/2025/01/007xgN06gy1hxj7l2rmqwj31o12yo4qq-1.jpg"
+                  alt="user profile photo"
                   className="h-full w-full object-cover"
                 />
               </span>
@@ -183,10 +170,9 @@ const DashboardLayout = () => {
                   clipRule="evenodd"
                 />
               </svg>
-
             </button>
             <div className="border-l pl-3 ml-3 space-x-1">
-            <button className="relative p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:bg-gray-100 focus:text-gray-600 rounded-full">
+              <button className="relative p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:bg-gray-100 focus:text-gray-600 rounded-full">
                 <span className="sr-only">Notifications</span>
                 <span className="absolute top-0 right-0 h-2 w-2 mt-1 mr-2 bg-red-500 rounded-full"></span>
                 <span className="absolute top-0 right-0 h-2 w-2 mt-1 mr-2 bg-red-500 rounded-full animate-ping"></span>
@@ -229,7 +215,7 @@ const DashboardLayout = () => {
             </div>
           </div>
         </header>
-        
+
         <main className="p-6 sm:p-10 space-y-6">
           <Outlet />
         </main>

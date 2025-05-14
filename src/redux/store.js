@@ -4,7 +4,7 @@ import { booksApi } from "./features/books/booksApi";
 import { ordersApi } from "./features/orders/ordersApi";
 import { authorsApi } from "./features/authors/authorsApi";
 import { categoriesApi } from "./features/categories/categoriesApi";
-import { usersApi } from "./features/users/usersApi";
+import { usersApi } from "./features/users/usersApi_ko";
 import authReducer from "./features/auth/authSlice";
 import cartReducer from "./features/cart/cartSlice";
 import { userApi } from "./features/users/userApi";

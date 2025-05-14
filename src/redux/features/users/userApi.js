@@ -19,6 +19,10 @@ export const userApi = createApi({
       query: () => "/users",
       providesTags: ["Users"],
     }),
+    getCurrentUser: builder.query({
+      query: () => "/users/me",
+      providesTags: ["User"],
+    }),
     searchUsers: builder.query({
       query: (query) => `/users/search?query=${query}`,
       providesTags: ["Users"],
@@ -60,6 +64,7 @@ export const {
   useUpdateProfileMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
+  useGetCurrentUserQuery, 
 } = userApi;
 
 export default userApi;

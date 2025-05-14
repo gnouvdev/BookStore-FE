@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState} from "react";
 import InputField from "./InputField";
 import { useForm } from "react-hook-form";
 import { useAddBookMutation } from "../../../redux/features/books/booksApi";
@@ -9,6 +9,7 @@ import { uploadToCloudinary } from "../../../utils/uploadService";
 import axios from "axios";
 import AsyncSelect from "react-select/async"; // Import AsyncSelect
 import debounce from "lodash/debounce"; // Hoặc sử dụng hàm debounce tự định nghĩa
+import baseUrl from './../../../utils/baseURL';
 
 const AddBook = () => {
   const {
@@ -19,7 +20,7 @@ const AddBook = () => {
   } = useForm();
 
   const [addBook, { isLoading }] = useAddBookMutation();
-  const { data: categoriesData, isLoading: isLoadingCategories } = useGetCategoriesQuery();
+  const { data: categoriesData} = useGetCategoriesQuery();
   const [coverImage, setCoverImage] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState(null);
   const [tags, setTags] = useState(""); // State để lưu tags

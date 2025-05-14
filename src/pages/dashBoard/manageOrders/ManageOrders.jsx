@@ -1,10 +1,11 @@
 import React from "react";
 import Swal from "sweetalert2";
-import { useGetAllOrdersQuery, useUpdateOrderStatusMutation } from "../../../redux/features/orders/ordersApi";
+import { useDeleteOrderMutation, useGetAllOrdersQuery, useUpdateOrderStatusMutation } from "../../../redux/features/orders/ordersApi";
 
 const ManageOrders = () => {
   const { data, isLoading, isError, error, refetch } = useGetAllOrdersQuery();
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
+  const [deleteOrder] = useDeleteOrderMutation();
 
   const orders = Array.isArray(data?.data) ? data.data : [];
 
@@ -14,7 +15,6 @@ const ManageOrders = () => {
     return <div>Error loading orders: {error?.data?.message || "Unknown error"}</div>;
   }
 
-  // Cập nhật trạng thái đơn hàng
   const handleUpdateStatus = async (orderId, status) => {
     try {
       await updateOrderStatus({ id: orderId, status }).unwrap();
@@ -33,8 +33,25 @@ const ManageOrders = () => {
       });
     }
   };
+  const handleDeleteOrder = async (orderId) => {
+    try {
+      await deleteOrder(orderId).unwrap();
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Order deleted successfully!",  
+      });
+      refetch();
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to delete order.",
+      });
+    }
+  };
 
-  // Xem chi tiết đơn hàng
   const handleViewDetails = (order) => {
     const formatAddress = (address) => {
       if (!address) return "No address provided";
@@ -51,9 +68,9 @@ const ManageOrders = () => {
     const formatProducts = (products) => {
       if (!products || !Array.isArray(products)) return "No products";
       return products
-        .map((product) => {
-          if (typeof product === "object" && product !== null) {
-            return `${product.title || "Unknown Product"}`;
+        .map((item) => {
+          if (typeof item === "object" && item !== null) {
+            return `${item.productId?.title || "Unknown Product"} (${item.quantity || 1})`;
           }
           return "Unknown Product";
         })
@@ -69,6 +86,7 @@ const ManageOrders = () => {
           <p><strong>Phone:</strong> ${order.phone || "N/A"}</p>
           <p><strong>Total Price:</strong> $${order.totalPrice || 0}</p>
           <p><strong>Status:</strong> ${order.status || "pending"}</p>
+          <p><strong>Payment Method:</strong> ${order.paymentMethod?.name || "N/A"}</p>
           <hr />
           <h3>Address:</h3>
           <p>${formatAddress(order.address)}</p>
@@ -107,7 +125,7 @@ const ManageOrders = () => {
                     <td className="border border-gray-300 px-4 py-2">{index + 1}</td>
                     <td className="border border-gray-300 px-4 py-2">{order.name || "N/A"}</td>
                     <td className="border border-gray-300 px-4 py-2">{order.email || "N/A"}</td>
-                    <td className="border border-gray-300 px-4 py-2">${order.totalPrice || 0}</td>
+                    <td className="border border-gray-300 px-4 py-2">{order.totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) || 0}</td>
                     <td className="border border-gray-300 px-4 py-2">{order.status || "pending"}</td>
                     <td className="border border-gray-300 px-4 py-2 space-x-2">
                       <button
@@ -121,14 +139,24 @@ const ManageOrders = () => {
                         {order.status === "processing" && "✔ "}Processing
                       </button>
                       <button
-                        onClick={() => handleUpdateStatus(order._id, "cancelled")}
+                        onClick={() => handleUpdateStatus(order._id, "shipped")}
                         className={`px-2 py-1 rounded ${
-                          order.status === "cancelled"
-                            ? "bg-red-700 text-white font-bold"
-                            : "bg-red-500 text-white"
+                          order.status === "shipped"
+                            ? "bg-yellow-700 text-white font-bold"
+                            : "bg-yellow-500 text-white"
                         }`}
                       >
-                        {order.status === "cancelled" && "✔ "}Cancelled
+                        {order.status === "shipped" && "✔ "}Shipped
+                      </button>
+                      <button
+                        onClick={() => handleUpdateStatus(order._id, "delivered")}
+                        className={`px-2 py-1 rounded ${
+                          order.status === "delivered"
+                            ? "bg-green-700 text-white font-bold"
+                            : "bg-green-500 text-white"
+                        }`}
+                      >
+                        {order.status === "delivered" && "✔ "}Delivered
                       </button>
                       <button
                         onClick={() => handleUpdateStatus(order._id, "completed")}
@@ -141,10 +169,26 @@ const ManageOrders = () => {
                         {order.status === "completed" && "✔ "}Completed
                       </button>
                       <button
+                        onClick={() => handleUpdateStatus(order._id, "cancelled")}
+                        className={`px-2 py-1 rounded ${
+                          order.status === "cancelled"
+                            ? "bg-red-700 text-white font-bold"
+                            : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {order.status === "cancelled" && "✔ "}Cancelled
+                      </button>
+                      <button
                         onClick={() => handleViewDetails(order)}
                         className="px-2 py-1 bg-gray-500 text-white rounded"
                       >
                         Detail
+                      </button>
+                      <button
+                        onClick={() => handleDeleteOrder(order._id)}
+                        className="px-2 py-1 bg-gray-500 text-white rounded"
+                      >
+                        Delete
                       </button>
                     </td>
                   </tr>

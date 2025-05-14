@@ -5,7 +5,7 @@ const paymentsApi = createApi({
   reducerPath: "paymentsApi",
   baseQuery: fetchBaseQuery({
     baseUrl: baseUrl,
-    prepareHeaders: (headers, { getState }) => {
+    prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
       if (token) {
         headers.set("authorization", `Bearer ${token}`);
@@ -28,7 +28,7 @@ const paymentsApi = createApi({
     }),
     addPaymentMethod: builder.mutation({
       query: (data) => ({
-        url: "/payments",
+        url: "/api/payments",
         method: "POST",
         body: data,
       }),
@@ -36,7 +36,7 @@ const paymentsApi = createApi({
     }),
     updatePaymentMethod: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `/payments/${id}`,
+        url: `/api/payments/${id}`,
         method: "PUT",
         body: data,
       }),
@@ -44,7 +44,7 @@ const paymentsApi = createApi({
     }),
     deletePaymentMethod: builder.mutation({
       query: (id) => ({
-        url: `/payments/${id}`,
+        url: `/api/payments/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Payment"],
