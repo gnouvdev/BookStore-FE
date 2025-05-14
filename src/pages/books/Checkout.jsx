@@ -12,6 +12,7 @@ import {
 } from "../../redux/features/payments/paymentsApi";
 import { useGetCurrentUserQuery } from "../../redux/features/users/userApi";
 import baseUrl from "../../utils/baseURL";
+import { t } from "i18next";
 
 const CheckoutPage = () => {
   const { currentUser } = useAuth();
@@ -264,10 +265,10 @@ const CheckoutPage = () => {
   return (
     <section className="min-h-screen p-6 bg-gray-100 flex items-center justify-center">
       <div className="container max-w-screen-lg mx-auto">
-        <h2 className="font-semibold text-xl text-gray-600 mb-2">Checkout</h2>
+        <h2 className="font-semibold text-xl text-gray-600 mb-2">{t("order.checkout")}</h2>
         <div className="flex flex-col gap-4">
           <div className="bg-white rounded w-full shadow-lg p-4 px-4 md:p-8 mb-6">
-            <h2 className="font-semibold text-xl text-gray-600 mb-4">Products</h2>
+            <h2 className="font-semibold text-xl text-gray-600 mb-4">{t("order.products")}</h2>
             <div className="space-y-4">
               {cartItems.length > 0 ? (
                 cartItems.map((item) => (
@@ -282,9 +283,9 @@ const CheckoutPage = () => {
                     />
                     <div className="flex-1">
                       <h3 className="text-lg font-medium">{item.title}</h3>
-                      <p className="text-gray-500">Quantity: {item.quantity}</p>
+                      <p className="text-gray-500">{t("order.quantity")}: {item.quantity}</p>
                       <p className="text-gray-600 font-semibold">
-                        Price: {(item.price || 0).toLocaleString("vi-VN")} x{" "}
+                        {t("order.price")}: {(item.price || 0).toLocaleString("vi-VN")} x{" "}
                         {item.quantity} ={" "}
                         {(item.price * item.quantity).toLocaleString("vi-VN")}đ
                       </p>
@@ -292,11 +293,11 @@ const CheckoutPage = () => {
                   </div>
                 ))
               ) : (
-                <p>Your cart is empty.</p>
+                <p>{t("order.cart_empty")}</p>
               )}
             </div>
             <p className="mt-4 text-right font-semibold">
-              Total Price: {totalPrice.toLocaleString("vi-VN")}đ
+              {t("order.total_price")}: {totalPrice.toLocaleString("vi-VN")}đ
             </p>
           </div>
           <div className="bg-white rounded shadow-lg p-4 px-4 md:p-8 mb-6">
@@ -305,13 +306,13 @@ const CheckoutPage = () => {
               className="grid gap-4 gap-y-2 text-sm grid-cols-1 lg:grid-cols-3"
             >
               <div className="text-gray-600">
-                <p className="font-medium text-lg">Personal Details</p>
-                <p>Please fill out all the fields.</p>
+                <p className="font-medium text-lg">{t("order.personal_details")}</p>
+                <p>{t("order.please_fill_out_all_fields")}</p>
               </div>
               <div className="lg:col-span-2">
                 <div className="grid gap-4 gap-y-2 text-sm grid-cols-1 md:grid-cols-5">
                   <div className="md:col-span-5">
-                    <label>Full Name</label>
+                    <label>{t("order.full_name")}</label>
                     <input
                       {...register("name", {
                         required: "Full Name is required",
@@ -326,7 +327,7 @@ const CheckoutPage = () => {
                     )}
                   </div>
                   <div className="md:col-span-5">
-                    <label>Email</label>
+                    <label>{t("order.email")}</label>
                     <input
                       type="text"
                       disabled
@@ -335,7 +336,7 @@ const CheckoutPage = () => {
                     />
                   </div>
                   <div className="md:col-span-5">
-                    <label>Phone</label>
+                    <label>{t("order.phone")}</label>
                     <input
                       {...register("phone", {
                         required: "Phone is required",
@@ -354,7 +355,7 @@ const CheckoutPage = () => {
                     )}
                   </div>
                   <div className="md:col-span-3">
-                    <label>City</label>
+                    <label>{t("order.city")}</label>
                     <input
                       {...register("city", { required: "City is required" })}
                       type="text"
@@ -367,7 +368,7 @@ const CheckoutPage = () => {
                     )}
                   </div>
                   <div className="md:col-span-2">
-                    <label>Country</label>
+                    <label>{t("order.country")}</label>
                     <input
                       {...register("country")}
                       type="text"
@@ -375,7 +376,7 @@ const CheckoutPage = () => {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label>State</label>
+                    <label>{t("order.state")}</label>
                     <input
                       {...register("state")}
                       type="text"
@@ -383,7 +384,7 @@ const CheckoutPage = () => {
                     />
                   </div>
                   <div className="md:col-span-1">
-                    <label>Zipcode</label>
+                    <label>{t("order.zipcode")}</label>
                     <input
                       {...register("zipcode")}
                       type="text"
@@ -391,9 +392,9 @@ const CheckoutPage = () => {
                     />
                   </div>
                   <div className="md:col-span-5">
-                    <label className="block mb-2">Payment Method</label>
+                    <label className="block mb-2">{t("order.payment_method")}</label>
                     {isLoadingPayments ? (
-                      <div>Loading payment methods...</div>
+                      <div>{t("order.loading_payment_methods")}</div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {supportedMethods.map((method) => (
@@ -440,13 +441,13 @@ const CheckoutPage = () => {
                       className="form-checkbox"
                     />
                     <label className="ml-2">
-                      I agree to the{" "}
+                      {t("order.i_agree_to_the")}
                       <Link className="underline text-blue-600">
-                        Terms & Conditions
+                        {t("order.terms_and_conditions")}
                       </Link>{" "}
-                      and{" "}
+                      {t("order.and")}
                       <Link className="underline text-blue-600">
-                        Shopping Policy
+                        {t("order.shopping_policy")}
                       </Link>
                       .
                     </label>
@@ -456,7 +457,7 @@ const CheckoutPage = () => {
                       disabled={!isChecked || isLoading || !selectedPayment}
                       className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
                     >
-                      {isLoading ? "Placing Order..." : "Place an Order"}
+                      {isLoading ? t("order.placing_order") : t("order.place_an_order")}
                     </button>
                   </div>
                 </div>
