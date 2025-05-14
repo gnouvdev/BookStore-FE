@@ -121,80 +121,50 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <AdminRoute><DashboardLayout/></AdminRoute>,
+    element: <AdminRoute />,
     children: [
       {
         path: "",
-        element: (
-          <AdminRoute>
-            <Dashboard/>
-          </AdminRoute>
-        ),
+        element: <DashboardLayout />,
+        children: [
+          {
+            path: "",
+            element: <Dashboard />,
+          },
+          {
+            path: "add-new-book",
+            element: <AddBook />,
+          },
+          {
+            path: "edit-book/:id",
+            element: <UpdateBook />,
+          },
+          {
+            path: "manage-books",
+            element: <ManageBooks />,
+          },
+          {
+            path: "manage-categories",
+            element: <ManageCategories />,
+          },
+          {
+            path: "manage-authors",
+            element: <ManageAuthors />,
+          },
+          {
+            path: "edit-category/:id",
+            element: <EditCategory />,
+          },
+          {
+            path: "manage-users",
+            element: <ManageUsers />,
+          },
+          {
+            path: "manage-orders",
+            element: <ManageOrders />,
+          },
+        ],
       },
-      {
-        path: "add-new-book",
-        element: (
-          <AdminRoute>
-            <AddBook/>
-          </AdminRoute>
-        ),
-      },
-      {
-        path: "edit-book/:id",
-        element: (
-          <AdminRoute>
-            <UpdateBook/>
-          </AdminRoute>
-        ),
-      },
-      {
-        path: "manage-books",
-        element: (
-          <AdminRoute>
-            <ManageBooks/>
-          </AdminRoute>
-        ),
-      },
-      {
-        path: "manage-categories",
-        element: (
-          <AdminRoute>
-            <ManageCategories/>
-          </AdminRoute>
-        ),
-      },
-      {
-        path: "manage-authors",
-        element: (
-          <AdminRoute>
-            <ManageAuthors/>
-          </AdminRoute>
-        ),
-      },
-      {
-        path: "edit-category/:id",
-        element: (
-          <AdminRoute>
-            <EditCategory/>
-          </AdminRoute>
-        ),
-      },
-      {
-        path: "manage-users",
-        element: (
-          <AdminRoute>
-            <ManageUsers/>
-          </AdminRoute>
-        ),
-      },
-      {
-        path: "manage-orders",
-        element: (
-          <AdminRoute>
-            <ManageOrders/>
-          </AdminRoute>
-        ),
-      }
     ],
   },
 ]);

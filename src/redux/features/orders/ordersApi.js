@@ -20,6 +20,10 @@ export const ordersApi = createApi({
       query: (email) => `/orders/email/${email}`,
       providesTags: ["Orders"],
     }),
+    getAllOrders: builder.query({
+      query: () => `/orders`,
+      providesTags: ["Orders"],
+    }),
     getOrderById: builder.query({
       query: (id) => `/orders/${id}`,
       providesTags: (result, error, id) => [{ type: "Orders", id }],
@@ -54,11 +58,14 @@ export const ordersApi = createApi({
       }),
       invalidatesTags: ["Orders"],
     }),
+    
   }),
+
 });
 
 export const {
   useGetOrdersQuery,
+  useGetAllOrdersQuery,
   useGetOrderByIdQuery,
   useCreateOrderMutation,
   useUpdateOrderStatusMutation,
