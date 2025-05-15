@@ -8,6 +8,9 @@ import { useSelector } from "react-redux";
 import { useAuth } from "./../context/AuthContext";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "./LanguageSwitcher";
+import SearchSuggestions from "./SearchSuggestions";
+import { useGetSearchSuggestionsQuery } from "../redux/features/search/searchApi";
+import { debounce } from "lodash";
 
 const navigation = [
   { name: "Profile", href: "/profile" },
@@ -18,6 +21,7 @@ const navigation = [
 
 const Navbar = () => {
   const [query, setQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const cartItems = useSelector((state) => state.cart.cartItems);
@@ -26,6 +30,12 @@ const Navbar = () => {
   const location = useLocation();
   const token = localStorage.getItem("token");
   const { t } = useTranslation();
+  const searchRef = useRef(null);
+
+  // Lấy suggestions từ API
+  const { data: suggestions } = useGetSearchSuggestionsQuery(query, {
+    skip: !query || query.length < 2,
+  });
 
   // Debug currentUser
   useEffect(() => {
@@ -33,16 +43,12 @@ const Navbar = () => {
   }, [currentUser]);
 
   const dropdownRef = useRef(null);
-  const handleSearch = () => {
-    if (query.trim()) {
-      navigate(`/search?query=${query}`);
-    }
-  };
 
+  // Xử lý click outside để đóng suggestions
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
       }
     };
 
@@ -51,6 +57,42 @@ const Navbar = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Debounce search input
+  const debouncedSearch = debounce((value) => {
+    if (value.length >= 2) {
+      setQuery(value);
+      setShowSuggestions(true);
+    } else {
+      setQuery("");
+      setShowSuggestions(false);
+    }
+  }, 500);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+    debouncedSearch(value);
+  };
+
+  const handleSearch = () => {
+    if (query.trim()) {
+      navigate(`/search?query=${encodeURIComponent(query)}`);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionSelect = (selectedQuery) => {
+    setQuery(selectedQuery);
+    setShowSuggestions(false);
+    navigate(`/search?query=${encodeURIComponent(selectedQuery)}`);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
   const handleLogout = () => {
     if (logout) {
@@ -66,7 +108,7 @@ const Navbar = () => {
   // Hàm kiểm tra và trả về URL ảnh avatar
   const getAvatarUrl = () => {
     console.log("Getting avatar URL for user:", currentUser);
-    
+
     // Kiểm tra từ currentUser trước
     if (currentUser?.photoURL) {
       console.log("Using photoURL from currentUser:", currentUser.photoURL);
@@ -98,53 +140,61 @@ const Navbar = () => {
           </Link>
 
           {/* Search input */}
-          <div className="relative sm:w-72 w-40">
+          <div className="relative sm:w-72 w-40" ref={searchRef}>
             <button onClick={handleSearch}>
               <IoSearchOutline className="absolute inline-block left-3 inset-y-2" />
             </button>
             <input
               type="text"
-              placeholder={t('common.search')}
+              placeholder={t("common.search")}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setShowSuggestions(true)}
               className="bg-[#EAEAEA] w-full py-1 md:px-8 px-6 rounded-md focus:outline"
             />
+            {showSuggestions && query.length >= 2 && (
+              <SearchSuggestions
+                suggestions={suggestions}
+                onSelect={handleSuggestionSelect}
+                onClose={() => setShowSuggestions(false)}
+              />
+            )}
           </div>
 
           {/* Navigation Links */}
           <Link to="/" className={`hover:text-primary ${isActive("/")}`}>
-            {t('common.home')}
+            {t("common.home")}
           </Link>
           <Link
             to="/product"
             className={`hover:text-primary ${isActive("/product")}`}
           >
-            {t('common.books')}
+            {t("common.books")}
           </Link>
           <Link
             to="/product/bussines"
             className={`hover:text-primary ${isActive("/product/business")}`}
           >
-            {t('common.bussines')}
+            {t("common.bussines")}
           </Link>
           <Link
             to="/product/fiction"
             className={`hover:text-primary ${isActive("/product/fiction")}`}
           >
-            {t('common.fiction')}
+            {t("common.fiction")}
           </Link>
           <Link
             to="/product/adventure"
             className={`hover:text-primary ${isActive("/product/adventure")}`}
           >
-            {t('common.adventure')}
+            {t("common.adventure")}
           </Link>
           <Link
             to="/product/manga"
             className={`hover:text-primary ${isActive("/product/manga")}`}
           >
-            {t('common.manga')}
+            {t("common.manga")}
           </Link>
         </div>
 
@@ -186,7 +236,7 @@ const Navbar = () => {
                           onClick={handleLogout}
                           className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                         >
-                          {t('common.logout')}
+                          {t("common.logout")}
                         </button>
                       </li>
                     </ul>

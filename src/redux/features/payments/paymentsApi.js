@@ -49,6 +49,12 @@ const paymentsApi = createApi({
       }),
       invalidatesTags: ["Payment"],
     }),
+    verifyVNPayPayment: builder.mutation({
+      query: (queryParams) => ({
+        url: `/payments/vnpay/verify?${queryParams}`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -58,6 +64,7 @@ export const {
   useUpdatePaymentMethodMutation,
   useDeletePaymentMethodMutation,
   useCreateVNPayUrlMutation,
+  useVerifyVNPayPaymentMutation,
 } = paymentsApi;
 
 export default paymentsApi;

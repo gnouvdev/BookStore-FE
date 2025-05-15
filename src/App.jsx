@@ -5,10 +5,8 @@ import { Provider } from "react-redux";
 import { store } from "./redux/store";
 import Navbar from "./components/Navbar";
 
-
 import { useTranslation } from "react-i18next";
 import Footer from "./components/Footer";
-
 
 function App() {
   const { t } = useTranslation();
@@ -18,10 +16,9 @@ function App() {
         <div className="min-h-screen bg-gray-100">
           <Navbar />
           <main className="min-h-screen max-w-screen-2xl mx-auto px-4 py-4 font-primary">
-          <Outlet />
-          
+            <Outlet />
           </main>
-          <Footer/>
+          <Footer />
           <Toaster position="top-center" reverseOrder={false} />
         </div>
       </AuthProvider>

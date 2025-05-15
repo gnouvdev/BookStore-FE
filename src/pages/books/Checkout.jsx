@@ -13,6 +13,7 @@ import {
 import { useGetCurrentUserQuery } from "../../redux/features/users/userApi";
 import baseUrl from "../../utils/baseURL";
 import { t } from "i18next";
+import { useClearCartMutation } from "../../redux/features/cart/cartApi";
 
 const CheckoutPage = () => {
   const { currentUser } = useAuth();
@@ -34,6 +35,7 @@ const CheckoutPage = () => {
   } = useGetCurrentUserQuery();
   const paymentMethods = paymentMethodsData?.data || [];
   const [createVNPayUrl] = useCreateVNPayUrlMutation();
+  const [clearCartApi] = useClearCartMutation();
 
   console.log("Payment methods error:", paymentError);
   console.log("User data error:", userError);
@@ -178,6 +180,7 @@ const CheckoutPage = () => {
               },
             },
             paymentMethodId: selectedPayment._id,
+            returnUrl: `${window.location.origin}/vnpay/callback`,
           };
           console.log("VNPay data:", vnpayData);
           const response = await createVNPayUrl(vnpayData).unwrap();
@@ -192,7 +195,9 @@ const CheckoutPage = () => {
           console.error("VNPay Error:", error);
           Swal.fire({
             title: "Payment Error",
-            text: error.data?.message || "Failed to create VNPay payment. Please try again.",
+            text:
+              error.data?.message ||
+              "Failed to create VNPay payment. Please try again.",
             icon: "error",
           });
         }
@@ -222,6 +227,7 @@ const CheckoutPage = () => {
         console.log("Calling createOrder for COD...");
         const order = await createOrder(orderData).unwrap();
         console.log("Order created:", order);
+        await clearCartApi();
         dispatch(clearCart());
         Swal.fire({
           title: "Order Confirmed",
@@ -265,10 +271,14 @@ const CheckoutPage = () => {
   return (
     <section className="min-h-screen p-6 bg-gray-100 flex items-center justify-center">
       <div className="container max-w-screen-lg mx-auto">
-        <h2 className="font-semibold text-xl text-gray-600 mb-2">{t("order.checkout")}</h2>
+        <h2 className="font-semibold text-xl text-gray-600 mb-2">
+          {t("order.checkout")}
+        </h2>
         <div className="flex flex-col gap-4">
           <div className="bg-white rounded w-full shadow-lg p-4 px-4 md:p-8 mb-6">
-            <h2 className="font-semibold text-xl text-gray-600 mb-4">{t("order.products")}</h2>
+            <h2 className="font-semibold text-xl text-gray-600 mb-4">
+              {t("order.products")}
+            </h2>
             <div className="space-y-4">
               {cartItems.length > 0 ? (
                 cartItems.map((item) => (
@@ -283,9 +293,12 @@ const CheckoutPage = () => {
                     />
                     <div className="flex-1">
                       <h3 className="text-lg font-medium">{item.title}</h3>
-                      <p className="text-gray-500">{t("order.quantity")}: {item.quantity}</p>
+                      <p className="text-gray-500">
+                        {t("order.quantity")}: {item.quantity}
+                      </p>
                       <p className="text-gray-600 font-semibold">
-                        {t("order.price")}: {(item.price || 0).toLocaleString("vi-VN")} x{" "}
+                        {t("order.price")}:{" "}
+                        {(item.price || 0).toLocaleString("vi-VN")} x{" "}
                         {item.quantity} ={" "}
                         {(item.price * item.quantity).toLocaleString("vi-VN")}đ
                       </p>
@@ -306,7 +319,9 @@ const CheckoutPage = () => {
               className="grid gap-4 gap-y-2 text-sm grid-cols-1 lg:grid-cols-3"
             >
               <div className="text-gray-600">
-                <p className="font-medium text-lg">{t("order.personal_details")}</p>
+                <p className="font-medium text-lg">
+                  {t("order.personal_details")}
+                </p>
                 <p>{t("order.please_fill_out_all_fields")}</p>
               </div>
               <div className="lg:col-span-2">
@@ -392,7 +407,9 @@ const CheckoutPage = () => {
                     />
                   </div>
                   <div className="md:col-span-5">
-                    <label className="block mb-2">{t("order.payment_method")}</label>
+                    <label className="block mb-2">
+                      {t("order.payment_method")}
+                    </label>
                     {isLoadingPayments ? (
                       <div>{t("order.loading_payment_methods")}</div>
                     ) : (
@@ -457,7 +474,9 @@ const CheckoutPage = () => {
                       disabled={!isChecked || isLoading || !selectedPayment}
                       className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
                     >
-                      {isLoading ? t("order.placing_order") : t("order.place_an_order")}
+                      {isLoading
+                        ? t("order.placing_order")
+                        : t("order.place_an_order")}
                     </button>
                   </div>
                 </div>

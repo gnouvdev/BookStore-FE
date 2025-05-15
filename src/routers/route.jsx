@@ -29,6 +29,7 @@ import ManageOrders from "./../pages/dashBoard/manageOrders/ManageOrders";
 import Recommended from "../pages/home/Recommended";
 import BookRecommendations from "./../components/BookRecommendations";
 import WishlistPage from "../pages/wishlist/WishlistPage";
+import VNPayCallback from './../pages/vnpaycallback/VNPayCallback';
 
 const router = createBrowserRouter([
   {
@@ -54,6 +55,10 @@ const router = createBrowserRouter([
             <ThanksPage />
           </PrivateRoute>
         ),
+      },
+      {
+        path: "/vnpay/callback",
+        element: <VNPayCallback />,
       },
       {
         path: "/about",
