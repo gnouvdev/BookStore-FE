@@ -64,7 +64,7 @@ export const {
   useUpdateProfileMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
-  useGetCurrentUserQuery, 
+  useGetCurrentUserQuery,
 } = userApi;
 
 export default userApi;

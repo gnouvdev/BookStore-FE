@@ -22,13 +22,14 @@ const navigation = [
 const Navbar = () => {
   const [query, setQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [inputValue, setInputValue] = useState("");
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const cartItems = useSelector((state) => state.cart.cartItems);
   const wishlistItems = useSelector((state) => state.wishlist.wishlistItems);
   const { currentUser, logout } = useAuth();
   const location = useLocation();
-  const token = localStorage.getItem("token");
+  // const token = localStorage.getItem("token");
   const { t } = useTranslation();
   const searchRef = useRef(null);
 
@@ -71,18 +72,19 @@ const Navbar = () => {
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
-    setQuery(value);
+    setInputValue(value);
     debouncedSearch(value);
   };
 
   const handleSearch = () => {
-    if (query.trim()) {
-      navigate(`/search?query=${encodeURIComponent(query)}`);
+    if (inputValue.trim()) {
+      navigate(`/search?query=${encodeURIComponent(inputValue)}`);
       setShowSuggestions(false);
     }
   };
 
   const handleSuggestionSelect = (selectedQuery) => {
+    setInputValue(selectedQuery);
     setQuery(selectedQuery);
     setShowSuggestions(false);
     navigate(`/search?query=${encodeURIComponent(selectedQuery)}`);
@@ -147,7 +149,7 @@ const Navbar = () => {
             <input
               type="text"
               placeholder={t("common.search")}
-              value={query}
+              value={inputValue}
               onChange={handleSearchChange}
               onKeyDown={handleKeyDown}
               onFocus={() => setShowSuggestions(true)}

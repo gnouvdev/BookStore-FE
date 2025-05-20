@@ -219,7 +219,7 @@ const SingleBook = () => {
             </p>
             <p className="text-gray-700 mb-2 capitalize">
               <strong>{t("books.category")}:</strong>{" "}
-              {book.category?.name || "Unknown"}
+              {t(`categories.${book.category?.name}`) || "Unknown"}
             </p>
             <p className="text-gray-700 mb-2 capitalize">
               <strong>{t("books.tag")}:</strong> #

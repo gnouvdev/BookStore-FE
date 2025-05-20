@@ -168,5 +168,11 @@
     "rating": "Đánh giá của bạn",
     "comment": "Bình luận",
     "submit": "Gửi"
-  } 
+  },
+  "categories": {
+    "Bussines": "Kinh doanh",
+    "Fiction": "Viễn tưởng",
+    "Adventure": "Phiêu lưu",
+    "Manga": "Truyện Nhật Bản"
+  }
 } 

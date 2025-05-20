@@ -169,6 +169,11 @@
     "rating": "Your Rating",
     "comment": "Comment",
     "submit": "Submit"
-
+  },
+  "categories": {
+    "Bussines": "Business",
+    "Fiction": "Fiction",
+    "Adventure": "Adventure",
+    "Manga": "Manga"
   }
 } 

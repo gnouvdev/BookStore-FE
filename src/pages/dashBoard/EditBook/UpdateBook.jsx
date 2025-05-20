@@ -24,7 +24,7 @@ const UpdateBook = () => {
     isLoading,
     isError,
     error,
-    refetch,
+    // refetch,
   } = useGetBookByIdQuery(id);
   const [updateBook, { isLoading: isUpdating }] = useUpdateBookMutation();
   const [coverImage, setCoverImage] = useState("");
