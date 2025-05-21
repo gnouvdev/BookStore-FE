@@ -1,25 +1,88 @@
-import React, { useState } from "react";
-import { useGetAuthorsQuery, useAddAuthorMutation, useUpdateAuthorMutation, useDeleteAuthorMutation, useSearchAuthorsQuery } from "../../../redux/features/authors/authorsApi";
+import React, { useState, useEffect } from "react";
+import {
+  useGetAuthorsQuery,
+  useAddAuthorMutation,
+  useUpdateAuthorMutation,
+  useDeleteAuthorMutation,
+  useSearchAuthorsQuery,
+} from "../../../redux/features/authors/authorsApi";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import Loading from "../../../components/Loading";
 
 const ManageAuthors = () => {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAuthor, setEditingAuthor] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
   });
 
-  const { data: authors, isLoading, error, refetch } = useGetAuthorsQuery();
+  // Check authentication on component mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!token || !user || user.role !== "admin") {
+      Swal.fire({
+        title: "Unauthorized",
+        text: "Please log in as admin",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/admin");
+      });
+      return;
+    }
+
+    setIsAuthenticated(true);
+  }, [navigate]);
+
+  const {
+    data: authors,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useGetAuthorsQuery(undefined, {
+    skip: !isAuthenticated,
+  });
   const { data: searchResults } = useSearchAuthorsQuery(searchQuery, {
-    skip: !searchQuery,
+    skip: !searchQuery || !isAuthenticated,
   });
   const [addAuthor, { isLoading: isAdding }] = useAddAuthorMutation();
   const [updateAuthor, { isLoading: isUpdating }] = useUpdateAuthorMutation();
   const [deleteAuthor, { isLoading: isDeleting }] = useDeleteAuthorMutation();
+
+  // Handle authentication errors
+  if (isError) {
+    if (error?.status === 401 || error?.status === 403) {
+      Swal.fire({
+        title: "Session Expired",
+        text: "Your session has expired. Please log in again.",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/admin");
+      });
+      return null;
+    }
+    return (
+      <div className="text-red-500">
+        Error: {error.data?.message || "Failed to load authors"}
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || isLoading) return <Loading />;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -45,7 +108,20 @@ const ManageAuthors = () => {
       refetch();
     } catch (error) {
       console.error("Error:", error);
-      toast.error(error.data?.message || "Something went wrong!");
+      if (error?.status === 401 || error?.status === 403) {
+        Swal.fire({
+          title: "Session Expired",
+          text: "Your session has expired. Please log in again.",
+          icon: "error",
+          confirmButtonText: "Go to Login",
+        }).then(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/admin");
+        });
+      } else {
+        toast.error(error.data?.message || "Something went wrong!");
+      }
     }
   };
 
@@ -77,7 +153,20 @@ const ManageAuthors = () => {
       }
     } catch (error) {
       console.error("Error:", error);
-      toast.error(error.data?.message || "Failed to delete author!");
+      if (error?.status === 401 || error?.status === 403) {
+        Swal.fire({
+          title: "Session Expired",
+          text: "Your session has expired. Please log in again.",
+          icon: "error",
+          confirmButtonText: "Go to Login",
+        }).then(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/admin");
+        });
+      } else {
+        toast.error(error.data?.message || "Failed to delete author!");
+      }
     }
   };
 
@@ -86,9 +175,6 @@ const ManageAuthors = () => {
   };
 
   const displayAuthors = searchQuery ? searchResults || [] : authors || [];
-
-  if (isLoading) return <Loading />;
-  if (error) return <div className="text-red-500">Error: {error.data?.message || "Failed to load authors"}</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -217,7 +303,11 @@ const ManageAuthors = () => {
                     className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                     disabled={isAdding || isUpdating}
                   >
-                    {isAdding || isUpdating ? "Processing..." : editingAuthor ? "Update" : "Add"}
+                    {isAdding || isUpdating
+                      ? "Processing..."
+                      : editingAuthor
+                      ? "Update"
+                      : "Add"}
                   </button>
                 </div>
               </form>

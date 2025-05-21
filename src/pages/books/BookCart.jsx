@@ -1,6 +1,6 @@
 import React from "react";
 import { FiShoppingCart } from "react-icons/fi";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { FaHeart, FaRegHeart, FaStar, FaRegStar } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useAddToCartMutation } from "../../redux/features/cart/cartApi";
@@ -34,8 +34,13 @@ const BookCard = ({ book }) => {
     }
   };
 
+  // Tính số sao hiển thị
+  const rating = book.rating || 0;
+  const numReviews = book.numReviews || 0;
+  const roundedRating = Math.round(rating); // Làm tròn rating (1-5)
+
   return (
-    <div className="bg-gray-200 rounded-xl p-4 mx-8 shadow-md w-60 max-w-xs h-full flex flex-col justify-between">
+    <div className="bg-gray-200 rounded-xl p-4 mx-8 shadow-md w-60 max-w-xs h-full flex flex-col justify-between relative">
       <div className="flex flex-col items-center gap-3 h-full">
         {/* Hình ảnh sách */}
         <div className="h-56 w-40 flex-shrink-0 border rounded-md overflow-hidden relative">
@@ -46,9 +51,16 @@ const BookCard = ({ book }) => {
               className="w-full h-full object-cover p-2 cursor-pointer hover:scale-105 transition-all duration-200"
             />
           </Link>
+          {/* Tag giảm giá */}
+          {book.discountPercentage > 0 && (
+            <div className="absolute top-0 right-0 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-bl-lg shadow-lg animate-pulse transform translate-y-[-10%]">
+              -{Math.round(book.discountPercentage)}%
+            </div>
+          )}
+          {/* Nút wishlist */}
           <button
             onClick={handleWishlistToggle}
-            className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+            className="absolute top-10 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
           >
             {isInWishlist ? (
               <FaHeart className="text-red-500 text-xl" />
@@ -65,9 +77,21 @@ const BookCard = ({ book }) => {
               {book?.title}
             </h3>
           </Link>
-          <p className="text-gray-500 text-sm mb-3 line-clamp-1 w-48">
-            {book?.description}
-          </p>
+          {/* Rating thay cho description */}
+          <div className="flex items-center gap-1 mb-3">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <span key={star}>
+                {star <= roundedRating ? (
+                  <FaStar className="text-yellow-400 text-sm" />
+                ) : (
+                  <FaRegStar className="text-gray-400 text-sm" />
+                )}
+              </span>
+            ))}
+            {numReviews > 0 && (
+              <span className="text-gray-500 text-sm ml-1">({numReviews})</span>
+            )}
+          </div>
 
           <p className="font-medium mb-3 text-xl text-red-600">
             {book?.price?.newPrice.toLocaleString("vi-VN")} đ

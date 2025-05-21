@@ -14,6 +14,7 @@ import paymentsApi from "./features/payments/paymentsApi";
 import { cartApi } from './features/cart/cartApi';
 import { reviewsApi } from './features/reviews/reviewsApi';
 import { searchApi } from './features/search/searchApi';
+import { recommendationsv2Api } from './features/recommendationv2/recommendationsv2Api';
 
 export const store = configureStore({
   reducer: {
@@ -31,6 +32,7 @@ export const store = configureStore({
     [cartApi.reducerPath]: cartApi.reducer,
     [reviewsApi.reducerPath]: reviewsApi.reducer,
     [searchApi.reducerPath]: searchApi.reducer,
+    [recommendationsv2Api.reducerPath]: recommendationsv2Api.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -44,7 +46,8 @@ export const store = configureStore({
       paymentsApi.middleware,
       cartApi.middleware,
       reviewsApi.middleware,
-      searchApi.middleware
+      searchApi.middleware,
+      recommendationsv2Api.middleware
     ),
 });
 

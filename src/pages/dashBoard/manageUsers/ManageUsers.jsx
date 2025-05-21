@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import {
@@ -11,6 +11,29 @@ import Loading from "../../../components/Loading";
 const ManageUsers = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!token || !user || user.role !== "admin") {
+      Swal.fire({
+        title: "Unauthorized",
+        text: "Please log in as admin",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/admin");
+      });
+      return;
+    }
+
+    setIsAuthenticated(true);
+  }, [navigate]);
 
   const {
     data: usersData,
@@ -18,20 +41,22 @@ const ManageUsers = () => {
     isError,
     error,
     refetch,
-  } = useGetUsersQuery();
+  } = useGetUsersQuery(undefined, {
+    skip: !isAuthenticated,
+  });
 
   const { data: searchResults } = useSearchUsersQuery(searchQuery, {
-    skip: !searchQuery,
+    skip: !searchQuery || !isAuthenticated,
   });
 
   const [deleteUser] = useDeleteUserMutation();
 
-  // Xử lý lỗi xác thực
+  // Handle authentication errors
   if (isError) {
     if (error?.status === 401 || error?.status === 403) {
       Swal.fire({
-        title: "Unauthorized",
-        text: "Please log in as admin",
+        title: "Session Expired",
+        text: "Your session has expired. Please log in again.",
         icon: "error",
         confirmButtonText: "Go to Login",
       }).then(() => {
@@ -46,7 +71,7 @@ const ManageUsers = () => {
     );
   }
 
-  if (isLoading) return <Loading />;
+  if (!isAuthenticated || isLoading) return <Loading />;
 
   // Kiểm tra dữ liệu trả về
   const users = searchQuery

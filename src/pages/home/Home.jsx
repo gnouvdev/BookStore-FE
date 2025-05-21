@@ -5,12 +5,13 @@ import Recommended from "./Recommended";
 import News from "./News";
 import GenreBooks from "../../components/GenreBooks";
 import MiniBanner from "../../components/miniBanner";
-
+import Recommendationsv2 from "../../components/Recommendationsv2";
 const Home = () => {
   return (
     <>
       <Banner />
       <Recommended />
+      <Recommendationsv2 />
       <GenreBooks genre={"Fiction"} />
       <MiniBanner genre1={"Business1"} genre2={"Business2"} />
       <GenreBooks genre={"Bussines"} />
@@ -21,7 +22,7 @@ const Home = () => {
       <MiniBanner genre1={"Horror1"} genre2={"Horror2"} />
       <GenreBooks genre={"Manga"} />
       {/* <TopSales /> */}
-    
+
       <News />
     </>
   );

@@ -159,7 +159,8 @@
     "filter_failed": "Failed",
     "filter_completed": "Completed",
     "search_placeholder": "Search by name, author, category, tag...",
-    "shop_now": "Shop Now"
+    "shop_now": "Shop Now",
+    "review": "Review Book"
   },
   "reviews": {
     "title": "Reviews",
@@ -175,5 +176,8 @@
     "Fiction": "Fiction",
     "Adventure": "Adventure",
     "Manga": "Manga"
+  },
+  "recommendations": {
+    "for_you": "Suggestions just for you"
   }
 } 

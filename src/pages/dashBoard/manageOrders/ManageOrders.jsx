@@ -1,19 +1,71 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { useDeleteOrderMutation, useGetAllOrdersQuery, useUpdateOrderStatusMutation } from "../../../redux/features/orders/ordersApi";
+import { useNavigate } from "react-router-dom";
+import {
+  useDeleteOrderMutation,
+  useGetAllOrdersQuery,
+  useUpdateOrderStatusMutation,
+} from "../../../redux/features/orders/ordersApi";
+import Loading from "../../../components/Loading";
 
 const ManageOrders = () => {
-  const { data, isLoading, isError, error, refetch } = useGetAllOrdersQuery();
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!token || !user || user.role !== "admin") {
+      Swal.fire({
+        title: "Unauthorized",
+        text: "Please log in as admin",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/admin");
+      });
+      return;
+    }
+
+    setIsAuthenticated(true);
+  }, [navigate]);
+
+  const { data, isLoading, isError, error, refetch } = useGetAllOrdersQuery(
+    undefined,
+    {
+      skip: !isAuthenticated,
+    }
+  );
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [deleteOrder] = useDeleteOrderMutation();
 
-  const orders = Array.isArray(data?.data) ? data.data : [];
-
-  if (isLoading) return <div>Loading...</div>;
+  // Handle authentication errors
   if (isError) {
-    console.error("Error loading orders:", error);
-    return <div>Error loading orders: {error?.data?.message || "Unknown error"}</div>;
+    if (error?.status === 401 || error?.status === 403) {
+      Swal.fire({
+        title: "Session Expired",
+        text: "Your session has expired. Please log in again.",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/admin");
+      });
+      return null;
+    }
+    return (
+      <div>Error loading orders: {error?.data?.message || "Unknown error"}</div>
+    );
   }
+
+  if (!isAuthenticated || isLoading) return <Loading />;
+
+  const orders = Array.isArray(data?.data) ? data.data : [];
 
   const handleUpdateStatus = async (orderId, status) => {
     try {
@@ -26,29 +78,68 @@ const ManageOrders = () => {
       refetch();
     } catch (error) {
       console.error("Error updating order status:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Failed to update order status.",
-      });
+      if (error?.status === 401 || error?.status === 403) {
+        Swal.fire({
+          title: "Session Expired",
+          text: "Your session has expired. Please log in again.",
+          icon: "error",
+          confirmButtonText: "Go to Login",
+        }).then(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/admin");
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Failed to update order status.",
+        });
+      }
     }
   };
+
   const handleDeleteOrder = async (orderId) => {
     try {
-      await deleteOrder(orderId).unwrap();
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Order deleted successfully!",  
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
       });
-      refetch();
+
+      if (result.isConfirmed) {
+        await deleteOrder(orderId).unwrap();
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Order deleted successfully!",
+        });
+        refetch();
+      }
     } catch (error) {
       console.error("Error deleting order:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Failed to delete order.",
-      });
+      if (error?.status === 401 || error?.status === 403) {
+        Swal.fire({
+          title: "Session Expired",
+          text: "Your session has expired. Please log in again.",
+          icon: "error",
+          confirmButtonText: "Go to Login",
+        }).then(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/admin");
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Failed to delete order.",
+        });
+      }
     }
   };
 
@@ -70,7 +161,9 @@ const ManageOrders = () => {
       return products
         .map((item) => {
           if (typeof item === "object" && item !== null) {
-            return `${item.productId?.title || "Unknown Product"} (${item.quantity || 1})`;
+            return `${item.productId?.title || "Unknown Product"} (${
+              item.quantity || 1
+            })`;
           }
           return "Unknown Product";
         })
@@ -86,7 +179,9 @@ const ManageOrders = () => {
           <p><strong>Phone:</strong> ${order.phone || "N/A"}</p>
           <p><strong>Total Price:</strong> $${order.totalPrice || 0}</p>
           <p><strong>Status:</strong> ${order.status || "pending"}</p>
-          <p><strong>Payment Method:</strong> ${order.paymentMethod?.name || "N/A"}</p>
+          <p><strong>Payment Method:</strong> ${
+            order.paymentMethod?.name || "N/A"
+          }</p>
           <hr />
           <h3>Address:</h3>
           <p>${formatAddress(order.address)}</p>
@@ -114,7 +209,9 @@ const ManageOrders = () => {
                   <th className="border border-gray-300 px-4 py-2">#</th>
                   <th className="border border-gray-300 px-4 py-2">Name</th>
                   <th className="border border-gray-300 px-4 py-2">Email</th>
-                  <th className="border border-gray-300 px-4 py-2">Total Price</th>
+                  <th className="border border-gray-300 px-4 py-2">
+                    Total Price
+                  </th>
                   <th className="border border-gray-300 px-4 py-2">Status</th>
                   <th className="border border-gray-300 px-4 py-2">Actions</th>
                 </tr>
@@ -122,14 +219,29 @@ const ManageOrders = () => {
               <tbody>
                 {orders.map((order, index) => (
                   <tr key={order._id}>
-                    <td className="border border-gray-300 px-4 py-2">{index + 1}</td>
-                    <td className="border border-gray-300 px-4 py-2">{order.name || "N/A"}</td>
-                    <td className="border border-gray-300 px-4 py-2">{order.email || "N/A"}</td>
-                    <td className="border border-gray-300 px-4 py-2">{order.totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) || 0}</td>
-                    <td className="border border-gray-300 px-4 py-2">{order.status || "pending"}</td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {index + 1}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {order.name || "N/A"}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {order.email || "N/A"}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {order.totalPrice.toLocaleString("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      }) || 0}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {order.status || "pending"}
+                    </td>
                     <td className="border border-gray-300 px-4 py-2 space-x-2">
                       <button
-                        onClick={() => handleUpdateStatus(order._id, "processing")}
+                        onClick={() =>
+                          handleUpdateStatus(order._id, "processing")
+                        }
                         className={`px-2 py-1 rounded ${
                           order.status === "processing"
                             ? "bg-blue-700 text-white font-bold"
@@ -149,7 +261,9 @@ const ManageOrders = () => {
                         {order.status === "shipped" && "✔ "}Shipped
                       </button>
                       <button
-                        onClick={() => handleUpdateStatus(order._id, "delivered")}
+                        onClick={() =>
+                          handleUpdateStatus(order._id, "delivered")
+                        }
                         className={`px-2 py-1 rounded ${
                           order.status === "delivered"
                             ? "bg-green-700 text-white font-bold"
@@ -159,7 +273,9 @@ const ManageOrders = () => {
                         {order.status === "delivered" && "✔ "}Delivered
                       </button>
                       <button
-                        onClick={() => handleUpdateStatus(order._id, "completed")}
+                        onClick={() =>
+                          handleUpdateStatus(order._id, "completed")
+                        }
                         className={`px-2 py-1 rounded ${
                           order.status === "completed"
                             ? "bg-green-700 text-white font-bold"
@@ -169,7 +285,9 @@ const ManageOrders = () => {
                         {order.status === "completed" && "✔ "}Completed
                       </button>
                       <button
-                        onClick={() => handleUpdateStatus(order._id, "cancelled")}
+                        onClick={() =>
+                          handleUpdateStatus(order._id, "cancelled")
+                        }
                         className={`px-2 py-1 rounded ${
                           order.status === "cancelled"
                             ? "bg-red-700 text-white font-bold"

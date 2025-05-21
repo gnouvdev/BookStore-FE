@@ -1,4 +1,4 @@
-import React, { useState} from "react";
+import React, { useState, useEffect } from "react";
 import InputField from "./InputField";
 import { useForm } from "react-hook-form";
 import { useAddBookMutation } from "../../../redux/features/books/booksApi";
@@ -7,11 +7,14 @@ import Swal from "sweetalert2";
 import toast from "react-hot-toast";
 import { uploadToCloudinary } from "../../../utils/uploadService";
 import axios from "axios";
-import AsyncSelect from "react-select/async"; // Import AsyncSelect
-import debounce from "lodash/debounce"; // Hoặc sử dụng hàm debounce tự định nghĩa
-import baseUrl from './../../../utils/baseURL';
+import AsyncSelect from "react-select/async";
+import debounce from "lodash/debounce";
+import baseUrl from "./../../../utils/baseURL";
+import { useNavigate } from "react-router-dom";
 
 const AddBook = () => {
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const {
     register,
     handleSubmit,
@@ -19,17 +22,70 @@ const AddBook = () => {
     reset,
   } = useForm();
 
+  // Check authentication on component mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!token || !user || user.role !== "admin") {
+      Swal.fire({
+        title: "Unauthorized",
+        text: "Please log in as admin",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/admin");
+      });
+      return;
+    }
+
+    setIsAuthenticated(true);
+  }, [navigate]);
+
   const [addBook, { isLoading }] = useAddBookMutation();
-  const { data: categoriesData} = useGetCategoriesQuery();
+  const {
+    data: categoriesData,
+    isError: isCategoriesError,
+    error: categoriesError,
+  } = useGetCategoriesQuery(undefined, {
+    skip: !isAuthenticated,
+  });
   const [coverImage, setCoverImage] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState(null);
-  const [tags, setTags] = useState(""); // State để lưu tags
-  const [language, setLanguage] = useState("Tiếng Anh"); // State để lưu ngôn ngữ
+  const [tags, setTags] = useState("");
+  const [language, setLanguage] = useState("Tiếng Anh");
 
-  const categories = categoriesData?.map((category) => ({
-    value: category._id,
-    label: category.name,
-  })) || [];
+  // Handle authentication errors
+  if (isCategoriesError) {
+    if (categoriesError?.status === 401 || categoriesError?.status === 403) {
+      Swal.fire({
+        title: "Session Expired",
+        text: "Your session has expired. Please log in again.",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/admin");
+      });
+      return null;
+    }
+    return (
+      <div className="text-red-500">
+        Error: {categoriesError.data?.message || "Failed to load categories"}
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
+
+  const categories =
+    categoriesData?.map((category) => ({
+      value: category._id,
+      label: category.name,
+    })) || [];
 
   const debouncedLoadOptions = debounce(async (inputValue) => {
     if (!inputValue) return [];
@@ -87,15 +143,15 @@ const AddBook = () => {
       author: selectedAuthor ? selectedAuthor.value : null,
       category: data.category,
       publish: data.publish,
-      tags: tags.split(",").map((tag) => tag.trim()), // Chuyển chuỗi tags thành mảng
+      tags: tags.split(",").map((tag) => tag.trim()),
       language: language,
       price: {
-        oldPrice: parseFloat(data.oldPrice), // Đưa oldPrice vào đối tượng price
-        newPrice: parseFloat(data.newPrice), // Đưa newPrice vào đối tượng price
+        oldPrice: parseFloat(data.oldPrice),
+        newPrice: parseFloat(data.newPrice),
       },
     };
 
-    console.log("Data being sent to API:", newBookData); // Kiểm tra dữ liệu
+    console.log("Data being sent to API:", newBookData);
 
     try {
       await addBook(newBookData).unwrap();
@@ -111,8 +167,21 @@ const AddBook = () => {
       setTags("");
       setLanguage("Tiếng Anh");
     } catch (error) {
-      console.error("Error adding book:", error); // Log lỗi chi tiết
-      alert("Failed to add book. Please try again.");
+      console.error("Error adding book:", error);
+      if (error?.status === 401 || error?.status === 403) {
+        Swal.fire({
+          title: "Session Expired",
+          text: "Your session has expired. Please log in again.",
+          icon: "error",
+          confirmButtonText: "Go to Login",
+        }).then(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/admin");
+        });
+      } else {
+        toast.error(error.data?.message || "Failed to add book!");
+      }
     }
   };
 
@@ -268,6 +337,7 @@ const AddBook = () => {
         <button
           type="submit"
           className="w-full py-2 bg-green-500 text-white font-bold rounded-md"
+          disabled={isLoading}
         >
           {isLoading ? "Adding..." : "Add Book"}
         </button>

@@ -247,7 +247,18 @@ const OrderPage = () => {
                           key={product._id}
                           className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                         >
-                          <div className="flex items-center space-x-4">
+                          <div  onClick={() => {
+                        navigate(
+                          `/books/${product._id}`,
+                          {
+                            state: {
+                              orderId: order._id,
+                              orderStatus: order.status,
+                              productId: order.productIds[0].productId._id,
+                            },
+                          }
+                        );
+                      }} className="flex items-center space-x-4">
                             <img
                               src={
                                 product.coverImage ||
@@ -309,7 +320,7 @@ const OrderPage = () => {
                       }}
                       className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
                     >
-                      {t("orders.review")}
+                      {t("order.review")}
                     </button>
                   )}
                 </div>

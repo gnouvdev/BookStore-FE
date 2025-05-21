@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   useGetCategoriesQuery,
   useAddCategoryMutation,
@@ -6,26 +6,85 @@ import {
   useDeleteCategoryMutation,
   useSearchCategoriesQuery,
 } from "../../../redux/features/categories/categoriesApi";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import Loading from "../../../components/Loading";
 
 const ManageCategories = () => {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
   });
 
-  const { data: categories, isLoading, error, refetch } = useGetCategoriesQuery();
+  // Check authentication on component mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!token || !user || user.role !== "admin") {
+      Swal.fire({
+        title: "Unauthorized",
+        text: "Please log in as admin",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/admin");
+      });
+      return;
+    }
+
+    setIsAuthenticated(true);
+  }, [navigate]);
+
+  const {
+    data: categories,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useGetCategoriesQuery(undefined, {
+    skip: !isAuthenticated,
+  });
   const { data: searchResults } = useSearchCategoriesQuery(searchQuery, {
-    skip: !searchQuery,
+    skip: !searchQuery || !isAuthenticated,
   });
   const [addCategory, { isLoading: isAdding }] = useAddCategoryMutation();
-  const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
-  const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
+  const [updateCategory, { isLoading: isUpdating }] =
+    useUpdateCategoryMutation();
+  const [deleteCategory, { isLoading: isDeleting }] =
+    useDeleteCategoryMutation();
+
+  // Handle authentication errors
+  if (isError) {
+    if (error?.status === 401 || error?.status === 403) {
+      Swal.fire({
+        title: "Session Expired",
+        text: "Your session has expired. Please log in again.",
+        icon: "error",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/admin");
+      });
+      return null;
+    }
+    return (
+      <div className="text-red-500">
+        Error: {error.data?.message || "Failed to load categories"}
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || isLoading) return <Loading />;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -51,7 +110,20 @@ const ManageCategories = () => {
       refetch();
     } catch (error) {
       console.error("Error:", error);
-      toast.error(error.data?.message || "Something went wrong!");
+      if (error?.status === 401 || error?.status === 403) {
+        Swal.fire({
+          title: "Session Expired",
+          text: "Your session has expired. Please log in again.",
+          icon: "error",
+          confirmButtonText: "Go to Login",
+        }).then(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/admin");
+        });
+      } else {
+        toast.error(error.data?.message || "Something went wrong!");
+      }
     }
   };
 
@@ -83,7 +155,20 @@ const ManageCategories = () => {
       }
     } catch (error) {
       console.error("Error:", error);
-      toast.error(error.data?.message || "Failed to delete category!");
+      if (error?.status === 401 || error?.status === 403) {
+        Swal.fire({
+          title: "Session Expired",
+          text: "Your session has expired. Please log in again.",
+          icon: "error",
+          confirmButtonText: "Go to Login",
+        }).then(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/admin");
+        });
+      } else {
+        toast.error(error.data?.message || "Failed to delete category!");
+      }
     }
   };
 
@@ -91,10 +176,9 @@ const ManageCategories = () => {
     setSearchQuery(e.target.value);
   };
 
-  const displayCategories = searchQuery ? searchResults || [] : categories || [];
-
-  if (isLoading) return <Loading />;
-  if (error) return <div className="text-red-500">Error: {error.data?.message || "Failed to load categories"}</div>;
+  const displayCategories = searchQuery
+    ? searchResults || []
+    : categories || [];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -223,7 +307,11 @@ const ManageCategories = () => {
                     className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                     disabled={isAdding || isUpdating}
                   >
-                    {isAdding || isUpdating ? "Processing..." : editingCategory ? "Update" : "Add"}
+                    {isAdding || isUpdating
+                      ? "Processing..."
+                      : editingCategory
+                      ? "Update"
+                      : "Add"}
                   </button>
                 </div>
               </form>
