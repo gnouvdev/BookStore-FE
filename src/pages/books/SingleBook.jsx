@@ -21,7 +21,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import { FaExpand, FaShoppingCart, FaHeart, FaShare } from "react-icons/fa";
-// import { motion } from "framer-motion";
+import { motion } from "framer-motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -487,7 +487,7 @@ const SingleBook = () => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5 }}
-              className="text-5xl font-bold mb-2 uppercase bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent"
+              className="text-5xl font-bold mb-2 uppercase bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent py-2"
             >
               {book.title}
             </motion.h1>
@@ -530,7 +530,7 @@ const SingleBook = () => {
                 {book.rating ? book.rating.toFixed(1) : "0.0"}
               </span>
               <span className="text-gray-500 text-sm">
-                ({book.reviewCount || 0} {t("reviews.review")})
+                ({reviewsData?.data?.length || 0} {t("reviews.review")})
               </span>
             </div>
 

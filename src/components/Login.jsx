@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaGoogle } from "react-icons/fa";
+import { FaGoogle, FaLock } from "react-icons/fa";
 import { useForm } from "react-hook-form";
 import { useAuth } from "./../context/AuthContext";
 import { toast } from "react-hot-toast";
 import axios from "axios";
-
 
 const Login = () => {
   const { loginUser, signInWithGoogle, setCurrentUser } = useAuth();
@@ -20,11 +19,14 @@ const Login = () => {
   // Hàm helper để lấy thông tin người dùng từ profile API
   const fetchUserProfile = async (token) => {
     try {
-      const response = await axios.get("http://localhost:5000/api/users/profile", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(
+        "http://localhost:5000/api/users/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       console.log("Profile API response:", response.data);
       return response.data.user;
     } catch (error) {
@@ -36,14 +38,15 @@ const Login = () => {
   // Hàm helper để tạo đối tượng người dùng sạch
   const createCleanUserObject = (user, profileData, role) => {
     const { email, uid, photoURL: firebasePhotoURL } = user;
-    
+
     let finalPhotoURL = null;
     if (profileData?.photoURL) {
       finalPhotoURL = profileData.photoURL;
     } else if (firebasePhotoURL) {
       finalPhotoURL = firebasePhotoURL;
     } else {
-      finalPhotoURL = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+      finalPhotoURL =
+        "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
     }
 
     return {
@@ -53,7 +56,7 @@ const Login = () => {
       photoURL: finalPhotoURL,
       displayName: profileData?.fullName || user.displayName || null,
       fullName: profileData?.fullName || null,
-      address: profileData?.address || null
+      address: profileData?.address || null,
     };
   };
 
@@ -65,7 +68,7 @@ const Login = () => {
       // 1. Đăng nhập với Firebase
       const result = await loginUser(data.email, data.password);
       const user = result.user;
-      
+
       // 2. Lấy token từ Firebase
       const idToken = await user.getIdToken();
       console.log("Firebase idToken:", idToken);
@@ -83,17 +86,17 @@ const Login = () => {
       // 4. Lấy thông tin người dùng từ profile API
       const profileData = await fetchUserProfile(token);
       console.log("Profile data:", profileData);
-      
+
       // 5. Tạo đối tượng người dùng sạch
       const cleanUser = createCleanUserObject(user, profileData, role);
       console.log("Clean user object:", cleanUser);
-      
+
       // 6. Lưu vào localStorage
       localStorage.setItem("user", JSON.stringify(cleanUser));
-      
+
       // 7. Cập nhật currentUser trong AuthContext
       setCurrentUser(cleanUser);
-      
+
       toast.success("Đăng nhập thành công!");
       navigate("/");
     } catch (error) {
@@ -130,17 +133,17 @@ const Login = () => {
       // Lấy thông tin người dùng từ profile API
       const profileData = await fetchUserProfile(token);
       console.log("Profile data:", profileData);
-      
+
       // Tạo đối tượng người dùng sạch
       const cleanUser = createCleanUserObject(user, profileData, role);
       console.log("Clean user object:", cleanUser);
-      
+
       // Lưu vào localStorage
       localStorage.setItem("user", JSON.stringify(cleanUser));
-      
+
       // Cập nhật currentUser trong AuthContext
       setCurrentUser(cleanUser);
-      
+
       toast.success("Đăng nhập bằng Google thành công!");
       navigate("/profile");
     } catch (error) {
@@ -150,11 +153,11 @@ const Login = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-120px)] flex justify-center items-center">
-      <div className="w-full max-w-sm mx-auto bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
         <h2 className="text-xl font-semibold mb-4">Đăng nhập</h2>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-4">
             <label
               className="block text-gray-700 text-sm font-bold mb-2"
@@ -182,35 +185,55 @@ const Login = () => {
             )}
           </div>
 
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 text-sm font-bold mb-2"
-              htmlFor="password"
-            >
-              Mật khẩu
-            </label>
-            <input
-              {...register("password", {
-                required: "Vui lòng nhập mật khẩu",
-                minLength: {
-                  value: 6,
-                  message: "Mật khẩu phải có ít nhất 6 ký tự",
-                },
-              })}
-              type="password"
-              id="password"
-              placeholder="Mật khẩu"
-              className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow"
-            />
-            {errors.password && (
-              <p className="text-red-500 text-xs italic">
-                {errors.password.message}
-              </p>
-            )}
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaLock className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="password"
+                required
+                {...register("password", {
+                  required: "Vui lòng nhập mật khẩu",
+                  minLength: {
+                    value: 6,
+                    message: "Mật khẩu phải có ít nhất 6 ký tự",
+                  },
+                })}
+                className="appearance-none rounded-md relative block w-full px-3 py-2 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Mật khẩu"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label
+                htmlFor="remember-me"
+                className="ml-2 block text-sm text-gray-900"
+              >
+                Ghi nhớ đăng nhập
+              </label>
+            </div>
+
+            <div className="text-sm">
+              <Link
+                to="/forgot-password"
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                Quên mật khẩu?
+              </Link>
+            </div>
           </div>
 
           <div>
-            <button 
+            <button
               type="submit"
               disabled={isSubmitting}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded focus:outline-none disabled:opacity-50"

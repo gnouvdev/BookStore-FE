@@ -40,10 +40,10 @@ const Recommendationsv2 = () => {
             start: "top bottom-=100",
             toggleActions: "play none none reverse",
           },
-          duration: 0.8,
+          duration: 0.4,
           y: 50,
           opacity: 0,
-          delay: index * 0.1,
+          delay: index * 0.05,
           ease: "power2.out",
         });
       });

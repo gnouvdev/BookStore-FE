@@ -30,6 +30,7 @@ import Recommended from "../pages/home/Recommended";
 import BookRecommendations from "./../components/BookRecommendations";
 import WishlistPage from "../pages/wishlist/WishlistPage";
 import VNPayCallback from './../pages/vnpaycallback/VNPayCallback';
+import ForgotPassword from './../components/ForgotPassword';
 
 const router = createBrowserRouter([
   {
@@ -75,6 +76,10 @@ const router = createBrowserRouter([
       {
         path: "/cart",
         element: <CartPage />,
+      },
+      {
+        path: "/forgot-password",
+        element: <ForgotPassword />,
       },
       {
         path: "/wishlist",
