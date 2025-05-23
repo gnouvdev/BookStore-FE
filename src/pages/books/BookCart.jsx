@@ -4,7 +4,10 @@ import { FaHeart, FaRegHeart, FaStar, FaRegStar } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useAddToCartMutation } from "../../redux/features/cart/cartApi";
-import { addToWishlist, removeFromWishlist } from "../../redux/features/wishlist/wishlistSlice";
+import {
+  addToWishlist,
+  removeFromWishlist,
+} from "../../redux/features/wishlist/wishlistSlice";
 import { useTranslation } from "react-i18next";
 
 const BookCard = ({ book }) => {
@@ -35,9 +38,32 @@ const BookCard = ({ book }) => {
   };
 
   // Tính số sao hiển thị
-  const rating = book.rating || 0;
-  const numReviews = book.numReviews || 0;
-  const roundedRating = Math.round(rating); // Làm tròn rating (1-5)
+  const rating = Number(book.rating) || 0;
+  const numReviews = Number(book.numReviews) || 0;
+  const roundedRating = Math.round(rating * 2) / 2; // Làm tròn đến 0.5
+
+  // Hàm render sao
+  const renderStars = () => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      if (i <= Math.floor(roundedRating)) {
+        // Sao đầy
+        stars.push(<FaStar key={i} className="text-yellow-400 text-sm" />);
+      } else if (i - 0.5 === roundedRating) {
+        // Sao nửa
+        stars.push(
+          <div key={i} className="relative">
+            <FaRegStar className="text-gray-400 text-sm" />
+            <FaStar className="text-yellow-400 text-sm absolute left-0 w-1/2 overflow-hidden" />
+          </div>
+        );
+      } else {
+        // Sao rỗng
+        stars.push(<FaRegStar key={i} className="text-gray-400 text-sm" />);
+      }
+    }
+    return stars;
+  };
 
   return (
     <div className="bg-gray-200 rounded-xl p-4 mx-8 shadow-md w-60 max-w-xs h-full flex flex-col justify-between relative">
@@ -77,19 +103,13 @@ const BookCard = ({ book }) => {
               {book?.title}
             </h3>
           </Link>
-          {/* Rating thay cho description */}
+          {/* Rating */}
           <div className="flex items-center gap-1 mb-3">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <span key={star}>
-                {star <= roundedRating ? (
-                  <FaStar className="text-yellow-400 text-sm" />
-                ) : (
-                  <FaRegStar className="text-gray-400 text-sm" />
-                )}
-              </span>
-            ))}
+            {renderStars()}
             {numReviews > 0 && (
-              <span className="text-gray-500 text-sm ml-1">({numReviews})</span>
+              <span className="text-gray-500 text-sm ml-1">
+                ({rating.toFixed(1)})
+              </span>
             )}
           </div>
 

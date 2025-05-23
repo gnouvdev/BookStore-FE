@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiShoppingCart } from "react-icons/fi";
 import { useParams } from "react-router-dom";
 import { useAddToCartMutation } from "../../redux/features/cart/cartApi";
@@ -14,6 +14,26 @@ import {
   useCreateReviewMutation,
   useGetReviewsQuery,
 } from "../../redux/features/reviews/reviewsApi";
+import axios from "axios";
+import baseUrl from "../../utils/baseURL";
+
+// Cấu hình axios
+const api = axios.create({
+  baseURL: baseUrl,
+});
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 const SingleBook = () => {
   const { id } = useParams();
@@ -36,6 +56,70 @@ const SingleBook = () => {
 
   const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
   const [quantity, setQuantity] = useState(1);
+
+  // Add useEffect to track book views
+  useEffect(() => {
+    const trackBookView = async () => {
+      if (book?._id && currentUser) {
+        try {
+          // Log chi tiết currentUser để debug
+          console.log("Current user object:", currentUser);
+          console.log("Current user keys:", Object.keys(currentUser));
+
+          // Thử lấy user ID từ nhiều nguồn khác nhau
+          const userId =
+            currentUser.uid ||
+            currentUser._id ||
+            currentUser.id ||
+            currentUser.userId;
+
+          if (!userId) {
+            console.error("No user ID found in currentUser:", currentUser);
+            // Thử lấy từ localStorage
+            const storedUser = localStorage.getItem("user");
+            if (storedUser) {
+              const parsedUser = JSON.parse(storedUser);
+              console.log("Stored user:", parsedUser);
+              const storedUserId =
+                parsedUser.uid ||
+                parsedUser._id ||
+                parsedUser.id ||
+                parsedUser.userId;
+              if (storedUserId) {
+                console.log("Using stored user ID:", storedUserId);
+                await api.post("/viewHistory/", {
+                  userId: storedUserId,
+                  bookId: book._id,
+                });
+                return;
+              }
+            }
+            return;
+          }
+
+          console.log("Using user ID:", userId);
+          const response = await api.post("/viewHistory/", {
+            userId: userId,
+            bookId: book._id,
+          });
+          console.log("Book view tracked successfully:", response.data);
+        } catch (error) {
+          console.error(
+            "Error tracking book view:",
+            error.response?.data || error.message
+          );
+          if (error.response) {
+            console.error("Response data:", error.response.data);
+            console.error("Response status:", error.response.status);
+            console.error("Request URL:", error.config?.url);
+            console.error("Request headers:", error.config?.headers);
+          }
+        }
+      }
+    };
+
+    trackBookView();
+  }, [book?._id, currentUser]);
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();

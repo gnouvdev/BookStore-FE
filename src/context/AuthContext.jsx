@@ -10,7 +10,6 @@ import {
 } from "firebase/auth";
 import { auth } from "../firebase/firebase.config";
 
-
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -20,7 +19,11 @@ export const AuthProvider = ({ children }) => {
   // Đăng ký với email/password
   const registerUser = async (email, password) => {
     try {
-      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const result = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       return result;
     } catch (error) {
       console.error("Registration error:", error);
@@ -84,9 +87,11 @@ export const AuthProvider = ({ children }) => {
           const cleanUser = {
             email: user.email,
             uid: user.uid,
-            photoURL: user.photoURL || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+            photoURL:
+              user.photoURL ||
+              "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
             displayName: user.displayName || null,
-            role: "user" // Mặc định là user
+            role: "user", // Mặc định là user
           };
           setCurrentUser(cleanUser);
         }
@@ -106,7 +111,7 @@ export const AuthProvider = ({ children }) => {
     signInWithGoogle,
     logout,
     updateUserProfile,
-    setCurrentUser
+    setCurrentUser,
   };
 
   return (

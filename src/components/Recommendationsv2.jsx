@@ -3,26 +3,33 @@ import { useGetCollaborativeRecommendationsQuery } from "../redux/features/recom
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
 
-import BookCard from './../pages/books/BookCart';
+import BookCard from "./../pages/books/BookCart";
 
 const Recommendationsv2 = () => {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
-  const { data, error, isLoading } = useGetCollaborativeRecommendationsQuery(undefined, {
-    skip: !currentUser,
-  });
+  const { data, error, isLoading } = useGetCollaborativeRecommendationsQuery(
+    undefined,
+    {
+      skip: !currentUser,
+    }
+  );
 
   if (!currentUser) return null;
-  if (isLoading) return (
-    <div className="container mx-auto p-6 text-center">
-      <div className="animate-pulse text-gray-600 text-lg">{t("loading")}</div>
-    </div>
-  );
-  if (error) return (
-    <div className="container mx-auto p-6 text-red-600 text-center font-semibold">
-      {t("error")}: {error.message}
-    </div>
-  );
+  if (isLoading)
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <div className="animate-pulse text-gray-600 text-lg">
+          {t("loading")}
+        </div>
+      </div>
+    );
+  if (error)
+    return (
+      <div className="container mx-auto p-6 text-red-600 text-center font-semibold">
+        {t("error")}: {error.message}
+      </div>
+    );
 
   return (
     <section className="relative py-16">
@@ -42,26 +49,35 @@ const Recommendationsv2 = () => {
         <div className="relative bg-white rounded-2xl p-8 shadow-xl border-2 border-transparent bg-clip-border bg-gradient-to-r from-blue-300 to-purple-300 transition-transform hover:scale-[1.01] duration-300">
           {data?.data?.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
-              {data.data.map((book, index) => (
-                <div
-                  key={book._id}
-                  className="animate-slide-up"
-                  style={{ animationDelay: `${index * 150}ms` }}
-                >
-                  <BookCard
-                    book={{
-                      _id: book._id,
-                      title: book.title,
-                      description: book.description,
-                      coverImage: book.coverImage,
-                      price: {
-                        newPrice: book.price,
-                        oldPrice: book.price * 1.2 // Giả định oldPrice cao hơn 20%
-                      }
-                    }}
-                  />
-                </div>
-              ))}
+              {data.data.map((book, index) => {
+                // Kiểm tra và xử lý giá
+                const price = book.price || {};
+                const newPrice =
+                  Number(price.newPrice) || Number(book.price) || 0;
+                const oldPrice =
+                  Number(price.oldPrice) || Math.round(newPrice * 1.2);
+
+                return (
+                  <div
+                    key={book._id}
+                    className="animate-slide-up"
+                    style={{ animationDelay: `${index * 150}ms` }}
+                  >
+                    <BookCard
+                      book={{
+                        _id: book._id,
+                        title: book.title,
+                        description: book.description,
+                        coverImage: book.coverImage,
+                        price: {
+                          newPrice: newPrice,
+                          oldPrice: oldPrice,
+                        },
+                      }}
+                    />
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="text-gray-500 text-lg text-center py-8 animate-fade-in">

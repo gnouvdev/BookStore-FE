@@ -19,11 +19,14 @@ const Register = () => {
   // Hàm helper để lấy thông tin người dùng từ profile API
   const fetchUserProfile = async (token) => {
     try {
-      const response = await axios.get("http://localhost:5000/api/users/profile", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(
+        "http://localhost:5000/api/users/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       console.log("Profile API response:", response.data);
       return response.data.user;
     } catch (error) {
@@ -35,14 +38,15 @@ const Register = () => {
   // Hàm helper để tạo đối tượng người dùng sạch
   const createCleanUserObject = (user, profileData, role) => {
     const { email, uid, photoURL: firebasePhotoURL } = user;
-    
+
     let finalPhotoURL = null;
     if (profileData?.photoURL) {
       finalPhotoURL = profileData.photoURL;
     } else if (firebasePhotoURL) {
       finalPhotoURL = firebasePhotoURL;
     } else {
-      finalPhotoURL = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+      finalPhotoURL =
+        "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
     }
 
     return {
@@ -52,7 +56,7 @@ const Register = () => {
       photoURL: finalPhotoURL,
       displayName: profileData?.fullName || user.displayName || null,
       fullName: profileData?.fullName || null,
-      address: profileData?.address || null
+      address: profileData?.address || null,
     };
   };
 
@@ -64,7 +68,7 @@ const Register = () => {
       // 1. Đăng ký với Firebase
       const result = await registerUser(data.email, data.password);
       const user = result.user;
-      
+
       // 2. Lấy token từ Firebase
       const idToken = await user.getIdToken();
       console.log("Firebase idToken:", idToken);
@@ -72,10 +76,10 @@ const Register = () => {
       // 3. Đăng ký với backend
       const response = await axios.post(
         "http://localhost:5000/api/user/register",
-        { 
+        {
           idToken,
           fullName: data.fullName,
-          email: data.email
+          email: data.email,
         }
       );
 
@@ -86,17 +90,17 @@ const Register = () => {
       // 4. Lấy thông tin người dùng từ profile API
       const profileData = await fetchUserProfile(token);
       console.log("Profile data:", profileData);
-      
+
       // 5. Tạo đối tượng người dùng sạch
       const cleanUser = createCleanUserObject(user, profileData, role);
       console.log("Clean user object:", cleanUser);
-      
+
       // 6. Lưu vào localStorage
       localStorage.setItem("user", JSON.stringify(cleanUser));
-      
+
       // 7. Cập nhật currentUser trong AuthContext
       setCurrentUser(cleanUser);
-      
+
       toast.success("Đăng ký thành công!");
       navigate("/profile");
     } catch (error) {
@@ -133,17 +137,17 @@ const Register = () => {
       // Lấy thông tin người dùng từ profile API
       const profileData = await fetchUserProfile(token);
       console.log("Profile data:", profileData);
-      
+
       // Tạo đối tượng người dùng sạch
       const cleanUser = createCleanUserObject(user, profileData, role);
       console.log("Clean user object:", cleanUser);
-      
+
       // Lưu vào localStorage
       localStorage.setItem("user", JSON.stringify(cleanUser));
-      
+
       // Cập nhật currentUser trong AuthContext
       setCurrentUser(cleanUser);
-      
+
       toast.success("Đăng nhập bằng Google thành công!");
       navigate("/profile");
     } catch (error) {
@@ -234,7 +238,7 @@ const Register = () => {
           </div>
 
           <div>
-            <button 
+            <button
               type="submit"
               disabled={isSubmitting}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded focus:outline-none disabled:opacity-50"

@@ -5,8 +5,8 @@ export const searchApi = createApi({
   reducerPath: "searchApi",
   baseQuery: fetchBaseQuery({
     baseUrl: baseUrl,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
+    prepareHeaders: (headers, { getState }) => {
+      const token = getState().auth.token;
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
@@ -30,7 +30,35 @@ export const searchApi = createApi({
       }),
       keepUnusedDataFor: 60,
     }),
+    getSearchHistory: builder.query({
+      query: () => ({
+        url: "/searchHistory",
+        method: "GET",
+      }),
+      providesTags: ["SearchHistory"],
+    }),
+    addSearchHistory: builder.mutation({
+      query: (data) => ({
+        url: "/searchHistory",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["SearchHistory"],
+    }),
+    deleteSearchHistory: builder.mutation({
+      query: (id) => ({
+        url: `/searchHistory/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["SearchHistory"],
+    }),
   }),
 });
 
-export const { useGetSearchSuggestionsQuery, useSearchBooksQuery } = searchApi;
+export const {
+  useGetSearchSuggestionsQuery,
+  useSearchBooksQuery,
+  useGetSearchHistoryQuery,
+  useAddSearchHistoryMutation,
+  useDeleteSearchHistoryMutation,
+} = searchApi;

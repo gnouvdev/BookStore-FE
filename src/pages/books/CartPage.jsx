@@ -6,7 +6,6 @@ import {
   useClearCartMutation,
   useRemoveFromCartMutation,
   useUpdateCartItemQuantityMutation,
-
 } from "../../redux/features/cart/cartApi";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
@@ -28,7 +27,6 @@ const CartPage = () => {
     try {
       const response = await removeFromCart(bookId).unwrap();
       console.log("Remove success:", response);
-     
     } catch (error) {
       console.error("Error removing item:", error);
       console.error("Error details:", error?.data || error);
@@ -45,7 +43,6 @@ const CartPage = () => {
     try {
       const response = await clearCart().unwrap();
       console.log("Clear cart success:", response);
-
     } catch (error) {
       console.error("Error clearing cart:", error);
       console.error("Error details:", error?.data || error);
@@ -58,11 +55,18 @@ const CartPage = () => {
   };
 
   const handleIncreaseQuantity = async (bookId, currentQuantity) => {
-    console.log("Increasing quantity for bookId:", bookId, "Current quantity:", currentQuantity);
+    console.log(
+      "Increasing quantity for bookId:",
+      bookId,
+      "Current quantity:",
+      currentQuantity
+    );
     try {
-      const response = await updateCartItemQuantity({ bookId, quantity: currentQuantity + 1 }).unwrap();
+      const response = await updateCartItemQuantity({
+        bookId,
+        quantity: currentQuantity + 1,
+      }).unwrap();
       console.log("Increase quantity success:", response);
-
     } catch (error) {
       console.error("Error increasing quantity:", error);
       console.error("Error details:", error?.data || error);
@@ -75,12 +79,19 @@ const CartPage = () => {
   };
 
   const handleDecreaseQuantity = async (bookId, currentQuantity) => {
-    console.log("Decreasing quantity for bookId:", bookId, "Current quantity:", currentQuantity);
+    console.log(
+      "Decreasing quantity for bookId:",
+      bookId,
+      "Current quantity:",
+      currentQuantity
+    );
     try {
       if (currentQuantity > 1) {
-        const response = await updateCartItemQuantity({ bookId, quantity: currentQuantity - 1 }).unwrap();
+        const response = await updateCartItemQuantity({
+          bookId,
+          quantity: currentQuantity - 1,
+        }).unwrap();
         console.log("Decrease quantity success:", response);
-
       } else {
         const response = await removeFromCart(bookId).unwrap();
         console.log("Remove item (quantity=1) success:", response);
@@ -102,16 +113,34 @@ const CartPage = () => {
     }
   };
 
-  if (isLoading) return <div className="container mx-auto p-6">{t("loading")}</div>;
-  if (isError) return <div className="container mx-auto p-6 text-red-600">{t("error")}: {error.message}</div>;
-  if (!user) return <div className="container mx-auto p-6">{t("cart.please_login")}</div>;
-  if (!cart || !cart.items.length) return <div className="container mx-auto p-6">{t("cart.cart_empty")}</div>;
+  if (isLoading)
+    return <div className="container mx-auto p-6">{t("loading")}</div>;
+  if (isError)
+    return (
+      <div className="container mx-auto p-6 text-red-600">
+        {t("error")}: {error.message}
+      </div>
+    );
+  if (!user)
+    return (
+      <div className="container mx-auto p-6">{t("cart.please_login")}</div>
+    );
+  if (!cart?.data?.items?.length)
+    return <div className="container mx-auto p-6">{t("cart.cart_empty")}</div>;
+
+  const cartItems = cart.data.items;
+  const totalAmount = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
 
   return (
     <div className="flex mt-12 h-full flex-col overflow-hidden bg-white shadow-xl">
       <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
         <div className="flex items-start justify-between">
-          <div className="text-4xl font-semibold text-gray-900">{t("cart.cart")}</div>
+          <div className="text-4xl font-semibold text-gray-900">
+            {t("cart.cart")}
+          </div>
           <div className="ml-3 flex h-7 items-center">
             <button
               type="button"
@@ -126,12 +155,15 @@ const CartPage = () => {
         <div className="mt-8">
           <div className="flow-root">
             <ul role="list" className="-my-6 divide-y divide-gray-200">
-              {cart.items.map((item) => (
-                <li key={item.bookId} className="flex py-6">
+              {cartItems.map((item) => (
+                <li key={item.book._id} className="flex py-6">
                   <div className="h-[120px] w-[79px] flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                     <img
-                      alt={item.title}
-                      src={item.coverImage || "https://via.placeholder.com/150"}
+                      alt={item.book.title}
+                      src={
+                        item.book.coverImage ||
+                        "https://via.placeholder.com/150"
+                      }
                       className="h-full w-full object-cover object-center"
                     />
                   </div>
@@ -140,24 +172,31 @@ const CartPage = () => {
                     <div>
                       <div className="flex flex-wrap justify-between text-base font-medium text-gray-900">
                         <h3 className="text-xl font-semibold text-gray-900 mb-2 truncate w-48">
-                          <Link to={`/books/${item.bookId}`}>{item.title}</Link>
+                          <Link to={`/books/${item.book._id}`}>
+                            {item.book.title}
+                          </Link>
                         </h3>
                         <p className="sm:ml-4">
-                          {(item.price * item.quantity).toLocaleString("vi-VN")} đ
+                          {(item.price * item.quantity).toLocaleString("vi-VN")}{" "}
+                          đ
                         </p>
                       </div>
                     </div>
                     <div className="flex flex-1 flex-wrap items-end justify-between space-y-2 text-sm">
                       <div className="flex items-center">
                         <button
-                          onClick={() => handleDecreaseQuantity(item.bookId, item.quantity)}
+                          onClick={() =>
+                            handleDecreaseQuantity(item.book._id, item.quantity)
+                          }
                           className="px-2 py-1 bg-gray-200 rounded"
                         >
                           -
                         </button>
                         <p className="mx-2 text-gray-900">{item.quantity}</p>
                         <button
-                          onClick={() => handleIncreaseQuantity(item.bookId, item.quantity)}
+                          onClick={() =>
+                            handleIncreaseQuantity(item.book._id, item.quantity)
+                          }
                           className="px-2 py-1 bg-gray-200 rounded"
                         >
                           +
@@ -165,7 +204,7 @@ const CartPage = () => {
                       </div>
                       <div className="flex">
                         <button
-                          onClick={() => handleRemoveFromCart(item.bookId)}
+                          onClick={() => handleRemoveFromCart(item.book._id)}
                           type="button"
                           className="font-medium text-indigo-600 hover:text-indigo-500"
                         >
@@ -184,9 +223,11 @@ const CartPage = () => {
       <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
         <div className="flex justify-between text-base font-medium text-gray-900">
           <p>{t("cart.subtotal")}</p>
-          <p>{cart.totalAmount.toLocaleString("vi-VN")} đ</p>
+          <p>{totalAmount.toLocaleString("vi-VN")} đ</p>
         </div>
-        <p className="mt-0.5 text-sm text-gray-500">{t("cart.shipping_taxes")}</p>
+        <p className="mt-0.5 text-sm text-gray-500">
+          {t("cart.shipping_taxes")}
+        </p>
         <div className="mt-6">
           <Link
             to="/checkout"

@@ -179,5 +179,12 @@
   },
   "recommendations": {
     "for_you": "Suggestions just for you"
+  },
+  "search": {
+    "recent_searches": "Recent Searches",
+    "no_history": "No recent searches",
+    "click_to_search": "Click to search",
+    "delete_history": "Delete history",
+    "search_placeholder": "Search by name, author, category, tag..."
   }
 } 

@@ -178,5 +178,12 @@
   },
   "recommendations": {
     "for_you": "Gợi ý riêng cho bạn"
+  },
+  "search": {
+    "recent_searches": "Tìm kiếm gần đây",
+    "no_history": "Chưa có lịch sử tìm kiếm",
+    "click_to_search": "Click để tìm kiếm",
+    "delete_history": "Xóa khỏi lịch sử",
+    "search_placeholder": "Tìm kiếm sách, tác giả, thể loại..."
   }
-} 
+}

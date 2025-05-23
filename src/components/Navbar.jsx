@@ -9,8 +9,16 @@ import { useAuth } from "./../context/AuthContext";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "./LanguageSwitcher";
 import SearchSuggestions from "./SearchSuggestions";
-import { useGetSearchSuggestionsQuery } from "../redux/features/search/searchApi";
+import {
+  useGetSearchSuggestionsQuery,
+  useAddSearchHistoryMutation,
+} from "../redux/features/search/searchApi";
 import { debounce } from "lodash";
+import SearchHistory from "./SearchHistory";
+import {
+  useGetSearchHistoryQuery,
+  useDeleteSearchHistoryMutation,
+} from "../redux/features/search/searchApi";
 
 const navigation = [
   { name: "Profile", href: "/profile" },
@@ -29,13 +37,20 @@ const Navbar = () => {
   const wishlistItems = useSelector((state) => state.wishlist.wishlistItems);
   const { currentUser, logout } = useAuth();
   const location = useLocation();
-  // const token = localStorage.getItem("token");
   const { t } = useTranslation();
   const searchRef = useRef(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [deleteSearchHistory] = useDeleteSearchHistoryMutation();
+  const [addSearchHistory] = useAddSearchHistoryMutation();
 
   // Lấy suggestions từ API
   const { data: suggestions } = useGetSearchSuggestionsQuery(query, {
     skip: !query || query.length < 2,
+  });
+
+  // Get search history
+  const { data: searchHistoryData } = useGetSearchHistoryQuery(undefined, {
+    skip: !currentUser || !showHistory,
   });
 
   // Debug currentUser
@@ -50,6 +65,7 @@ const Navbar = () => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSuggestions(false);
+        setShowHistory(false);
       }
     };
 
@@ -76,18 +92,43 @@ const Navbar = () => {
     debouncedSearch(value);
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (inputValue.trim()) {
       navigate(`/search?query=${encodeURIComponent(inputValue)}`);
       setShowSuggestions(false);
+
+      // Track search history if user is logged in
+      if (currentUser) {
+        try {
+          console.log("Tracking search history for query:", inputValue.trim());
+          await addSearchHistory({ query: inputValue.trim() }).unwrap();
+          console.log("Search tracked successfully");
+        } catch (error) {
+          console.error("Error tracking search:", error);
+        }
+      }
     }
   };
 
-  const handleSuggestionSelect = (selectedQuery) => {
+  const handleSuggestionSelect = async (selectedQuery) => {
     setInputValue(selectedQuery);
     setQuery(selectedQuery);
     setShowSuggestions(false);
     navigate(`/search?query=${encodeURIComponent(selectedQuery)}`);
+
+    // Track search history when selecting a suggestion
+    if (currentUser) {
+      try {
+        console.log(
+          "Tracking search history for suggestion:",
+          selectedQuery.trim()
+        );
+        await addSearchHistory({ query: selectedQuery.trim() }).unwrap();
+        console.log("Search from suggestion tracked successfully");
+      } catch (error) {
+        console.error("Error tracking search from suggestion:", error);
+      }
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -132,6 +173,31 @@ const Navbar = () => {
     return avatarImg;
   };
 
+  // Handle search history selection
+  const handleHistorySelect = (query) => {
+    setInputValue(query);
+    setQuery(query);
+    setShowHistory(false);
+    setShowSuggestions(true);
+  };
+
+  // Handle search history deletion
+  const handleHistoryDelete = async (historyId) => {
+    try {
+      await deleteSearchHistory(historyId).unwrap();
+    } catch (error) {
+      console.error("Error deleting search history:", error);
+    }
+  };
+
+  // Update input focus handler
+  const handleInputFocus = () => {
+    if (currentUser) {
+      setShowHistory(true);
+    }
+    setShowSuggestions(false);
+  };
+
   return (
     <header className="max-w-screen-2xl mx-auto px-4 py-6">
       <nav className="flex justify-between items-center">
@@ -148,13 +214,20 @@ const Navbar = () => {
             </button>
             <input
               type="text"
-              placeholder={t("common.search")}
+              placeholder={t("search.search_placeholder")}
               value={inputValue}
               onChange={handleSearchChange}
               onKeyDown={handleKeyDown}
-              onFocus={() => setShowSuggestions(true)}
+              onFocus={handleInputFocus}
               className="bg-[#EAEAEA] w-full py-1 md:px-8 px-6 rounded-md focus:outline"
             />
+            {showHistory && currentUser && (
+              <SearchHistory
+                history={searchHistoryData?.data}
+                onSelect={handleHistorySelect}
+                onDelete={handleHistoryDelete}
+              />
+            )}
             {showSuggestions && query.length >= 2 && (
               <SearchSuggestions
                 suggestions={suggestions}
