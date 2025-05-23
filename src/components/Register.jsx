@@ -64,18 +64,20 @@ const Register = () => {
   const onSubmit = async (data) => {
     console.log("Form Data:", data);
     setIsSubmitting(true);
+    let firebaseUser = null;
+
     try {
       // 1. Đăng ký với Firebase
       const result = await registerUser(data.email, data.password);
-      const user = result.user;
+      firebaseUser = result.user;
 
       // 2. Lấy token từ Firebase
-      const idToken = await user.getIdToken();
+      const idToken = await firebaseUser.getIdToken();
       console.log("Firebase idToken:", idToken);
 
       // 3. Đăng ký với backend
       const response = await axios.post(
-        "http://localhost:5000/api/user/register",
+        "http://localhost:5000/api/users/register",
         {
           idToken,
           fullName: data.fullName,
@@ -92,7 +94,7 @@ const Register = () => {
       console.log("Profile data:", profileData);
 
       // 5. Tạo đối tượng người dùng sạch
-      const cleanUser = createCleanUserObject(user, profileData, role);
+      const cleanUser = createCleanUserObject(firebaseUser, profileData, role);
       console.log("Clean user object:", cleanUser);
 
       // 6. Lưu vào localStorage
@@ -105,10 +107,28 @@ const Register = () => {
       navigate("/profile");
     } catch (error) {
       console.error("Registration error:", error);
+
+      // Nếu đã tạo user trong Firebase nhưng backend thất bại
+      if (firebaseUser) {
+        try {
+          // Xóa user trong Firebase
+          await firebaseUser.delete();
+          console.log("Rolled back Firebase user creation");
+        } catch (deleteError) {
+          console.error("Error deleting Firebase user:", deleteError);
+        }
+      }
+
+      // Xử lý các loại lỗi cụ thể
       if (error.code === "auth/email-already-in-use") {
         toast.error("Email này đã được đăng ký. Vui lòng đăng nhập.");
       } else if (error.code === "auth/weak-password") {
         toast.error("Mật khẩu quá yếu. Vui lòng sử dụng mật khẩu mạnh hơn.");
+      } else if (error.response) {
+        // Lỗi từ backend
+        const errorMessage =
+          error.response.data?.message || "Đăng ký thất bại. Vui lòng thử lại.";
+        toast.error(errorMessage);
       } else {
         toast.error("Đăng ký thất bại. Vui lòng thử lại.");
       }
