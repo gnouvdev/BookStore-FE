@@ -17,7 +17,8 @@
     "orders": "Đơn hàng",
     "check out": "Thanh toán",
     "cart page": "Trang giỏ hàng",
-    "view all": "Xem tất cả"
+    "view all": "Xem tất cả",
+    "business": "Sách Kinh doanh"
   },
   "filter": {
     "title": "Bộ lọc",
@@ -165,7 +166,7 @@
     "title": "Đánh giá",
     "no_reviews": "Không có đánh giá",
     "write_a_review": "Viết đánh giá",
-    "review": "Đánh giá của bạn",
+    "review": "Đánh giá",
     "rating": "Đánh giá của bạn",
     "comment": "Bình luận",
     "submit": "Gửi"

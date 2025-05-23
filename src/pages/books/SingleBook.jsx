@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { FiShoppingCart } from "react-icons/fi";
+import React, { useState, useEffect, useRef } from "react";
+// import { FiShoppingCart } from "react-icons/fi";
 import { useParams } from "react-router-dom";
 import { useAddToCartMutation } from "../../redux/features/cart/cartApi";
 import { useGetBookByIdQuery } from "../../redux/features/books/booksApi";
@@ -16,6 +16,14 @@ import {
 } from "../../redux/features/reviews/reviewsApi";
 import axios from "axios";
 import baseUrl from "../../utils/baseURL";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
+import { FaExpand, FaShoppingCart, FaHeart, FaShare } from "react-icons/fa";
+// import { motion } from "framer-motion";
+
+gsap.registerPlugin(ScrollTrigger);
 
 // Cấu hình axios
 const api = axios.create({
@@ -42,6 +50,14 @@ const SingleBook = () => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [hoverRating, setHoverRating] = useState(0);
+  const ratingRef = useRef(null);
+  const starsRef = useRef([]);
+  const imageRef = useRef(null);
+  const detailsRef = useRef(null);
+  const priceRef = useRef(null);
+  const descriptionRef = useRef(null);
+  const reviewsRef = useRef(null);
+  const [showFullImage, setShowFullImage] = useState(false);
 
   const {
     data: book,
@@ -120,6 +136,118 @@ const SingleBook = () => {
 
     trackBookView();
   }, [book?._id, currentUser]);
+
+  // Complex animations
+  useEffect(() => {
+    if (book) {
+      // Timeline cho toàn bộ animation
+      const tl = gsap.timeline();
+
+      // Animation cho ảnh sách
+      tl.fromTo(
+        imageRef.current,
+        {
+          scale: 0.8,
+          opacity: 0,
+          rotation: -5,
+        },
+        {
+          scale: 1,
+          opacity: 1,
+          rotation: 0,
+          duration: 1,
+          ease: "elastic.out(1, 0.5)",
+        }
+      );
+
+      // Animation cho tiêu đề và thông tin cơ bản
+      tl.fromTo(
+        detailsRef.current.children,
+        {
+          y: 30,
+          opacity: 0,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          stagger: 0.1,
+          ease: "power2.out",
+        },
+        "-=0.5"
+      );
+
+      // Animation cho rating stars
+      tl.fromTo(
+        starsRef.current,
+        {
+          scale: 0,
+          opacity: 0,
+          rotation: -180,
+        },
+        {
+          scale: 1,
+          opacity: 1,
+          rotation: 0,
+          duration: 0.5,
+          stagger: 0.1,
+          ease: "back.out(1.7)",
+        },
+        "-=0.3"
+      );
+
+      // Animation cho giá
+      tl.fromTo(
+        priceRef.current,
+        {
+          scale: 1.2,
+          opacity: 0,
+        },
+        {
+          scale: 1,
+          opacity: 1,
+          duration: 0.5,
+          ease: "power2.out",
+        },
+        "-=0.2"
+      );
+
+      // Animation cho mô tả
+      tl.fromTo(
+        descriptionRef.current,
+        {
+          height: 0,
+          opacity: 0,
+        },
+        {
+          height: "auto",
+          opacity: 1,
+          duration: 0.8,
+          ease: "power2.inOut",
+        }
+      );
+
+      // Scroll-triggered animations
+      gsap.fromTo(
+        reviewsRef.current,
+        {
+          y: 50,
+          opacity: 0,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 1,
+          scrollTrigger: {
+            trigger: reviewsRef.current,
+            start: "top 80%",
+            toggleActions: "play none none reverse",
+          },
+          ease: "power2.out",
+        }
+      );
+    }
+  }, [book]);
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
@@ -245,6 +373,14 @@ const SingleBook = () => {
     }
   };
 
+  const handleImageClick = () => {
+    setShowFullImage(true);
+  };
+
+  const handleCloseFullImage = () => {
+    setShowFullImage(false);
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 flex justify-center items-center min-h-[400px]">
@@ -273,29 +409,129 @@ const SingleBook = () => {
   const isOutOfStock = !book.quantity || book.quantity === 0;
 
   return (
-    <div className="w-full container mx-auto">
-      <div className="w-full shadow-md flex flex-col md:flex-row gap-8 p-6 bg-white rounded-lg mb-5">
-        {/* Left: Book Image */}
-        <img
-          src={book.coverImage}
-          alt={book.title}
-          className="object-cover w-[300px] h-[370px] rounded-lg shadow-lg"
-        />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="w-full container mx-auto"
+    >
+      <div className="w-full shadow-md flex flex-col md:flex-row gap-8 p-6 bg-white rounded-lg mb-5 hover:shadow-xl transition-shadow duration-300">
+        {/* Left: Book Image with enhanced features */}
+        <div className="relative group">
+          <LazyLoadImage
+            ref={imageRef}
+            src={book.coverImage}
+            alt={book.title}
+            effect="blur"
+            className="object-cover w-[300px] h-[370px] rounded-lg shadow-lg transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl"
+            wrapperClassName="w-[300px] h-[370px]"
+            placeholderSrc={book.coverImage + "?w=50"}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <button className="bg-white p-2 rounded-full hover:bg-blue-500 hover:text-white transition-colors duration-300">
+              <FaHeart className="w-5 h-5" />
+            </button>
+            <button className="bg-white p-2 rounded-full hover:bg-blue-500 hover:text-white transition-colors duration-300">
+              <FaShare className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleImageClick}
+              className="bg-white p-2 rounded-full hover:bg-blue-500 hover:text-white transition-colors duration-300"
+            >
+              <FaExpand className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Full Image Modal */}
+        {showFullImage && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center"
+            onClick={handleCloseFullImage}
+          >
+            <div className="relative max-w-4xl max-h-[90vh] p-4">
+              <LazyLoadImage
+                src={book.coverImage}
+                alt={book.title}
+                effect="blur"
+                className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                wrapperClassName="w-full h-full"
+              />
+              <button
+                onClick={handleCloseFullImage}
+                className="absolute top-4 right-4 text-white bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-75 transition-all duration-300"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Right: Book Details */}
-        <div className="w-full flex flex-col justify-between">
+        <div ref={detailsRef} className="w-full flex flex-col justify-between">
           <div>
-            <h1 className="text-5xl font-bold mb-2 uppercase">{book.title}</h1>
+            <motion.h1
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="text-5xl font-bold mb-2 uppercase bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent"
+            >
+              {book.title}
+            </motion.h1>
             <p className="text-gray-700 text-sm mb-2">
               <strong>{t("books.author")}:</strong>{" "}
               {book.author?.name || "Unknown"}
             </p>
 
-            {/* Rating */}
-            <div className="flex mb-4">
-              {[...Array(5)].map((_, index) => (
-                <IoMdStar key={index} className="text-yellow-300 text-2xl" />
-              ))}
+            {/* Rating with Animation */}
+            <div ref={ratingRef} className="flex items-center gap-2 mb-4">
+              <div className="flex">
+                {[...Array(5)].map((_, index) => (
+                  <div
+                    key={index}
+                    ref={(el) => (starsRef.current[index] = el)}
+                    className="relative"
+                  >
+                    <IoMdStar
+                      className={`text-2xl ${
+                        index < Math.floor(book.rating || 0)
+                          ? "text-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    />
+                    {index < (book.rating || 0) &&
+                      index + 1 > (book.rating || 0) && (
+                        <div
+                          className="absolute top-0 left-0 overflow-hidden"
+                          style={{
+                            width: `${((book.rating || 0) % 1) * 100}%`,
+                          }}
+                        >
+                          <IoMdStar className="text-2xl text-yellow-400" />
+                        </div>
+                      )}
+                  </div>
+                ))}
+              </div>
+              <span className="text-gray-600 font-medium">
+                {book.rating ? book.rating.toFixed(1) : "0.0"}
+              </span>
+              <span className="text-gray-500 text-sm">
+                ({book.reviewCount || 0} {t("reviews.review")})
+              </span>
             </div>
 
             <p className="text-gray-700 mb-2">
@@ -313,7 +549,10 @@ const SingleBook = () => {
               <strong>{t("books.language")}:</strong>{" "}
               {book.language || "Unknown"}
             </p>
-            <p className="font-medium mb-3 text-5xl text-red-500">
+            <p
+              ref={priceRef}
+              className="font-medium mb-3 text-5xl text-red-500"
+            >
               {book.price?.newPrice?.toLocaleString("vi-VN")} đ
               {book.price?.oldPrice && (
                 <span className="line-through font-normal ml-2 text-xl">
@@ -323,7 +562,7 @@ const SingleBook = () => {
             </p>
 
             {/* Description with max length */}
-            <p className="text-gray-700 mb-6">
+            <p ref={descriptionRef} className="text-gray-700 mb-6">
               <strong>{t("books.description")}:</strong>{" "}
               {book.description?.length > 200
                 ? book.description.slice(0, 200) + "..."
@@ -331,10 +570,15 @@ const SingleBook = () => {
             </p>
 
             {/* Quantity Selector */}
-            <div className="flex items-center gap-4 mb-6">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="flex items-center gap-4 mb-6"
+            >
               <button
                 onClick={handleDecrease}
-                className="px-3 py-1 bg-gray-300 text-lg rounded"
+                className="px-3 py-1 bg-gray-100 text-lg rounded-full hover:bg-gray-200 transition-colors duration-300"
                 disabled={quantity <= 1}
               >
                 -
@@ -342,41 +586,56 @@ const SingleBook = () => {
               <span className="text-xl font-semibold">{quantity}</span>
               <button
                 onClick={handleIncrease}
-                className="px-3 py-1 bg-gray-300 text-lg rounded"
+                className="px-3 py-1 bg-gray-100 text-lg rounded-full hover:bg-gray-200 transition-colors duration-300"
                 disabled={isOutOfStock}
               >
                 +
               </button>
-            </div>
+            </motion.div>
           </div>
 
           {/* Add to Cart Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => handleAddToCart(book)}
             disabled={isAddingToCart || isOutOfStock}
-            className="bg-primary text-black px-6 py-3 text-base rounded-lg flex items-center gap-2 hover:bg-blue-900 transition w-[280px] justify-center whitespace-nowrap disabled:opacity-50"
+            className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-8 py-3 text-base rounded-full flex items-center gap-2 hover:from-blue-500 hover:to-blue-300 transition-all duration-300 w-[280px] justify-center whitespace-nowrap disabled:opacity-50 shadow-lg hover:shadow-xl"
           >
-            <FiShoppingCart className="text-lg" />
+            <FaShoppingCart className="text-lg" />
             <span>{t("books.Add to Cart")}</span>
-          </button>
-        </div>
-      </div>
-      <div className="bg-white text-gray-700 mt-8 px-8 py-6 flex justify-end flex-col gap-2 text-sm rounded-lg shadow-md border border-gray-200">
-        <p className="font-semibold text-yellow-600">
-          {t("books.delivery.free")}
-        </p>
-        <div className="flex gap-2 items-center">
-          <FaBuilding className="text-yellow-600 text-xl" />
-          <span>{t("books.delivery.city")}</span>
-        </div>
-        <div className="flex gap-2 items-center">
-          <IoShieldCheckmarkSharp className="text-yellow-600 text-xl" />
-          <span>{t("books.delivery.province")}</span>
+          </motion.button>
         </div>
       </div>
 
-      {/* Reviews Section */}
-      <div className="mt-8 bg-white rounded-lg shadow-md p-6">
+      {/* Delivery Info with enhanced design */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="bg-gradient-to-r from-blue-50 to-blue-100 text-gray-700 mt-8 px-8 py-6 flex justify-end flex-col gap-2 text-sm rounded-lg shadow-md border border-blue-200"
+      >
+        <p className="font-semibold text-blue-600">
+          {t("books.delivery.free")}
+        </p>
+        <div className="flex gap-2 items-center">
+          <FaBuilding className="text-blue-600 text-xl" />
+          <span>{t("books.delivery.city")}</span>
+        </div>
+        <div className="flex gap-2 items-center">
+          <IoShieldCheckmarkSharp className="text-blue-600 text-xl" />
+          <span>{t("books.delivery.province")}</span>
+        </div>
+      </motion.div>
+
+      {/* Reviews Section with enhanced design */}
+      <motion.div
+        ref={reviewsRef}
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="mt-8 bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow duration-300"
+      >
         <h2 className="text-2xl font-bold mb-6">{t("reviews.title")}</h2>
 
         {/* Review Form */}
@@ -470,10 +729,10 @@ const SingleBook = () => {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {book._id && <BookRecommendations bookId={book._id} />}
-    </div>
+    </motion.div>
   );
 };
 

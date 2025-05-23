@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { IoSearchOutline } from "react-icons/io5";
-import { FaRegUser, FaRegHeart, FaCartShopping } from "react-icons/fa6";
+import { FaRegUser, FaRegHeart, FaCartShopping, FaBars } from "react-icons/fa6";
 import avatarImg from "../assets/avatar.png";
-import logo from "../assets/books/logo.png";
 import { useSelector } from "react-redux";
 import { useAuth } from "./../context/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -19,6 +18,7 @@ import {
   useGetSearchHistoryQuery,
   useDeleteSearchHistoryMutation,
 } from "../redux/features/search/searchApi";
+import gsap from "gsap";
 
 const navigation = [
   { name: "Profile", href: "/profile" },
@@ -27,21 +27,35 @@ const navigation = [
   { name: "Check Out", href: "/checkout" },
 ];
 
+const categories = [
+  { name: "Books", href: "/product" },
+  { name: "Business", href: "/product/bussines" },
+  { name: "Fiction", href: "/product/fiction" },
+  { name: "Adventure", href: "/product/adventure" },
+  { name: "Manga", href: "/product/manga" },
+];
+
 const Navbar = () => {
   const [query, setQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const cartItems = useSelector((state) => state.cart.cartItems);
   const wishlistItems = useSelector((state) => state.wishlist.wishlistItems);
   const { currentUser, logout } = useAuth();
-  const location = useLocation();
+  // const location = useLocation();
   const { t } = useTranslation();
   const searchRef = useRef(null);
+  const categoryRef = useRef(null);
   const [showHistory, setShowHistory] = useState(false);
   const [deleteSearchHistory] = useDeleteSearchHistoryMutation();
   const [addSearchHistory] = useAddSearchHistoryMutation();
+
+  // Animation refs
+  const categoryMenuRef = useRef(null);
+  const logoRef = useRef(null);
 
   // Lấy suggestions từ API
   const { data: suggestions } = useGetSearchSuggestionsQuery(query, {
@@ -60,12 +74,15 @@ const Navbar = () => {
 
   const dropdownRef = useRef(null);
 
-  // Xử lý click outside để đóng suggestions
+  // Xử lý click outside để đóng suggestions và category menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSuggestions(false);
         setShowHistory(false);
+      }
+      if (categoryRef.current && !categoryRef.current.contains(event.target)) {
+        setIsCategoryOpen(false);
       }
     };
 
@@ -73,6 +90,48 @@ const Navbar = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, []);
+
+  // Animation cho category menu
+  useEffect(() => {
+    if (categoryMenuRef.current) {
+      if (isCategoryOpen) {
+        gsap.fromTo(
+          categoryMenuRef.current,
+          {
+            opacity: 0,
+            y: -10,
+            scale: 0.95,
+          },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.3,
+            ease: "power2.out",
+          }
+        );
+      }
+    }
+  }, [isCategoryOpen]);
+
+  // Animation cho logo text
+  useEffect(() => {
+    if (logoRef.current) {
+      gsap.fromTo(
+        logoRef.current,
+        {
+          opacity: 0,
+          y: -20,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          ease: "power3.out",
+        }
+      );
+    }
   }, []);
 
   // Debounce search input
@@ -145,8 +204,8 @@ const Navbar = () => {
     }
   };
 
-  const isActive = (path) =>
-    location.pathname === path ? "text-primary font-semibold" : "";
+  // const isActive = (path) =>
+  //   location.pathname === path ? "text-primary font-semibold" : "";
 
   // Hàm kiểm tra và trả về URL ảnh avatar
   const getAvatarUrl = () => {
@@ -198,19 +257,52 @@ const Navbar = () => {
     setShowSuggestions(false);
   };
 
+  // Thêm style cho animation và font
+  const style = document.createElement("style");
+  style.textContent = `
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@800&display=swap');
+    
+    @keyframes dropIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
   return (
     <header className="max-w-screen-2xl mx-auto px-4 py-6">
-      <nav className="flex justify-between items-center">
-        {/* Left side */}
-        <div className="flex items-center md:gap-10">
-          <Link to="/">
-            <img className="w-16 object-cover ml-8" src={logo} alt="Logo" />
+      <nav className="flex justify-between items-center mx-8">
+        {/* Left side - Logo Text */}
+        <div className="flex items-center w-40 mx-5">
+          <Link to="/" className="text-2xl font-extrabold whitespace-nowrap">
+            <span ref={logoRef} className="inline-block">
+              {"BookStore".split("").map((letter, index) => (
+                <span
+                  key={index}
+                  className="inline-block bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent hover:from-blue-500 hover:to-blue-300 transition-all duration-300"
+                  style={{
+                    opacity: 0,
+                    transform: "translateY(-20px)",
+                    animation: `dropIn 0.5s ease forwards ${index * 0.1}s`,
+                    fontFamily: "'Poppins', sans-serif",
+                    textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  {letter}
+                </span>
+              ))}
+            </span>
           </Link>
+        </div>
 
-          {/* Search input */}
-          <div className="relative sm:w-72 w-40" ref={searchRef}>
-            <button onClick={handleSearch}>
-              <IoSearchOutline className="absolute inline-block left-3 inset-y-2" />
+        {/* Center - Search bar */}
+        <div className="flex-1 max-w-4xl mx-4">
+          <div className="relative flex items-center" ref={searchRef}>
+            <button onClick={handleSearch} className="absolute left-4 z-10">
+              <IoSearchOutline className="size-5 text-gray-500" />
             </button>
             <input
               type="text"
@@ -219,8 +311,37 @@ const Navbar = () => {
               onChange={handleSearchChange}
               onKeyDown={handleKeyDown}
               onFocus={handleInputFocus}
-              className="bg-[#EAEAEA] w-full py-1 md:px-8 px-6 rounded-md focus:outline"
+              className="bg-[#EAEAEA] w-full py-2.5 pl-12 pr-10 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {/* Category Dropdown */}
+            <div className="relative ml-2" ref={categoryRef}>
+              <button
+                onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                onMouseEnter={() => setIsCategoryOpen(true)}
+                className="flex items-center space-x-1 hover:text-blue-600 transition-colors bg-[#EAEAEA] p-2 rounded-full"
+              >
+                <FaBars className="size-5" />
+                <span className="hidden md:inline">Categories</span>
+              </button>
+              {isCategoryOpen && (
+                <div
+                  ref={categoryMenuRef}
+                  className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg py-2 z-50"
+                  onMouseLeave={() => setIsCategoryOpen(false)}
+                >
+                  {categories.map((category) => (
+                    <Link
+                      key={category.name}
+                      to={category.href}
+                      className="block px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
+                      onClick={() => setIsCategoryOpen(false)}
+                    >
+                      {t(`common.${category.name.toLowerCase()}`)}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
             {showHistory && currentUser && (
               <SearchHistory
                 history={searchHistoryData?.data}
@@ -236,45 +357,11 @@ const Navbar = () => {
               />
             )}
           </div>
-
-          {/* Navigation Links */}
-          <Link to="/" className={`hover:text-primary ${isActive("/")}`}>
-            {t("common.home")}
-          </Link>
-          <Link
-            to="/product"
-            className={`hover:text-primary ${isActive("/product")}`}
-          >
-            {t("common.books")}
-          </Link>
-          <Link
-            to="/product/bussines"
-            className={`hover:text-primary ${isActive("/product/business")}`}
-          >
-            {t("common.bussines")}
-          </Link>
-          <Link
-            to="/product/fiction"
-            className={`hover:text-primary ${isActive("/product/fiction")}`}
-          >
-            {t("common.fiction")}
-          </Link>
-          <Link
-            to="/product/adventure"
-            className={`hover:text-primary ${isActive("/product/adventure")}`}
-          >
-            {t("common.adventure")}
-          </Link>
-          <Link
-            to="/product/manga"
-            className={`hover:text-primary ${isActive("/product/manga")}`}
-          >
-            {t("common.manga")}
-          </Link>
         </div>
 
-        {/* Right side */}
-        <div className="relative flex items-center md:space-x-2">
+        {/* Right side - Navigation items */}
+        <div className="flex items-center space-x-6">
+          {/* User Profile */}
           <div className="relative" ref={dropdownRef}>
             {currentUser ? (
               <>
@@ -284,14 +371,13 @@ const Navbar = () => {
                     alt="User Avatar"
                     className="size-7 rounded-full ring-2 ring-blue-500 object-cover"
                     onError={(e) => {
-                      console.log("Error loading avatar, using default");
                       e.target.onerror = null;
                       e.target.src = avatarImg;
                     }}
                   />
                 </button>
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg z-50">
                     <ul className="py-2">
                       {navigation.map((item) => (
                         <li
@@ -325,6 +411,7 @@ const Navbar = () => {
             )}
           </div>
 
+          {/* Wishlist */}
           <Link to="/wishlist" className="relative">
             <FaRegHeart className="size-6" />
             {wishlistItems.length > 0 && (
@@ -334,6 +421,7 @@ const Navbar = () => {
             )}
           </Link>
 
+          {/* Cart */}
           <Link
             to="/cart"
             className="bg-primary p-1 sm:px-6 px-2 flex items-center rounded-sm"
@@ -347,6 +435,8 @@ const Navbar = () => {
               <span className="text-sm font-semibold sm:ml-1">0</span>
             )}
           </Link>
+
+          {/* Language Switcher */}
           <LanguageSwitcher />
         </div>
       </nav>

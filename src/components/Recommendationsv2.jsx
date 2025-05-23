@@ -1,19 +1,54 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useGetCollaborativeRecommendationsQuery } from "../redux/features/recommendationv2/recommendationsv2Api";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import BookCard from "./../pages/books/BookCart";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const Recommendationsv2 = () => {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
+  const sectionRef = useRef(null);
+  const cardsRef = useRef([]);
+
   const { data, error, isLoading } = useGetCollaborativeRecommendationsQuery(
     undefined,
     {
       skip: !currentUser,
     }
   );
+
+  useEffect(() => {
+    if (data?.data?.length > 0) {
+      // Animation cho tiêu đề
+      gsap.from(".section-title", {
+        duration: 1,
+        y: 50,
+        opacity: 0,
+        ease: "power3.out",
+      });
+
+      // Animation cho các card
+      cardsRef.current.forEach((card, index) => {
+        gsap.from(card, {
+          scrollTrigger: {
+            trigger: card,
+            start: "top bottom-=100",
+            toggleActions: "play none none reverse",
+          },
+          duration: 0.8,
+          y: 50,
+          opacity: 0,
+          delay: index * 0.1,
+          ease: "power2.out",
+        });
+      });
+    }
+  }, [data]);
 
   if (!currentUser) return null;
   if (isLoading)
@@ -32,7 +67,7 @@ const Recommendationsv2 = () => {
     );
 
   return (
-    <section className="relative py-16">
+    <section ref={sectionRef} className="relative py-16">
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 w-64 h-64 bg-blue-200 opacity-20 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
@@ -41,7 +76,7 @@ const Recommendationsv2 = () => {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Tiêu đề */}
-        <h2 className="text-5xl md:text-5xl font-extrabold text-center mb-10 bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-purple-700 drop-shadow-lg animate-slide-in py-2">
+        <h2 className="section-title text-5xl md:text-5xl font-extrabold text-center mb-10 bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-purple-700 drop-shadow-lg py-2">
           {t("recommendations.for_you")}
         </h2>
 
@@ -60,8 +95,8 @@ const Recommendationsv2 = () => {
                 return (
                   <div
                     key={book._id}
-                    className="animate-slide-up"
-                    style={{ animationDelay: `${index * 150}ms` }}
+                    ref={(el) => (cardsRef.current[index] = el)}
+                    className="transform transition-all duration-300 hover:scale-105"
                   >
                     <BookCard
                       book={{
