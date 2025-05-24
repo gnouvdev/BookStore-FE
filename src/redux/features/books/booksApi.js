@@ -5,10 +5,10 @@ export const booksApi = createApi({
   reducerPath: "booksApi",
   baseQuery: fetchBaseQuery({
     baseUrl: baseUrl,
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.token;
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem("token");
       if (token) {
-        headers.set("authorization", `Bearer ${token}`);
+        headers.set("Authorization", `Bearer ${token}`);
       }
       return headers;
     },
@@ -18,6 +18,16 @@ export const booksApi = createApi({
     getBooks: builder.query({
       query: () => "/books",
       providesTags: ["Books"],
+    }),
+    getBooksByAuthor: builder.query({
+      query: (authorId) => `/books/author/${authorId}`,
+      providesTags: (result, error, authorId) => [{ type: "Books", authorId }],
+    }),
+    getBooksByCategory: builder.query({
+      query: (categoryId) => `/books/category/${categoryId}`,
+      providesTags: (result, error, categoryId) => [
+        { type: "Books", categoryId },
+      ],
     }),
     getBookById: builder.query({
       query: (id) => `/books/${id}`,
@@ -32,6 +42,9 @@ export const booksApi = createApi({
         url: "/books/create-book",
         method: "POST",
         body: data,
+        headers: {
+          "Content-Type": "application/json",
+        },
       }),
       invalidatesTags: ["Books"],
     }),
@@ -58,6 +71,8 @@ export const booksApi = createApi({
 
 export const {
   useGetBooksQuery,
+  useGetBooksByAuthorQuery,
+  useGetBooksByCategoryQuery,
   useGetBookByIdQuery,
   useSearchBooksQuery,
   useAddBookMutation,

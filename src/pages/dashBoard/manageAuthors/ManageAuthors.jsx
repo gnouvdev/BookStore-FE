@@ -1,322 +1,906 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable no-unused-vars */
+"use client";
+
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { gsap } from "gsap";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import {
+  Search,
+  Plus,
+  Edit3,
+  Trash2,
+  RefreshCw,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Eye,
+  BookOpen,
+  Mail,
+  MapPin,
+  Award,
+  TrendingUp,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   useGetAuthorsQuery,
   useAddAuthorMutation,
   useUpdateAuthorMutation,
   useDeleteAuthorMutation,
-  useSearchAuthorsQuery,
-} from "../../../redux/features/authors/authorsApi";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
-import Swal from "sweetalert2";
-import Loading from "../../../components/Loading";
+} from "@/redux/features/authors/authorsApi";
+import { useGetBooksByAuthorQuery } from "@/redux/features/books/booksApi";
 
-const ManageAuthors = () => {
+// Mock data for demonstration
+// eslint-disable-next-line no-unused-vars
+const generateMockAuthors = (count = 75) => {
+  const firstNames = [
+    "John",
+    "Jane",
+    "Robert",
+    "Emily",
+    "Michael",
+    "Sarah",
+    "David",
+    "Lisa",
+    "James",
+    "Maria",
+  ];
+  const lastNames = [
+    "Smith",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Garcia",
+    "Miller",
+    "Davis",
+    "Rodriguez",
+    "Martinez",
+  ];
+  const countries = [
+    "USA",
+    "UK",
+    "Canada",
+    "Australia",
+    "Germany",
+    "France",
+    "Spain",
+    "Italy",
+    "Japan",
+    "Brazil",
+  ];
+
+  return Array.from({ length: count }, (_, i) => ({
+    _id: `author-${i + 1}`,
+    name: `${firstNames[i % firstNames.length]} ${
+      lastNames[i % lastNames.length]
+    }`,
+    bio: `Acclaimed author with ${
+      Math.floor(Math.random() * 20) + 5
+    } years of writing experience. Known for compelling storytelling and unique narrative style.`,
+    email: `author${i + 1}@example.com`,
+    phone: `+1-555-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+    country: countries[i % countries.length],
+    booksCount: Math.floor(Math.random() * 15) + 1,
+    totalSales: Math.floor(Math.random() * 100000) + 5000,
+    rating: (Math.random() * 2 + 3).toFixed(1),
+    joinDate: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
+    status: Math.random() > 0.1 ? "active" : "inactive",
+    avatar: `/placeholder.svg?height=80&width=80`,
+  }));
+};
+
+const EnhancedManageAuthors = () => {
   const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingAuthor, setEditingAuthor] = useState(null);
+  const containerRef = useRef(null);
+  const headerRef = useRef(null);
+  const tableRef = useRef(null);
+
+  // State management
+  const [selectedAuthor, setSelectedAuthor] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [sortBy, setSortBy] = useState("name");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    bio: "",
+    biography: "",
+    image: "",
   });
+  const [showBooksModal, setShowBooksModal] = useState(false);
 
-  // Check authentication on component mount
+  // RTK Query hooks
+  const { data: authors = [], isLoading } = useGetAuthorsQuery();
+  const [addAuthor] = useAddAuthorMutation();
+  const [updateAuthor] = useUpdateAuthorMutation();
+  const [deleteAuthor] = useDeleteAuthorMutation();
+  const { data: authorBooks = [], isLoading: isLoadingBooks } =
+    useGetBooksByAuthorQuery(selectedAuthor?._id, { skip: !selectedAuthor });
+
+  // Memoize filtered authors
+  const filteredAuthors = useMemo(() => {
+    let filtered = [...authors];
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (author) =>
+          author.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          author.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          author.country?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (selectedStatus !== "all") {
+      filtered = filtered.filter((author) => author.status === selectedStatus);
+    }
+
+    // Sorting
+    return filtered.sort((a, b) => {
+      const aValue = a[sortBy];
+      const bValue = b[sortBy];
+
+      if (typeof aValue === "string") {
+        return sortOrder === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
+    });
+  }, [authors, searchQuery, selectedStatus, sortBy, sortOrder]);
+
+  // Calculate total pages
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredAuthors.length / itemsPerPage);
+  }, [filteredAuthors.length, itemsPerPage]);
+
+  // Get current page items
+  const currentPageItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredAuthors.slice(startIndex, endIndex);
+  }, [currentPage, itemsPerPage, filteredAuthors]);
+
+  // Update current page when filters change
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
+    setCurrentPage(1);
+  }, [searchQuery, selectedStatus, sortBy, sortOrder]);
 
-    if (!token || !user || user.role !== "admin") {
-      Swal.fire({
-        title: "Unauthorized",
-        text: "Please log in as admin",
-        icon: "error",
-        confirmButtonText: "Go to Login",
-      }).then(() => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/admin");
-      });
-      return;
-    }
+  // Initialize animations
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        headerRef.current,
+        { opacity: 0, y: -30 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }
+      );
 
-    setIsAuthenticated(true);
-  }, [navigate]);
+      gsap.fromTo(
+        tableRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power3.out" }
+      );
+    }, containerRef);
 
-  const {
-    data: authors,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useGetAuthorsQuery(undefined, {
-    skip: !isAuthenticated,
-  });
-  const { data: searchResults } = useSearchAuthorsQuery(searchQuery, {
-    skip: !searchQuery || !isAuthenticated,
-  });
-  const [addAuthor, { isLoading: isAdding }] = useAddAuthorMutation();
-  const [updateAuthor, { isLoading: isUpdating }] = useUpdateAuthorMutation();
-  const [deleteAuthor, { isLoading: isDeleting }] = useDeleteAuthorMutation();
+    return () => ctx.revert();
+  }, []);
 
-  // Handle authentication errors
-  if (isError) {
-    if (error?.status === 401 || error?.status === 403) {
-      Swal.fire({
-        title: "Session Expired",
-        text: "Your session has expired. Please log in again.",
-        icon: "error",
-        confirmButtonText: "Go to Login",
-      }).then(() => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/admin");
-      });
-      return null;
-    }
-    return (
-      <div className="text-red-500">
-        Error: {error.data?.message || "Failed to load authors"}
-      </div>
-    );
-  }
+  // Pagination handlers
+  const handlePageChange = useCallback((page) => {
+    setCurrentPage(page);
+    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
-  if (!isAuthenticated || isLoading) return <Loading />;
+  const handleItemsPerPageChange = useCallback((value) => {
+    setItemsPerPage(Number.parseInt(value));
+    setCurrentPage(1);
+  }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  // Form handlers
+  const handleInputChange = useCallback((field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingAuthor) {
-        await updateAuthor({ id: editingAuthor._id, ...formData }).unwrap();
-        toast.success("Author updated successfully!");
-      } else {
+  const resetForm = useCallback(() => {
+    setFormData({
+      name: "",
+      biography: "",
+      image: "",
+    });
+  }, []);
+
+  // Add author handler
+  const handleAddAuthor = useCallback(
+    async (e) => {
+      e.preventDefault();
+      try {
         await addAuthor(formData).unwrap();
-        toast.success("Author added successfully!");
+        setShowAddModal(false);
+        resetForm();
+        toast.success("Author added successfully");
+      } catch (err) {
+        toast.error(err.data?.message || "Failed to add author");
       }
-      setIsModalOpen(false);
-      setFormData({ name: "", bio: "" });
-      setEditingAuthor(null);
-      refetch();
-    } catch (error) {
-      console.error("Error:", error);
-      if (error?.status === 401 || error?.status === 403) {
-        Swal.fire({
-          title: "Session Expired",
-          text: "Your session has expired. Please log in again.",
-          icon: "error",
-          confirmButtonText: "Go to Login",
-        }).then(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          navigate("/admin");
-        });
-      } else {
-        toast.error(error.data?.message || "Something went wrong!");
+    },
+    [addAuthor, formData, resetForm]
+  );
+
+  // Edit author handler
+  const handleEditAuthor = useCallback(
+    async (e) => {
+      e.preventDefault();
+      try {
+        await updateAuthor({ id: selectedAuthor._id, ...formData }).unwrap();
+        setShowEditModal(false);
+        setSelectedAuthor(null);
+        resetForm();
+        toast.success("Author updated successfully");
+      } catch (err) {
+        toast.error(err.data?.message || "Failed to update author");
       }
+    },
+    [updateAuthor, selectedAuthor, formData, resetForm]
+  );
+
+  // Delete author handler
+  const handleDeleteAuthor = useCallback(async () => {
+    try {
+      await deleteAuthor(selectedAuthor._id).unwrap();
+      setShowDeleteModal(false);
+      setSelectedAuthor(null);
+      toast.success("Author deleted successfully");
+    } catch (err) {
+      toast.error(err.data?.message || "Failed to delete author");
     }
+  }, [deleteAuthor, selectedAuthor]);
+
+  // Refresh handler
+  const handleRefresh = useCallback(() => {
+    // RTK Query will automatically refetch the data
+    toast.success("Authors refreshed successfully");
+  }, []);
+
+  // Format price to VNĐ
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(price);
   };
 
-  const handleEdit = (author) => {
-    setEditingAuthor(author);
+  // Open edit dialog with pre-filled data
+  const openEditDialog = useCallback((author) => {
+    setSelectedAuthor(author);
     setFormData({
       name: author.name,
-      bio: author.bio || "",
+      biography: author.bio,
+      image: author.avatar,
     });
-    setIsModalOpen(true);
-  };
+    setShowEditModal(true);
+  }, []);
 
-  const handleDelete = async (id) => {
-    try {
-      const result = await Swal.fire({
-        title: "Are you sure?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
-      });
+  // Pagination component
+  const PaginationControls = () => {
+    const getPageNumbers = () => {
+      const delta = 2;
+      const range = [];
+      const rangeWithDots = [];
 
-      if (result.isConfirmed) {
-        await deleteAuthor(id).unwrap();
-        toast.success("Author deleted successfully!");
-        refetch();
+      for (
+        let i = Math.max(2, currentPage - delta);
+        i <= Math.min(totalPages - 1, currentPage + delta);
+        i++
+      ) {
+        range.push(i);
       }
-    } catch (error) {
-      console.error("Error:", error);
-      if (error?.status === 401 || error?.status === 403) {
-        Swal.fire({
-          title: "Session Expired",
-          text: "Your session has expired. Please log in again.",
-          icon: "error",
-          confirmButtonText: "Go to Login",
-        }).then(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          navigate("/admin");
-        });
+
+      if (currentPage - delta > 2) {
+        rangeWithDots.push(1, "...");
       } else {
-        toast.error(error.data?.message || "Failed to delete author!");
+        rangeWithDots.push(1);
       }
-    }
-  };
 
-  const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
-  };
+      rangeWithDots.push(...range);
 
-  const displayAuthors = searchQuery ? searchResults || [] : authors || [];
+      if (currentPage + delta < totalPages - 1) {
+        rangeWithDots.push("...", totalPages);
+      } else {
+        rangeWithDots.push(totalPages);
+      }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Manage Authors</h1>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search authors..."
-              value={searchQuery}
-              onChange={handleSearch}
-              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          <button
-            onClick={() => {
-              setEditingAuthor(null);
-              setFormData({ name: "", bio: "" });
-              setIsModalOpen(true);
-            }}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            disabled={isAdding || isUpdating}
+      return rangeWithDots;
+    };
+
+    return (
+      <div className="flex items-center justify-between px-6 py-4 border-t bg-white/50 backdrop-blur-sm">
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-600">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+            {Math.min(currentPage * itemsPerPage, filteredAuthors.length)} of{" "}
+            {filteredAuthors.length} results
+          </span>
+          <Select
+            value={itemsPerPage.toString()}
+            onValueChange={handleItemsPerPageChange}
           >
-            Add New Author
-          </button>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-gray-600">per page</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          {getPageNumbers().map((page, index) => (
+            <Button
+              key={index}
+              variant={page === currentPage ? "default" : "outline"}
+              size="sm"
+              onClick={() => typeof page === "number" && handlePageChange(page)}
+              disabled={page === "..."}
+              className="h-8 w-8 p-0"
+            >
+              {page}
+            </Button>
+          ))}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
       </div>
+    );
+  };
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Bio
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {displayAuthors.map((author) => (
-              <tr key={author._id}>
-                <td className="px-6 py-4 whitespace-nowrap">{author.name}</td>
-                <td className="px-6 py-4">{author.bio || "-"}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <button
-                    onClick={() => handleEdit(author)}
-                    className="text-indigo-600 hover:text-indigo-900 mr-4"
-                    disabled={isUpdating || isDeleting}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(author._id)}
-                    className="text-red-600 hover:text-red-900"
-                    disabled={isUpdating || isDeleting}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+  return (
+    <div
+      ref={containerRef}
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-100"
+    >
+      {/* Header Section */}
+      <div
+        ref={headerRef}
+        className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40"
+      >
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl text-white">
+                <User className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Manage Authors
+                </h1>
+                <p className="text-gray-600">
+                  Manage your author database and profiles
+                </p>
+              </div>
+            </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                {editingAuthor ? "Edit Author" : "Add New Author"}
-              </h3>
-              <form onSubmit={handleSubmit}>
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    required
-                    disabled={isAdding || isUpdating}
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
-                    Bio
-                  </label>
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleInputChange}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    rows="3"
-                    disabled={isAdding || isUpdating}
-                  />
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-                    disabled={isAdding || isUpdating}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                    disabled={isAdding || isUpdating}
-                  >
-                    {isAdding || isUpdating
-                      ? "Processing..."
-                      : editingAuthor
-                      ? "Update"
-                      : "Add"}
-                  </button>
-                </div>
-              </form>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleRefresh}
+                disabled={isLoading}
+                variant="outline"
+                className="gap-2"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </Button>
+              <Button
+                onClick={() => {
+                  resetForm();
+                  setShowAddModal(true);
+                }}
+                className="gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700"
+              >
+                <Plus className="h-4 w-4" />
+                Add Author
+              </Button>
+            </div>
+          </div>
+
+          {/* Filters and Search */}
+          <div className="mt-6 flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search authors by name, email, or country..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-white/70 backdrop-blur-sm"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="booksCount">Books</SelectItem>
+                  <SelectItem value="totalSales">Sales</SelectItem>
+                  <SelectItem value="rating">Rating</SelectItem>
+                  <SelectItem value="joinDate">Join Date</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() =>
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                }
+                className="bg-white/70 backdrop-blur-sm"
+              >
+                {sortOrder === "asc" ? "↑" : "↓"}
+              </Button>
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div
+          ref={tableRef}
+          className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+        >
+          {/* Stats Bar */}
+          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <User className="h-4 w-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Total Authors</p>
+                  <p className="font-semibold">{filteredAuthors.length}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <BookOpen className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Total Books</p>
+                  <p className="font-semibold">
+                    {filteredAuthors.reduce((acc, a) => acc + a.booksCount, 0)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <TrendingUp className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Active Authors</p>
+                  <p className="font-semibold">
+                    {
+                      filteredAuthors.filter((a) => a.status === "active")
+                        .length
+                    }
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <Award className="h-4 w-4 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Avg Rating</p>
+                  <p className="font-semibold">
+                    {(
+                      filteredAuthors.reduce(
+                        (acc, a) => acc + Number.parseFloat(a.rating),
+                        0
+                      ) / filteredAuthors.length || 0
+                    ).toFixed(1)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div
+            className="overflow-auto"
+            style={{ maxHeight: "calc(100vh - 300px)" }}
+          >
+            <table className="w-full">
+              <thead className="bg-gray-50/80 sticky top-0 z-10">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Author
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Books
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                <AnimatePresence mode="wait">
+                  {currentPageItems.map((author, index) => (
+                    <motion.tr
+                      key={author._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="hover:bg-gray-50/50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={author.avatar || "/placeholder.svg"}
+                            alt={author.name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {author.name}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              ID: {author._id}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedAuthor(author);
+                            setShowBooksModal(true);
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <BookOpen className="h-4 w-4" />
+                          <span>{author.booksCount} books</span>
+                        </Button>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedAuthor(author);
+                              setFormData({
+                                name: author.name,
+                                biography: author.bio,
+                                image: author.avatar,
+                              });
+                              setShowEditModal(true);
+                            }}
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedAuthor(author);
+                              setShowDeleteModal(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Books List Modal */}
+          <Dialog open={showBooksModal} onOpenChange={setShowBooksModal}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Books by {selectedAuthor?.name}</DialogTitle>
+                <DialogDescription>
+                  List of books written by this author
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                {isLoadingBooks ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                  </div>
+                ) : authorBooks.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No books found for this author
+                  </div>
+                ) : (
+                  authorBooks.map((book) => (
+                    <div
+                      key={book._id}
+                      className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <img
+                        src={book.coverImage || "/placeholder.svg"}
+                        alt={book.title}
+                        className="w-16 h-20 object-cover rounded"
+                      />
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">
+                          {book.title}
+                        </h4>
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {book.description}
+                        </p>
+                        <div className="mt-2 flex items-center gap-4">
+                          <span className="text-sm text-gray-500">
+                            Price: {formatPrice(book.price.newPrice)}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            Stock: {book.quantity}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <DialogFooter className="mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowBooksModal(false)}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Pagination */}
+          <div className="sticky bottom-0 bg-white/80 backdrop-blur-sm border-t">
+            <PaginationControls />
+          </div>
+        </div>
+      </div>
+
+      {/* Add Author Dialog */}
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Author</DialogTitle>
+            <DialogDescription>
+              Create a new author profile for your bookstore.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                placeholder="Enter author name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                placeholder="Enter email address"
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+                placeholder="Enter phone number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="country">Country</Label>
+              <Input
+                id="country"
+                value={formData.country}
+                onChange={(e) => handleInputChange("country", e.target.value)}
+                placeholder="Enter country"
+              />
+            </div>
+            <div>
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                value={formData.biography}
+                onChange={(e) => handleInputChange("biography", e.target.value)}
+                placeholder="Enter author biography"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddAuthor} disabled={isLoading}>
+              {isLoading ? "Adding..." : "Add Author"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Author Dialog */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Author</DialogTitle>
+            <DialogDescription>
+              Update the author's information.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={formData.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                placeholder="Enter author name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                placeholder="Enter email address"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-phone">Phone</Label>
+              <Input
+                id="edit-phone"
+                value={formData.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+                placeholder="Enter phone number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-country">Country</Label>
+              <Input
+                id="edit-country"
+                value={formData.country}
+                onChange={(e) => handleInputChange("country", e.target.value)}
+                placeholder="Enter country"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-bio">Bio</Label>
+              <Textarea
+                id="edit-bio"
+                value={formData.biography}
+                onChange={(e) => handleInputChange("biography", e.target.value)}
+                placeholder="Enter author biography"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditAuthor} disabled={isLoading}>
+              {isLoading ? "Updating..." : "Update Author"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Author</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{selectedAuthor?.name}"? This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAuthor}
+              disabled={isLoading}
+            >
+              {isLoading ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-export default ManageAuthors;
+export default EnhancedManageAuthors;

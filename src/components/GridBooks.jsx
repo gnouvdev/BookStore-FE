@@ -34,6 +34,8 @@ const EnhancedGridBooks = ({ genre }) => {
   const [viewMode, setViewMode] = useState("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
 
   const [filters, setFilters] = useState({
     minPrice: 0,
@@ -115,7 +117,9 @@ const EnhancedGridBooks = ({ genre }) => {
         result = result.filter(
           (book) =>
             book.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            book.author?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            book.author?.name
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
             book.description?.toLowerCase().includes(searchQuery.toLowerCase())
         );
       }
@@ -164,7 +168,7 @@ const EnhancedGridBooks = ({ genre }) => {
           case t("filter.rating"):
             result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
             break;
-          case t("filter.title")  :
+          case t("filter.title"):
             result.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
             break;
           default:
@@ -176,14 +180,127 @@ const EnhancedGridBooks = ({ genre }) => {
     }
   }, [books, genre, filters, searchQuery]);
 
+  // Add pagination logic
+  const totalPages = Math.ceil(filteredBooks.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentBooks = filteredBooks.slice(startIndex, endIndex);
+
+  // Add pagination handlers
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1);
+  };
+
+  // Add pagination component
+  const Pagination = () => {
+    const getPageNumbers = () => {
+      const delta = 2;
+      const range = [];
+      const rangeWithDots = [];
+
+      for (
+        let i = Math.max(2, currentPage - delta);
+        i <= Math.min(totalPages - 1, currentPage + delta);
+        i++
+      ) {
+        range.push(i);
+      }
+
+      if (currentPage - delta > 2) {
+        rangeWithDots.push(1, "...");
+      } else {
+        rangeWithDots.push(1);
+      }
+
+      rangeWithDots.push(...range);
+
+      if (currentPage + delta < totalPages - 1) {
+        rangeWithDots.push("...", totalPages);
+      } else if (totalPages > 1) {
+        rangeWithDots.push(totalPages);
+      }
+
+      return rangeWithDots;
+    };
+
+    return (
+      <div className="flex items-center justify-between px-6 py-4 border-t bg-white/50 backdrop-blur-sm rounded-b-3xl">
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-600">
+            Showing {startIndex + 1} to{" "}
+            {Math.min(endIndex, filteredBooks.length)} of {filteredBooks.length}{" "}
+            results
+          </span>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => handleItemsPerPageChange(e.target.value)}
+            className="px-3 py-1 border rounded-lg bg-white"
+          >
+            <option value="12">12 per page</option>
+            <option value="24">24 per page</option>
+            <option value="36">36 per page</option>
+            <option value="48">48 per page</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border rounded-lg bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            Previous
+          </button>
+
+          {getPageNumbers().map((page, index) => (
+            <button
+              key={index}
+              onClick={() => typeof page === "number" && handlePageChange(page)}
+              disabled={page === "..."}
+              className={`px-3 py-1 border rounded-lg ${
+                page === currentPage
+                  ? "bg-blue-500 text-white"
+                  : "bg-white hover:bg-gray-50"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {page}
+            </button>
+          ))}
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border rounded-lg bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
   };
 
   const sortOptions = [
     { value: "", label: t("filter.default"), icon: FaSort },
-    { value: "price_asc", label: t("filter.priceLowToHigh"), icon: RiPriceTag3Line },
-    { value: "price_desc", label: t("filter.priceHighToLow"), icon: RiPriceTag3Line },
+    {
+      value: "price_asc",
+      label: t("filter.priceLowToHigh"),
+      icon: RiPriceTag3Line,
+    },
+    {
+      value: "price_desc",
+      label: t("filter.priceHighToLow"),
+      icon: RiPriceTag3Line,
+    },
     { value: "newest", label: t("filter.newest"), icon: FaCalendarAlt },
     { value: "trending", label: t("filter.trending"), icon: FaChartLine },
     { value: "rating", label: t("filter.highestRated"), icon: FaStar },
@@ -277,7 +394,9 @@ const EnhancedGridBooks = ({ genre }) => {
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
                 <FaFilter className="text-white text-lg" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800">{t("filter.filters")}</h3>
+              <h3 className="text-xl font-bold text-gray-800">
+                {t("filter.filters")}
+              </h3>
             </div>
 
             <div className="space-y-6">
@@ -292,7 +411,7 @@ const EnhancedGridBooks = ({ genre }) => {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={t("filter.searchBooksPlaceholder")}
+                    placeholder={t("filter.searchBooksPlaceholder")}
                     className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                   />
                 </div>
@@ -301,11 +420,15 @@ const EnhancedGridBooks = ({ genre }) => {
               {/* Price Range */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Price Range: ${filters.minPrice} - ${filters.maxPrice}
+                  {t("filter.priceRange")}:{" "}
+                  {filters.minPrice.toLocaleString("vi-VN")}đ -{" "}
+                  {filters.maxPrice.toLocaleString("vi-VN")}đ
                 </label>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs text-gray-600">Min Price</label>
+                    <label className="text-xs text-gray-600">
+                      {t("filter.minPrice")}
+                    </label>
                     <input
                       type="range"
                       min="0"
@@ -318,8 +441,12 @@ const EnhancedGridBooks = ({ genre }) => {
                           minPrice: Number.parseInt(e.target.value),
                         })
                       }
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
                     />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>0đ</span>
+                      <span>1.000.000đ</span>
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs text-gray-600">
@@ -339,6 +466,10 @@ const EnhancedGridBooks = ({ genre }) => {
                       }
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                     />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>0đ</span>
+                      <span>1.000.000đ</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -515,7 +646,7 @@ const EnhancedGridBooks = ({ genre }) => {
                   : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6"
               }
             >
-              {filteredBooks.map((book, index) => (
+              {currentBooks.map((book, index) => (
                 <div
                   key={book._id || index}
                   ref={(el) => (booksRef.current[index] = el)}
@@ -580,6 +711,9 @@ const EnhancedGridBooks = ({ genre }) => {
               ))}
             </div>
           )}
+
+          {/* Add pagination component */}
+          {filteredBooks.length > 0 && <Pagination />}
         </div>
       </div>
     </div>

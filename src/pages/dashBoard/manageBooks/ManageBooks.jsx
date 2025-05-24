@@ -1,207 +1,925 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable no-unused-vars */
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { gsap } from "gsap";
 import {
-  useGetBooksQuery,
-  useDeleteBookMutation,
-  useSearchBooksQuery,
-} from "../../../redux/features/books/booksApi";
-import { Link, useNavigate } from "react-router-dom";
+  Search,
+  Plus,
+  Edit3,
+  Trash2,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Eye,
+  Star,
+  TrendingUp,
+  Package,
+  DollarSign,
+  User,
+  Tag,
+  BookOpen,
+  Grid,
+  List,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import axios from "axios";
+import baseUrl from "../../../utils/baseURL";
 import { toast } from "react-hot-toast";
-import Loading from "../../../components/Loading";
-import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 
-const ManageBooks = () => {
+const EnhancedManageBooks = () => {
+  const containerRef = useRef(null);
+  const headerRef = useRef(null);
+  const tableRef = useRef(null);
   const navigate = useNavigate();
+
+  // State management
+  const [books, setBooks] = useState([]);
+  const [filteredBooks, setFilteredBooks] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [sortBy, setSortBy] = useState("title");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [viewMode, setViewMode] = useState("table");
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Check authentication on component mount
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Modal states
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+
+  // Fetch books from API
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
+    const fetchBooks = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error("Please login to continue");
+          navigate("/admin");
+          return;
+        }
 
-    if (!token || !user || user.role !== "admin") {
-      Swal.fire({
-        title: "Unauthorized",
-        text: "Please log in as admin",
-        icon: "error",
-        confirmButtonText: "Go to Login",
-      }).then(() => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/admin");
-      });
-      return;
-    }
+        const response = await axios.get(`${baseUrl}/books`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-    setIsAuthenticated(true);
+        if (response.data) {
+          setBooks(response.data);
+          setFilteredBooks(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching books:", error);
+        toast.error(error.response?.data?.message || "Failed to load books");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBooks();
   }, [navigate]);
 
-  const {
-    data: books,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useGetBooksQuery(undefined, {
-    skip: !isAuthenticated,
-  });
-  const { data: searchResults } = useSearchBooksQuery(searchQuery, {
-    skip: !searchQuery || !isAuthenticated,
-  });
-  const [deleteBook] = useDeleteBookMutation();
+  // Initialize animations
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        headerRef.current,
+        { opacity: 0, y: -30 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }
+      );
 
-  // Handle authentication errors
-  if (isError) {
-    if (error?.status === 401 || error?.status === 403) {
-      Swal.fire({
-        title: "Session Expired",
-        text: "Your session has expired. Please log in again.",
-        icon: "error",
-        confirmButtonText: "Go to Login",
-      }).then(() => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/admin");
-      });
-      return null;
+      gsap.fromTo(
+        tableRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power3.out" }
+      );
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  // Filter and search logic
+  useEffect(() => {
+    let filtered = [...books];
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (book) =>
+          book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          book.author.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          book.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
-    return (
-      <div>Error loading books: {error?.data?.message || "Unknown error"}</div>
-    );
-  }
 
-  if (!isAuthenticated || isLoading) return <Loading />;
+    // Category filter
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(
+        (book) => book.category.name === selectedCategory
+      );
+    }
 
-  const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
+    // Status filter
+    if (selectedStatus !== "all") {
+      filtered = filtered.filter((book) => book.status === selectedStatus);
+    }
+
+    // Sorting
+    filtered.sort((a, b) => {
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+
+      if (sortBy === "author") {
+        aValue = a.author.name;
+        bValue = b.author.name;
+      } else if (sortBy === "category") {
+        aValue = a.category.name;
+        bValue = b.category.name;
+      } else if (sortBy === "price") {
+        aValue = a.price.newPrice;
+        bValue = b.price.newPrice;
+      } else if (sortBy === "publish") {
+        aValue = a.publish.name;
+        bValue = b.publish.name;
+      }
+
+      if (typeof aValue === "string") {
+        return sortOrder === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
+    });
+
+    setFilteredBooks(filtered);
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
+    setCurrentPage(1);
+  }, [
+    books,
+    searchQuery,
+    selectedCategory,
+    selectedStatus,
+    sortBy,
+    sortOrder,
+    itemsPerPage,
+  ]);
+
+  // Get current page items
+  const getCurrentPageItems = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredBooks.slice(startIndex, endIndex);
   };
 
-  const displayBooks = searchQuery ? searchResults || [] : books || [];
+  // Pagination handlers
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // Smooth scroll to top of table
+    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
-  const handleDelete = async (id) => {
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(Number.parseInt(value));
+    setCurrentPage(1);
+  };
+
+  // CRUD handlers
+  const handleDelete = async (bookId) => {
     try {
-      const result = await Swal.fire({
-        title: "Are you sure?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
+      setIsLoading(true);
+      const token = localStorage.getItem("token");
+
+      await axios.delete(`${baseUrl}/books/${bookId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      if (result.isConfirmed) {
-        await deleteBook(id).unwrap();
-        toast.success("Book deleted successfully!");
-        refetch();
+      setBooks(books.filter((book) => book._id !== bookId));
+      setShowDeleteDialog(false);
+      setSelectedBook(null);
+      toast.success("Book deleted successfully");
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      toast.error(error.response?.data?.message || "Failed to delete book");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("token");
+
+      const response = await axios.get(`${baseUrl}/books`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data) {
+        setBooks(response.data);
+        setFilteredBooks(response.data);
+        toast.success("Books refreshed successfully");
       }
     } catch (error) {
-      console.error("Failed to delete book:", error);
-      if (error?.status === 401 || error?.status === 403) {
-        Swal.fire({
-          title: "Session Expired",
-          text: "Your session has expired. Please log in again.",
-          icon: "error",
-          confirmButtonText: "Go to Login",
-        }).then(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          navigate("/admin");
-        });
-      } else {
-        toast.error("Failed to delete book. Please try again.");
-      }
+      console.error("Error refreshing books:", error);
+      toast.error(error.response?.data?.message || "Failed to refresh books");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleRefresh = () => {
-    refetch();
-    toast.success("Book list refreshed!");
+  // Get unique categories for filter
+  const categories = [...new Set(books.map((book) => book.category.name))];
+
+  // Pagination component
+  const PaginationControls = () => {
+    const getPageNumbers = () => {
+      const delta = 2;
+      const range = [];
+      const rangeWithDots = [];
+
+      for (
+        let i = Math.max(2, currentPage - delta);
+        i <= Math.min(totalPages - 1, currentPage + delta);
+        i++
+      ) {
+        range.push(i);
+      }
+
+      if (currentPage - delta > 2) {
+        rangeWithDots.push(1, "...");
+      } else {
+        rangeWithDots.push(1);
+      }
+
+      rangeWithDots.push(...range);
+
+      if (currentPage + delta < totalPages - 1) {
+        rangeWithDots.push("...", totalPages);
+      } else {
+        rangeWithDots.push(totalPages);
+      }
+
+      return rangeWithDots;
+    };
+
+    return (
+      <div className="flex items-center justify-between px-6 py-4 border-t bg-white/50 backdrop-blur-sm">
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-600">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+            {Math.min(currentPage * itemsPerPage, filteredBooks.length)} of{" "}
+            {filteredBooks.length} results
+          </span>
+          <Select
+            value={itemsPerPage.toString()}
+            onValueChange={handleItemsPerPageChange}
+          >
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-gray-600">per page</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          {getPageNumbers().map((page, index) => (
+            <Button
+              key={index}
+              variant={page === currentPage ? "default" : "outline"}
+              size="sm"
+              onClick={() => typeof page === "number" && handlePageChange(page)}
+              disabled={page === "..."}
+              className="h-8 w-8 p-0"
+            >
+              {page}
+            </Button>
+          ))}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Format price to VND
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(price);
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Manage Books</h1>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search books..."
-              value={searchQuery}
-              onChange={handleSearch}
-              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+    <div
+      ref={containerRef}
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
+    >
+      {/* Header Section */}
+      <div
+        ref={headerRef}
+        className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40"
+      >
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white">
+                <BookOpen className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Manage Books
+                </h1>
+                <p className="text-gray-600">
+                  Manage your book inventory and catalog
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleRefresh}
+                disabled={isLoading}
+                variant="outline"
+                className="gap-2"
               >
-                ✕
-              </button>
-            )}
+                <RefreshCw
+                  className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </Button>
+              <Button
+                className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                onClick={() => navigate("/dashboard/add-new-book")}
+              >
+                <Plus className="h-4 w-4" />
+                Add Book
+              </Button>
+            </div>
           </div>
-          <button
-            onClick={handleRefresh}
-            className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-          >
-            Refresh List
-          </button>
+
+          {/* Filters and Search */}
+          <div className="mt-6 flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search books by title or author..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-white/70 backdrop-blur-sm"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
+                <SelectTrigger className="w-40 bg-white/70 backdrop-blur-sm">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="title">Title</SelectItem>
+                  <SelectItem value="author">Author</SelectItem>
+                  <SelectItem value="category">Category</SelectItem>
+                  <SelectItem value="price">Price</SelectItem>
+                  <SelectItem value="quantity">Stock</SelectItem>
+                  <SelectItem value="publish">Publisher</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() =>
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                }
+                className="bg-white/70 backdrop-blur-sm"
+              >
+                {sortOrder === "asc" ? "↑" : "↓"}
+              </Button>
+
+              <div className="flex border rounded-lg bg-white/70 backdrop-blur-sm">
+                <Button
+                  variant={viewMode === "table" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("table")}
+                  className="rounded-r-none"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className="rounded-l-none"
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <table className="table-auto w-full border-collapse border border-gray-300">
-        <thead>
-          <tr>
-            <th className="border border-gray-300 px-4 py-2">#</th>
-            <th className="border border-gray-300 px-4 py-2">Image</th>
-            <th className="border border-gray-300 px-4 py-2">Title</th>
-            <th className="border border-gray-300 px-4 py-2">Author</th>
-            <th className="border border-gray-300 px-4 py-2">Category</th>
-            <th className="border border-gray-300 px-4 py-2">Price</th>
-            <th className="border border-gray-300 px-4 py-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {displayBooks.map((book, index) => (
-            <tr key={book._id}>
-              <td className="border border-gray-300 px-4 py-2">{index + 1}</td>
-              <td className="border border-gray-300 px-4 py-2">
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div
+          ref={tableRef}
+          className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+        >
+          {/* Stats Bar */}
+          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <BookOpen className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Total Books</p>
+                  <p className="font-semibold">{filteredBooks.length}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Trending</p>
+                  <p className="font-semibold">
+                    {filteredBooks.filter((b) => b.trending).length}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <Package className="h-4 w-4 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Low Stock</p>
+                  <p className="font-semibold">
+                    {filteredBooks.filter((b) => b.quantity < 10).length}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <DollarSign className="h-4 w-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Avg Price</p>
+                  <p className="font-semibold">
+                    $
+                    {Math.round(
+                      filteredBooks.reduce(
+                        (acc, b) => acc + b.price.newPrice,
+                        0
+                      ) / filteredBooks.length || 0
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Table View */}
+          {viewMode === "table" && (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50/80">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Book
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Author
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Price
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Stock
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  <AnimatePresence mode="wait">
+                    {getCurrentPageItems().map((book, index) => (
+                      <motion.tr
+                        key={book._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="hover:bg-gray-50/50 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-4">
+                            <div className="relative">
+                              <img
+                                src={book.coverImage || "/placeholder.svg"}
+                                alt={book.title}
+                                className="w-12 h-16 object-cover rounded-lg shadow-sm"
+                              />
+                              {book.trending && (
+                                <div className="absolute -top-1 -right-1 p-1 bg-yellow-400 rounded-full">
+                                  <Star className="h-3 w-3 text-white" />
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900 line-clamp-2">
+                                {book.title}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                ID: {book._id}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-gray-400" />
+                            <span className="text-gray-900">
+                              {book.author.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge variant="secondary" className="gap-1">
+                            <Tag className="h-3 w-3" />
+                            {book.category.name}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className="font-medium text-gray-900">
+                              {formatPrice(book.price.newPrice)}
+                            </span>
+                            {book.price.oldPrice > book.price.newPrice && (
+                              <span className="text-sm text-gray-500 line-through">
+                                {formatPrice(book.price.oldPrice)}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-gray-400" />
+                            <span
+                              className={`font-medium ${
+                                book.quantity < 10
+                                  ? "text-red-600"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {book.quantity}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge
+                            variant={
+                              book.status === "active" ? "default" : "secondary"
+                            }
+                          >
+                            {book.status}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedBook(book);
+                                  setShowDetailsDialog(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate(`/dashboard/edit-book/${book._id}`)
+                                }
+                              >
+                                <Edit3 className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => {
+                                  setSelectedBook(book);
+                                  setShowDeleteDialog(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Grid View */}
+          {viewMode === "grid" && (
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <AnimatePresence mode="wait">
+                  {getCurrentPageItems().map((book, index) => (
+                    <motion.div
+                      key={book._id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                    >
+                      <div className="relative">
+                        <img
+                          src={book.coverImage || "/placeholder.svg"}
+                          alt={book.title}
+                          className="w-full h-48 object-cover"
+                        />
+                        {book.trending && (
+                          <div className="absolute top-2 right-2 p-1 bg-yellow-400 rounded-full">
+                            <Star className="h-4 w-4 text-white" />
+                          </div>
+                        )}
+                        <Badge
+                          variant={
+                            book.status === "active" ? "default" : "secondary"
+                          }
+                          className="absolute top-2 left-2"
+                        >
+                          {book.status}
+                        </Badge>
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-medium text-gray-900 line-clamp-2 mb-2">
+                          {book.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-2">
+                          {book.author.name}
+                        </p>
+                        <div className="flex items-center justify-between mb-3">
+                          <Badge variant="secondary" className="text-xs">
+                            {book.category.name}
+                          </Badge>
+                          <span className="font-medium text-gray-900">
+                            {formatPrice(book.price.newPrice)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-500">
+                            Stock: {book.quantity}
+                          </span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedBook(book);
+                                  setShowDetailsDialog(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate(`/dashboard/edit-book/${book._id}`)
+                                }
+                              >
+                                <Edit3 className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => {
+                                  setSelectedBook(book);
+                                  setShowDeleteDialog(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          )}
+
+          {/* Pagination */}
+          <PaginationControls />
+        </div>
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Book</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{selectedBook?.title}"? This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleDelete(selectedBook?._id)}
+              disabled={isLoading}
+            >
+              {isLoading ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Book Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Book Details</DialogTitle>
+          </DialogHeader>
+          {selectedBook && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
                 <img
-                  src={book.coverImage || "https://via.placeholder.com/100"}
-                  alt={book.title}
-                  className="w-16 h-19 object-cover"
+                  src={selectedBook.coverImage || "/placeholder.svg"}
+                  alt={selectedBook.title}
+                  className="w-full h-64 object-cover rounded-lg"
                 />
-              </td>
-              <td className="border border-gray-300 px-4 py-2">{book.title}</td>
-              <td className="border border-gray-300 px-4 py-2">
-                {book.author?.name || "Unknown"}
-              </td>
-              <td className="border border-gray-300 px-4 py-2">
-                {book.category?.name || "Unknown"}
-              </td>
-              <td className="border border-gray-300 px-4 py-2">
-                {book.price?.newPrice.toLocaleString("vi-VN") || "N/A"}đ
-              </td>
-              <td className="border border-gray-300 px-4 py-2 space-x-2">
-                <Link
-                  to={`/dashboard/edit-book/${book._id}`}
-                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => handleDelete(book._id)}
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-lg">
+                    {selectedBook.title}
+                  </h3>
+                  <p className="text-gray-600">by {selectedBook.author.name}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">Category:</span>
+                    <p className="font-medium">{selectedBook.category.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Price:</span>
+                    <p className="font-medium">
+                      {formatPrice(selectedBook.price.newPrice)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Stock:</span>
+                    <p className="font-medium">{selectedBook.quantity}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Status:</span>
+                    <p className="font-medium">{selectedBook.status}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Language:</span>
+                    <p className="font-medium">{selectedBook.language}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Publisher:</span>
+                    <p className="font-medium">{selectedBook.publish.name}</p>
+                  </div>
+                </div>
+                {selectedBook.trending && (
+                  <Badge className="gap-1">
+                    <Star className="h-3 w-3" />
+                    Trending
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-export default ManageBooks;
+export default EnhancedManageBooks;

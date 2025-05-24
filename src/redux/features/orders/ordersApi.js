@@ -22,6 +22,21 @@ export const ordersApi = createApi({
     }),
     getAllOrders: builder.query({
       query: () => `/orders`,
+      transformResponse: (response) => {
+        console.log("API Response:", response);
+        // Handle both possible response structures
+        if (response?.data) {
+          return response.data;
+        }
+        if (Array.isArray(response)) {
+          return response;
+        }
+        return [];
+      },
+      transformErrorResponse: (response) => {
+        console.error("API Error:", response);
+        return response;
+      },
       providesTags: ["Orders"],
     }),
     getOrderById: builder.query({
@@ -57,9 +72,8 @@ export const ordersApi = createApi({
         body: { status },
       }),
       invalidatesTags: ["Orders"],
-    })
+    }),
   }),
-
 });
 
 export const {

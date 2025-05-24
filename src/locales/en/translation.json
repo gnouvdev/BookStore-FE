@@ -68,7 +68,9 @@
     "newest": "Newest",
     "trending": "Trending",
     "rating": "Rating",
-    
+    "minPrice": "Min Price",
+    "maxPrice": "Max Price",
+    "priceRange": "Price Range",
     "tags": {
       "bestseller": "Bestseller",
       "new": "New",

@@ -1,20 +1,38 @@
-import React, { useEffect, useState } from "react";
-import InputField from "../addBook/InputField";
-import AsyncSelect from "react-select/async";
+/* eslint-disable no-unused-vars */
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { useParams, useNavigate } from "react-router-dom";
+import {
+  FaBook,
+  FaUser,
+  FaImage,
+  FaTag,
+  FaDollarSign,
+  FaLanguage,
+  FaChartLine,
+  FaTimes,
+  FaSpinner,
+  FaEdit,
+  FaCloudUploadAlt,
+  FaSave,
+  FaArrowLeft,
+} from "react-icons/fa";
+import { RiPriceTag3Line } from "react-icons/ri";
 import {
   useGetBookByIdQuery,
   useUpdateBookMutation,
 } from "../../../redux/features/books/booksApi";
-import Loading from "../../../components/Loading";
 import Swal from "sweetalert2";
 import { toast } from "react-hot-toast";
 import { uploadToCloudinary } from "../../../utils/uploadService";
 import debounce from "lodash/debounce";
-import SelectField from "../addBook/SelectField";
+import AsyncSelect from "react-select/async";
 import axios from "axios";
 import baseUrl from "../../../utils/baseURL";
+import gsap from "gsap";
 
 // Create axios instance with default config
 const api = axios.create({
@@ -24,24 +42,15 @@ const api = axios.create({
   },
 });
 
-const UpdateBook = () => {
+const EnhancedUpdateBook = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
-  // Check authentication on mount
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error("Please login to continue");
-      navigate("/admin");
-      return;
-    }
-    setIsAuthenticated(true);
-
-    // Set default authorization header
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  }, [navigate]);
+  const formRef = useRef(null);
+  const headerRef = useRef(null);
 
   const {
     data: bookData,
@@ -57,7 +66,53 @@ const UpdateBook = () => {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState("");
   const [language, setLanguage] = useState("Tiếng Anh");
-  const { register, handleSubmit, setValue, reset } = useForm();
+  const [imagePreview, setImagePreview] = useState("");
+  const [hasChanges, setHasChanges] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    watch,
+    formState: { errors },
+  } = useForm();
+
+  // Watch form values to detect changes
+  const watchedFields = watch();
+
+  // Enhanced animations
+  useEffect(() => {
+    if (headerRef.current) {
+      gsap.fromTo(
+        headerRef.current,
+        { y: -50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
+      );
+    }
+
+    if (formRef.current) {
+      gsap.fromTo(
+        formRef.current,
+        { y: 50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: "power3.out", delay: 0.2 }
+      );
+    }
+  }, []);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to continue");
+      navigate("/admin");
+      return;
+    }
+    setIsAuthenticated(true);
+
+    // Set default authorization header
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  }, [navigate]);
 
   useEffect(() => {
     console.log("Book ID từ useParams:", id);
@@ -90,6 +145,7 @@ const UpdateBook = () => {
       setTags(bookData.tags?.join(", ") || "");
       setLanguage(bookData.language || "Tiếng Anh");
       setCoverImage(bookData.coverImage || "");
+      setImagePreview(bookData.coverImage || "");
     }
   }, [bookData, setValue]);
 
@@ -126,20 +182,19 @@ const UpdateBook = () => {
     }
   }, [isAuthenticated]);
 
-  const loadAuthorOptions = debounce(async (inputValue, callback) => {
-    if (!inputValue || !isAuthenticated) return callback([]);
+  const loadAuthorOptions = debounce(async (inputValue) => {
+    if (!inputValue || !isAuthenticated) return [];
 
     try {
       const response = await api.get(`/authors/search?name=${inputValue}`);
       if (response.data && Array.isArray(response.data)) {
-        const authors = response.data.map((author) => ({
+        return response.data.map((author) => ({
           value: author._id,
           label: author.name,
         }));
-        callback(authors);
       } else {
         console.error("Invalid authors data format:", response.data);
-        callback([]);
+        return [];
       }
     } catch (error) {
       console.error("Error fetching authors:", error);
@@ -148,7 +203,7 @@ const UpdateBook = () => {
       } else {
         toast.error(error.response?.data?.message || "Failed to load authors");
       }
-      callback([]);
+      return [];
     }
   }, 300);
 
@@ -161,27 +216,76 @@ const UpdateBook = () => {
 
   const handleTagsChange = (event) => {
     setTags(event.target.value);
+    setHasChanges(true);
   };
 
   const handleLanguageChange = (event) => {
     setLanguage(event.target.value);
+    setHasChanges(true);
   };
 
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
     try {
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.readAsDataURL(file);
+
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
       const url = await uploadToCloudinary(file);
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
       if (url) {
         setCoverImage(url);
         setValue("coverImage", url);
-        toast.success("Image uploaded successfully!");
+        setHasChanges(true);
+        toast.success("Image uploaded successfully!", {
+          icon: "🎉",
+          style: {
+            borderRadius: "12px",
+            background: "#10B981",
+            color: "#fff",
+          },
+        });
       } else {
         toast.error("Failed to upload image.");
       }
     } catch (error) {
       console.error("Image upload failed:", error);
       toast.error("An error occurred while uploading the image.");
+    } finally {
+      setIsUploading(false);
+      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
@@ -204,7 +308,7 @@ const UpdateBook = () => {
       category: data.category,
       publish: data.publish,
       trending: data.trending,
-      quantity: parseInt(data.quantity),
+      quantity: Number.parseInt(data.quantity),
       coverImage: coverImage || bookData.coverImage,
       tags: tags
         .split(",")
@@ -212,8 +316,8 @@ const UpdateBook = () => {
         .filter((tag) => tag !== ""),
       language: language,
       price: {
-        oldPrice: parseFloat(data.oldPrice),
-        newPrice: parseFloat(data.newPrice),
+        oldPrice: Number.parseFloat(data.oldPrice) || 0,
+        newPrice: Number.parseFloat(data.newPrice),
       },
     };
 
@@ -224,13 +328,28 @@ const UpdateBook = () => {
       }).unwrap();
 
       console.log("Update response:", response);
+
+      // Success animation
       Swal.fire({
-        title: "Book Updated",
+        title: "🎉 Book Updated Successfully!",
         text: "Your book details have been updated successfully!",
         icon: "success",
+        confirmButtonText: "Continue Editing",
+        showCancelButton: true,
+        cancelButtonText: "Back to Books",
+        background: "#fff",
+        customClass: {
+          popup: "rounded-2xl",
+          confirmButton: "bg-blue-500 hover:bg-blue-600 rounded-xl px-6 py-2",
+          cancelButton: "bg-gray-500 hover:bg-gray-600 rounded-xl px-6 py-2",
+        },
+      }).then((result) => {
+        if (!result.isConfirmed) {
+          navigate("/dashboard/manage-books");
+        } else {
+          setHasChanges(false);
+        }
       });
-      reset();
-      navigate("/dashboard/manage-books");
     } catch (error) {
       console.error("Update failed:", error);
       if (error.status === 401) {
@@ -238,174 +357,532 @@ const UpdateBook = () => {
       } else {
         const errorMessage =
           error.data?.message || "Failed to update book. Please try again.";
-        toast.error(errorMessage);
+        toast.error(errorMessage, {
+          style: {
+            borderRadius: "12px",
+            background: "#EF4444",
+            color: "#fff",
+          },
+        });
       }
     }
   };
 
-  if (isLoading) return <Loading />;
-  if (isError) return <div>Error fetching book data</div>;
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      border: "2px solid #E5E7EB",
+      borderRadius: "12px",
+      padding: "8px",
+      boxShadow: state.isFocused ? "0 0 0 3px rgba(59, 130, 246, 0.1)" : "none",
+      borderColor: state.isFocused ? "#3B82F6" : "#E5E7EB",
+      "&:hover": {
+        borderColor: "#3B82F6",
+      },
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected
+        ? "#3B82F6"
+        : state.isFocused
+        ? "#EBF4FF"
+        : "white",
+      color: state.isSelected ? "white" : "#374151",
+      padding: "12px",
+      cursor: "pointer",
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: "#9CA3AF",
+    }),
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 1,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "linear",
+            }}
+            className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"
+          />
+          <p className="text-xl font-semibold text-gray-700">
+            Loading book data...
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-4"
+        >
+          <div className="text-6xl mb-4">😞</div>
+          <h2 className="text-2xl font-bold text-red-600 mb-2">
+            Error Loading Book
+          </h2>
+          <p className="text-gray-600">Failed to load book data</p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-lg mx-auto md:p-6 p-3 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Update Book</h2>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <InputField
-          label="Title"
-          name="title"
-          placeholder="Enter book title"
-          register={register}
-        />
-        <InputField
-          label="Description"
-          name="description"
-          placeholder="Enter book description"
-          type="textarea"
-          register={register}
-        />
-        <InputField
-          label="Publish"
-          name="publish"
-          placeholder="Enter book publish"
-          type="textarea"
-          register={register}
-        />
-        <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-700">
-            Category
-          </label>
-          <select
-            {...register("category", { required: true })}
-            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
-          >
-            <option value="">Choose A Category</option>
-            {categories && categories.length > 0 ? (
-              categories.map((category) => (
-                <option key={category.value} value={category.value}>
-                  {category.label}
-                </option>
-              ))
-            ) : (
-              <option disabled>Loading categories...</option>
-            )}
-          </select>
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Author
-          </label>
-          <AsyncSelect
-            cacheOptions
-            defaultOptions
-            loadOptions={loadAuthorOptions}
-            onChange={(selectedOption) =>
-              setValue("author", selectedOption ? selectedOption.value : "")
-            }
-            defaultValue={
-              bookData?.author
-                ? { value: bookData.author._id, label: bookData.author.name }
-                : null
-            }
-            placeholder="Search or select an author"
-            className="w-full"
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-blue-400/20 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [0, -30, 0],
+              opacity: [0, 1, 0],
+              scale: [0, 1, 0],
+            }}
+            transition={{
+              duration: 3 + Math.random() * 2,
+              repeat: Number.POSITIVE_INFINITY,
+              delay: Math.random() * 2,
+              ease: "easeInOut",
+            }}
           />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-700">
-            Tags
-          </label>
-          <input
-            type="text"
-            value={tags}
-            onChange={handleTagsChange}
-            placeholder="Enter tags (comma-separated)"
-            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-700">
-            Language
-          </label>
-          <select
-            value={language}
-            onChange={handleLanguageChange}
-            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
-          >
-            <option value="Tiếng Anh">Tiếng Anh</option>
-            <option value="Tiếng Việt">Tiếng Việt</option>
-          </select>
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-700">
-            Cover Image
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="form-input"
-          />
-          {coverImage && (
-            <img
-              src={coverImage}
-              alt="Cover preview"
-              className="mt-2 w-32 h-32 object-cover rounded"
-            />
+        ))}
+      </div>
+
+      <div className="relative z-10 max-w-4xl mx-auto px-4">
+        {/* Header */}
+        <motion.div
+          ref={headerRef}
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <motion.button
+              onClick={() => navigate("/dashboard/manage-books")}
+              className="absolute left-0 flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-xl hover:bg-gray-600 transition-colors duration-200"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <FaArrowLeft />
+              Back
+            </motion.button>
+
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+              className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg"
+            >
+              <FaEdit className="text-white text-2xl" />
+            </motion.div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Update Book
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Edit book details and information
+              </p>
+            </div>
+          </div>
+
+          {hasChanges && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-yellow-100 border border-yellow-300 rounded-xl p-3 max-w-md mx-auto"
+            >
+              <p className="text-yellow-800 text-sm">
+                <FaEdit className="inline mr-2" />
+                You have unsaved changes
+              </p>
+            </motion.div>
           )}
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <InputField
-            label="Old Price"
-            name="oldPrice"
-            type="number"
-            placeholder="Enter old price"
-            register={register}
-          />
-          <InputField
-            label="New Price"
-            name="newPrice"
-            type="number"
-            placeholder="Enter new price"
-            register={register}
-          />
-        </div>
-        <InputField
-          label="Quantity"
-          name="quantity"
-          type="number"
-          placeholder="Enter quantity"
-          register={register}
-        />
-        <div className="flex items-center mb-4">
-          <input
-            type="checkbox"
-            id="trending"
-            {...register("trending")}
-            className="form-checkbox h-4 w-4 text-blue-600"
-          />
-          <label htmlFor="trending" className="ml-2 text-sm text-gray-700">
-            Trending Book
-          </label>
-        </div>
-        <div className="flex justify-end space-x-2">
-          <button
-            type="button"
-            onClick={() => navigate("/dashboard/manage-books")}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isUpdating}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
-          >
-            {isUpdating ? "Updating..." : "Update Book"}
-          </button>
-        </div>
-      </form>
+        </motion.div>
+
+        {/* Form */}
+        <motion.div
+          ref={formRef}
+          className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <form onSubmit={handleSubmit(onSubmit)} className="p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column */}
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800 mb-4">
+                    Basic Information
+                  </h2>
+
+                  {/* Title */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <FaBook className="inline mr-2" />
+                      Book Title *
+                    </label>
+                    <input
+                      {...register("title", { required: "Title is required" })}
+                      type="text"
+                      placeholder="Enter book title"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
+                      onChange={() => setHasChanges(true)}
+                    />
+                    {errors.title && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.title.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Author */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <FaUser className="inline mr-2" />
+                      Author *
+                    </label>
+                    <AsyncSelect
+                      cacheOptions
+                      defaultOptions
+                      loadOptions={loadAuthorOptions}
+                      onChange={(selectedOption) => {
+                        setValue(
+                          "author",
+                          selectedOption ? selectedOption.value : ""
+                        );
+                        setHasChanges(true);
+                      }}
+                      defaultValue={
+                        bookData?.author
+                          ? {
+                              value: bookData.author._id,
+                              label: bookData.author.name,
+                            }
+                          : null
+                      }
+                      placeholder="Search or select an author"
+                      styles={customSelectStyles}
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Description *
+                    </label>
+                    <textarea
+                      {...register("description", {
+                        required: "Description is required",
+                      })}
+                      rows={4}
+                      placeholder="Enter book description"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200 resize-none"
+                      onChange={() => setHasChanges(true)}
+                    />
+                    {errors.description && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.description.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Publisher */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Publisher
+                    </label>
+                    <input
+                      {...register("publish")}
+                      type="text"
+                      placeholder="Enter publisher name"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
+                      onChange={() => setHasChanges(true)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800 mb-4">
+                    Details & Pricing
+                  </h2>
+
+                  {/* Category */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <FaTag className="inline mr-2" />
+                      Category *
+                    </label>
+                    <select
+                      {...register("category", {
+                        required: "Category is required",
+                      })}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
+                      onChange={() => setHasChanges(true)}
+                    >
+                      <option value="">Choose A Category</option>
+                      {categories && categories.length > 0 ? (
+                        categories.map((category) => (
+                          <option key={category.value} value={category.value}>
+                            {category.label}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>Loading categories...</option>
+                      )}
+                    </select>
+                    {errors.category && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.category.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Cover Image */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <FaImage className="inline mr-2" />
+                      Cover Image
+                    </label>
+                    <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition-colors duration-200">
+                      {imagePreview ? (
+                        <div className="space-y-4">
+                          <img
+                            src={imagePreview || "/placeholder.svg"}
+                            alt="Cover Preview"
+                            className="max-w-32 h-40 object-cover rounded-lg mx-auto shadow-lg"
+                          />
+                          {isUploading && (
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <motion.div
+                                className="bg-blue-500 h-2 rounded-full"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${uploadProgress}%` }}
+                                transition={{ duration: 0.3 }}
+                              />
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImagePreview("");
+                              setCoverImage("");
+                              setHasChanges(true);
+                            }}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            Remove Image
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <FaCloudUploadAlt className="text-4xl text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-600 mb-2">
+                            Click to upload or drag and drop
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            PNG, JPG up to 5MB
+                          </p>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        disabled={isUploading}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <FaTag className="inline mr-2" />
+                      Tags
+                    </label>
+                    <input
+                      type="text"
+                      value={tags}
+                      onChange={handleTagsChange}
+                      placeholder="Enter tags (comma-separated)"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Separate tags with commas (e.g., fiction, romance,
+                      bestseller)
+                    </p>
+                  </div>
+
+                  {/* Language */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <FaLanguage className="inline mr-2" />
+                      Language
+                    </label>
+                    <select
+                      value={language}
+                      onChange={handleLanguageChange}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
+                    >
+                      <option value="Tiếng Anh">English</option>
+                      <option value="Tiếng Việt">Vietnamese</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pricing Section */}
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800 mb-6">
+                Pricing & Inventory
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Old Price */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <RiPriceTag3Line className="inline mr-2" />
+                    Original Price
+                  </label>
+                  <input
+                    {...register("oldPrice")}
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
+                    onChange={() => setHasChanges(true)}
+                  />
+                </div>
+
+                {/* New Price */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <FaDollarSign className="inline mr-2" />
+                    Sale Price *
+                  </label>
+                  <input
+                    {...register("newPrice", {
+                      required: "Sale price is required",
+                      min: 0,
+                    })}
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
+                    onChange={() => setHasChanges(true)}
+                  />
+                  {errors.newPrice && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.newPrice.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Quantity */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Quantity in Stock *
+                  </label>
+                  <input
+                    {...register("quantity", {
+                      required: "Quantity is required",
+                      min: 1,
+                    })}
+                    type="number"
+                    placeholder="Enter quantity"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
+                    onChange={() => setHasChanges(true)}
+                  />
+                  {errors.quantity && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.quantity.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Trending */}
+              <div className="mt-6">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="trending"
+                    {...register("trending")}
+                    className="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
+                    onChange={() => setHasChanges(true)}
+                  />
+                  <label
+                    htmlFor="trending"
+                    className="ml-3 text-sm font-semibold text-gray-700"
+                  >
+                    <FaChartLine className="inline mr-2" />
+                    Mark as Trending Book
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+              <motion.button
+                type="button"
+                onClick={() => navigate("/dashboard/manage-books")}
+                className="flex items-center gap-2 bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition-colors duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FaTimes />
+                Cancel
+              </motion.button>
+
+              <motion.button
+                type="submit"
+                disabled={isUpdating}
+                className="flex items-center gap-2 bg-blue-500 text-white px-8 py-3 rounded-xl hover:bg-blue-600 transition-colors duration-200 disabled:opacity-50"
+                whileHover={{ scale: isUpdating ? 1 : 1.05 }}
+                whileTap={{ scale: isUpdating ? 1 : 0.95 }}
+              >
+                {isUpdating ? (
+                  <>
+                    <FaSpinner className="animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <FaSave />
+                    Update Book
+                  </>
+                )}
+              </motion.button>
+            </div>
+          </form>
+        </motion.div>
+      </div>
     </div>
   );
 };
 
-export default UpdateBook;
+export default EnhancedUpdateBook;

@@ -5,6 +5,7 @@ export const userApi = createApi({
   reducerPath: "userApi",
   baseQuery: fetchBaseQuery({
     baseUrl: baseUrl,
+    credentials: "include",
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
       if (token) {
@@ -16,7 +17,21 @@ export const userApi = createApi({
   tagTypes: ["Users"],
   endpoints: (builder) => ({
     getUsers: builder.query({
-      query: () => "/users",
+      query: () => ({
+        url: "/users",
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+      transformResponse: (response) => {
+        console.log("API Response:", response);
+        return response?.users || [];
+      },
+      transformErrorResponse: (response) => {
+        console.error("API Error:", response);
+        return response;
+      },
       providesTags: ["Users"],
     }),
     getCurrentUser: builder.query({

@@ -74,6 +74,9 @@
     "title": "Tên",
     "titleAZ": "Tên A-Z",
     "highestRated": "Đánh giá cao nhất",
+    "minPrice": "Giá tối thiểu",
+    "maxPrice": "Giá tối đa",
+    "priceRange": "Khoảng giá",
     "tags": {
       "bestseller": "Bestseller",
       "new": "Mới",
