@@ -16,16 +16,42 @@ import SelectField from "../addBook/SelectField";
 import axios from "axios";
 import baseUrl from "../../../utils/baseURL";
 
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: baseUrl,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 const UpdateBook = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to continue");
+      navigate("/admin");
+      return;
+    }
+    setIsAuthenticated(true);
+
+    // Set default authorization header
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  }, [navigate]);
+
   const {
     data: bookData,
     isLoading,
     isError,
     error,
-    // refetch,
-  } = useGetBookByIdQuery(id);
+  } = useGetBookByIdQuery(id, {
+    skip: !isAuthenticated,
+  });
+
   const [updateBook, { isLoading: isUpdating }] = useUpdateBookMutation();
   const [coverImage, setCoverImage] = useState("");
   const [categories, setCategories] = useState([]);
@@ -55,6 +81,7 @@ const UpdateBook = () => {
       setValue("author", bookData.author?._id || bookData.author);
       setValue("description", bookData.description);
       setValue("category", bookData.category?._id || bookData.category);
+      setValue("publish", bookData.publish?._id || bookData.publish);
       setValue("trending", bookData.trending);
       setValue("oldPrice", bookData.price?.oldPrice);
       setValue("newPrice", bookData.price?.newPrice);
@@ -66,11 +93,11 @@ const UpdateBook = () => {
     }
   }, [bookData, setValue]);
 
+  // Fetch categories with authentication
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${baseUrl}/categories`);
-        console.log("Categories response:", response.data);
+        const response = await api.get("/categories");
         if (response.data && Array.isArray(response.data)) {
           setCategories(
             response.data.map((category) => ({
@@ -84,20 +111,26 @@ const UpdateBook = () => {
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
-        toast.error(error.response?.data?.message || "Failed to load categories");
+        if (error.response?.status === 401) {
+          handleAuthError();
+        } else {
+          toast.error(
+            error.response?.data?.message || "Failed to load categories"
+          );
+        }
       }
     };
 
-    fetchCategories();
-  }, []);
+    if (isAuthenticated) {
+      fetchCategories();
+    }
+  }, [isAuthenticated]);
 
   const loadAuthorOptions = debounce(async (inputValue, callback) => {
-    if (!inputValue) return callback([]);
+    if (!inputValue || !isAuthenticated) return callback([]);
 
     try {
-      const response = await axios.get(
-        `${baseUrl}/authors/search?name=${inputValue}`
-      );
+      const response = await api.get(`/authors/search?name=${inputValue}`);
       if (response.data && Array.isArray(response.data)) {
         const authors = response.data.map((author) => ({
           value: author._id,
@@ -110,10 +143,21 @@ const UpdateBook = () => {
       }
     } catch (error) {
       console.error("Error fetching authors:", error);
-      toast.error(error.response?.data?.message || "Failed to load authors");
+      if (error.response?.status === 401) {
+        handleAuthError();
+      } else {
+        toast.error(error.response?.data?.message || "Failed to load authors");
+      }
       callback([]);
     }
   }, 300);
+
+  const handleAuthError = () => {
+    toast.error("Session expired. Please log in again.");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/admin");
+  };
 
   const handleTagsChange = (event) => {
     setTags(event.target.value);
@@ -142,6 +186,12 @@ const UpdateBook = () => {
   };
 
   const onSubmit = async (data) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to continue");
+      navigate("/admin");
+      return;
+    }
+
     if (!bookData || !bookData._id) {
       toast.error("Book data is missing. Cannot update.");
       return;
@@ -152,6 +202,7 @@ const UpdateBook = () => {
       author: data.author,
       description: data.description,
       category: data.category,
+      publish: data.publish,
       trending: data.trending,
       quantity: parseInt(data.quantity),
       coverImage: coverImage || bookData.coverImage,
@@ -167,7 +218,11 @@ const UpdateBook = () => {
     };
 
     try {
-      const response = await updateBook({ id: bookData._id, ...updatedBookData }).unwrap();
+      const response = await updateBook({
+        id: bookData._id,
+        ...updatedBookData,
+      }).unwrap();
+
       console.log("Update response:", response);
       Swal.fire({
         title: "Book Updated",
@@ -178,18 +233,11 @@ const UpdateBook = () => {
       navigate("/dashboard/manage-books");
     } catch (error) {
       console.error("Update failed:", error);
-      const errorMessage = error.data?.message || "Failed to update book. Please try again.";
-      
-      if (error.status === 404) {
-        toast.error("Book not found. Please check the book ID.");
-      } else if (error.status === 403) {
-        toast.error("Session expired. Please log in again.");
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/admin");
-      } else if (error.status === 400) {
-        toast.error("Invalid data provided. Please check your inputs.");
+      if (error.status === 401) {
+        handleAuthError();
       } else {
+        const errorMessage =
+          error.data?.message || "Failed to update book. Please try again.";
         toast.error(errorMessage);
       }
     }
@@ -212,6 +260,13 @@ const UpdateBook = () => {
           label="Description"
           name="description"
           placeholder="Enter book description"
+          type="textarea"
+          register={register}
+        />
+        <InputField
+          label="Publish"
+          name="publish"
+          placeholder="Enter book publish"
           type="textarea"
           register={register}
         />

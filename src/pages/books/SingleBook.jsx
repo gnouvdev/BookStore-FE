@@ -1,11 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
-// import { FiShoppingCart } from "react-icons/fi";
+/* eslint-disable no-unused-vars */
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useParams } from "react-router-dom";
 import { useAddToCartMutation } from "../../redux/features/cart/cartApi";
 import { useGetBookByIdQuery } from "../../redux/features/books/booksApi";
 import { IoMdStar } from "react-icons/io";
-import { FaBuilding } from "react-icons/fa";
-import { IoShieldCheckmarkSharp } from "react-icons/io5";
+import {
+  FaShoppingCart,
+  FaHeart,
+  FaShare,
+  FaExpand,
+  FaPlus,
+  FaMinus,
+} from "react-icons/fa";
+import {
+  RiTruckFill,
+  RiSecurePaymentFill,
+  RiRefund2Fill,
+} from "react-icons/ri";
 import BookRecommendations from "../../components/BookRecommendations";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
@@ -20,9 +34,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
-import { FaExpand, FaShoppingCart, FaHeart, FaShare } from "react-icons/fa";
-import { motion } from "framer-motion";
-
+import "../../styles/SingleBook.css";
 gsap.registerPlugin(ScrollTrigger);
 
 // Cấu hình axios
@@ -43,21 +55,21 @@ api.interceptors.request.use(
   }
 );
 
-const SingleBook = () => {
+const EnhancedSingleBook = () => {
   const { id } = useParams();
   const { currentUser } = useAuth();
   const { t } = useTranslation();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [hoverRating, setHoverRating] = useState(0);
-  const ratingRef = useRef(null);
-  const starsRef = useRef([]);
+  const [showFullImage, setShowFullImage] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [activeTab, setActiveTab] = useState("description");
+
   const imageRef = useRef(null);
   const detailsRef = useRef(null);
-  const priceRef = useRef(null);
-  const descriptionRef = useRef(null);
   const reviewsRef = useRef(null);
-  const [showFullImage, setShowFullImage] = useState(false);
 
   const {
     data: book,
@@ -69,40 +81,28 @@ const SingleBook = () => {
 
   const { data: reviewsData } = useGetReviewsQuery(id);
   const [createReview] = useCreateReviewMutation();
-
   const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
-  const [quantity, setQuantity] = useState(1);
 
-  // Add useEffect to track book views
+  // Track book views
   useEffect(() => {
     const trackBookView = async () => {
       if (book?._id && currentUser) {
         try {
-          // Log chi tiết currentUser để debug
-          console.log("Current user object:", currentUser);
-          console.log("Current user keys:", Object.keys(currentUser));
-
-          // Thử lấy user ID từ nhiều nguồn khác nhau
           const userId =
             currentUser.uid ||
             currentUser._id ||
             currentUser.id ||
             currentUser.userId;
-
           if (!userId) {
-            console.error("No user ID found in currentUser:", currentUser);
-            // Thử lấy từ localStorage
             const storedUser = localStorage.getItem("user");
             if (storedUser) {
               const parsedUser = JSON.parse(storedUser);
-              console.log("Stored user:", parsedUser);
               const storedUserId =
                 parsedUser.uid ||
                 parsedUser._id ||
                 parsedUser.id ||
                 parsedUser.userId;
               if (storedUserId) {
-                console.log("Using stored user ID:", storedUserId);
                 await api.post("/viewHistory/", {
                   userId: storedUserId,
                   bookId: book._id,
@@ -113,23 +113,15 @@ const SingleBook = () => {
             return;
           }
 
-          console.log("Using user ID:", userId);
-          const response = await api.post("/viewHistory/", {
+          await api.post("/viewHistory/", {
             userId: userId,
             bookId: book._id,
           });
-          console.log("Book view tracked successfully:", response.data);
         } catch (error) {
           console.error(
             "Error tracking book view:",
             error.response?.data || error.message
           );
-          if (error.response) {
-            console.error("Response data:", error.response.data);
-            console.error("Response status:", error.response.status);
-            console.error("Request URL:", error.config?.url);
-            console.error("Request headers:", error.config?.headers);
-          }
         }
       }
     };
@@ -137,101 +129,45 @@ const SingleBook = () => {
     trackBookView();
   }, [book?._id, currentUser]);
 
-  // Complex animations
+  // Enhanced animations
   useEffect(() => {
     if (book) {
-      // Timeline cho toàn bộ animation
       const tl = gsap.timeline();
 
-      // Animation cho ảnh sách
       tl.fromTo(
         imageRef.current,
         {
           scale: 0.8,
           opacity: 0,
-          rotation: -5,
+          rotationY: -45,
         },
         {
           scale: 1,
           opacity: 1,
-          rotation: 0,
-          duration: 1,
-          ease: "elastic.out(1, 0.5)",
+          rotationY: 0,
+          duration: 1.2,
+          ease: "power3.out",
         }
-      );
-
-      // Animation cho tiêu đề và thông tin cơ bản
-      tl.fromTo(
-        detailsRef.current.children,
+      ).fromTo(
+        detailsRef.current?.children || [],
         {
-          y: 30,
+          x: 50,
           opacity: 0,
         },
         {
-          y: 0,
+          x: 0,
           opacity: 1,
           duration: 0.8,
           stagger: 0.1,
           ease: "power2.out",
         },
-        "-=0.5"
+        "-=0.8"
       );
 
-      // Animation cho rating stars
-      tl.fromTo(
-        starsRef.current,
-        {
-          scale: 0,
-          opacity: 0,
-          rotation: -180,
-        },
-        {
-          scale: 1,
-          opacity: 1,
-          rotation: 0,
-          duration: 0.5,
-          stagger: 0.1,
-          ease: "back.out(1.7)",
-        },
-        "-=0.3"
-      );
-
-      // Animation cho giá
-      tl.fromTo(
-        priceRef.current,
-        {
-          scale: 1.2,
-          opacity: 0,
-        },
-        {
-          scale: 1,
-          opacity: 1,
-          duration: 0.5,
-          ease: "power2.out",
-        },
-        "-=0.2"
-      );
-
-      // Animation cho mô tả
-      tl.fromTo(
-        descriptionRef.current,
-        {
-          height: 0,
-          opacity: 0,
-        },
-        {
-          height: "auto",
-          opacity: 1,
-          duration: 0.8,
-          ease: "power2.inOut",
-        }
-      );
-
-      // Scroll-triggered animations
       gsap.fromTo(
         reviewsRef.current,
         {
-          y: 50,
+          y: 100,
           opacity: 0,
         },
         {
@@ -270,19 +206,11 @@ const SingleBook = () => {
     }
 
     try {
-      console.log("Submitting review with data:", {
-        bookId: id,
-        rating,
-        comment,
-      });
-
       const result = await createReview({
         bookId: id,
         rating,
         comment,
       }).unwrap();
-
-      console.log("Review submission result:", result);
 
       if (result.success) {
         Swal.fire({
@@ -290,59 +218,28 @@ const SingleBook = () => {
           title: t("reviews.success"),
           text: t("reviews.thank_you"),
         });
-
         setRating(0);
         setComment("");
       }
     } catch (error) {
       console.error("Review error:", error);
-      let errorMessage = t("reviews.error_message");
-
-      if (error.data?.message) {
-        errorMessage = error.data.message;
-      }
-
       Swal.fire({
         icon: "error",
         title: t("reviews.error"),
-        text: errorMessage,
+        text: error.data?.message || t("reviews.error_message"),
       });
     }
   };
-
-  // Kiểm tra xem người dùng có thể đánh giá không
-  const canReview = React.useMemo(() => {
-    if (!currentUser) {
-      console.log("Cannot review: missing user");
-      return false;
-    }
-    return true;
-  }, [currentUser]);
-
-  // Kiểm tra xem người dùng đã đánh giá sách này chưa
-  const hasReviewed = React.useMemo(() => {
-    if (!currentUser || !reviewsData?.data) {
-      console.log("Cannot check review status: missing data");
-      return false;
-    }
-
-    const hasReview = reviewsData.data.some(
-      (review) => review.user._id === currentUser._id
-    );
-    console.log("Has reviewed:", hasReview);
-    return hasReview;
-  }, [currentUser, reviewsData]);
 
   const handleAddToCart = async (product) => {
     if (product && product._id) {
       try {
         await addToCart({ bookId: product._id, quantity }).unwrap();
-        console.log("Added to cart:", product._id);
         Swal.fire({
           icon: "success",
           title: t("cart.add_success"),
           showConfirmButton: false,
-          timer: 1000,
+          timer: 1500,
         });
       } catch (error) {
         console.error("Error adding to cart:", error);
@@ -373,36 +270,47 @@ const SingleBook = () => {
     }
   };
 
-  const handleImageClick = () => {
-    setShowFullImage(true);
-  };
-
-  const handleCloseFullImage = () => {
-    setShowFullImage(false);
-  };
+  const canReview =
+    currentUser &&
+    reviewsData?.data &&
+    !reviewsData.data.some((review) => review.user._id === currentUser._id);
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="container mx-auto p-6 flex justify-center items-center min-h-[400px]"
+      >
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{
+            duration: 1,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "linear",
+          }}
+          className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full"
+        />
+      </motion.div>
     );
   }
 
-  if (error) {
-    console.error("Error details:", error);
+  if (error || !book || !book._id) {
     return (
-      <div className="container mx-auto p-6 text-red-600">
-        {error?.data?.message || t("books.error")}
-      </div>
-    );
-  }
-
-  if (!book || !book._id) {
-    return (
-      <div className="container mx-auto p-6 text-gray-600">
-        {t("books.notFound")}
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="container mx-auto p-6 text-center"
+      >
+        <div className="bg-red-50 border border-red-200 rounded-lg p-8">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">
+            {t("books.error")}
+          </h2>
+          <p className="text-red-500">
+            {error?.data?.message || t("books.notFound")}
+          </p>
+        </div>
+      </motion.div>
     );
   }
 
@@ -412,55 +320,613 @@ const SingleBook = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="w-full container mx-auto"
+      transition={{ duration: 0.6 }}
+      className="w-full container mx-auto px-4 py-8"
     >
-      <div className="w-full shadow-md flex flex-col md:flex-row gap-8 p-6 bg-white rounded-lg mb-5 hover:shadow-xl transition-shadow duration-300">
-        {/* Left: Book Image with enhanced features */}
-        <div className="relative group">
-          <LazyLoadImage
-            ref={imageRef}
-            src={book.coverImage}
-            alt={book.title}
-            effect="blur"
-            className="object-cover w-[300px] h-[370px] rounded-lg shadow-lg transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl"
-            wrapperClassName="w-[300px] h-[370px]"
-            placeholderSrc={book.coverImage + "?w=50"}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <button className="bg-white p-2 rounded-full hover:bg-blue-500 hover:text-white transition-colors duration-300">
-              <FaHeart className="w-5 h-5" />
-            </button>
-            <button className="bg-white p-2 rounded-full hover:bg-blue-500 hover:text-white transition-colors duration-300">
-              <FaShare className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleImageClick}
-              className="bg-white p-2 rounded-full hover:bg-blue-500 hover:text-white transition-colors duration-300"
+      {/* Main Product Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="bg-white rounded-3xl shadow-2xl overflow-hidden mb-8"
+      >
+        <div className="flex flex-col lg:flex-row">
+          {/* Enhanced Image Section */}
+          <div className="lg:w-1/3 p-8">
+            <motion.div
+              ref={imageRef}
+              className="relative group"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.3 }}
             >
-              <FaExpand className="w-5 h-5" />
-            </button>
+              <div className="relative overflow-hidden rounded-2xl shadow-2xl ">
+                <LazyLoadImage
+                  src={book.coverImage}
+                  alt={book.title}
+                  effect="blur"
+                  className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
+                  wrapperClassName="w-full h-[500px]"
+                />
+
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 " />
+
+                {/* Action Buttons */}
+                <motion.div
+                  className="absolute bottom-6 left-6 right-6 flex justify-center gap-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileHover={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setIsWishlisted(!isWishlisted)}
+                    className={`p-3 rounded-full backdrop-blur-md border border-white/20 transition-all duration-300 ${
+                      isWishlisted
+                        ? "bg-red-500 text-white"
+                        : "bg-white/20 text-white hover:bg-white hover:text-gray-800"
+                    }`}
+                  >
+                    <FaHeart className="w-5 h-5" />
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="p-3 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white hover:text-gray-800 transition-all duration-300 border border-white/20"
+                  >
+                    <FaShare className="w-5 h-5" />
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowFullImage(true)}
+                    className="p-3 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white hover:text-gray-800 transition-all duration-300 border border-white/20"
+                  >
+                    <FaExpand className="w-5 h-5" />
+                  </motion.button>
+                </motion.div>
+
+                {/* Discount Badge */}
+                {book.price?.oldPrice && (
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.5, type: "spring" }}
+                    className="absolute top-6 right-6 bg-red-500 text-white px-4 py-2 rounded-full font-bold shadow-lg"
+                  >
+                    -
+                    {Math.round(
+                      ((book.price.oldPrice - book.price.newPrice) /
+                        book.price.oldPrice) *
+                        100
+                    )}
+                    %
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Enhanced Details Section */}
+          <div
+            ref={detailsRef}
+            className="lg:w-1/2 p-8 flex flex-col justify-between"
+          >
+            <div>
+              <motion.h1
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight"
+              >
+                {book.title}
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="text-xl text-gray-600 mb-6"
+              >
+                {t("books.author")}:{" "}
+                <span className="font-semibold text-gray-800">
+                  {book.author?.name || "Unknown"}
+                </span>
+              </motion.p>
+
+              {/* Enhanced Rating */}
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="flex items-center gap-4 mb-6"
+              >
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ delay: 0.5 + index * 0.1, type: "spring" }}
+                    >
+                      <IoMdStar
+                        className={`text-2xl ${
+                          index < Math.floor(book.rating || 0)
+                            ? "text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+                <span className="text-lg font-semibold text-gray-700">
+                  {book.rating ? book.rating.toFixed(1) : "0.0"}
+                </span>
+                <span className="text-gray-500">
+                  ({reviewsData?.data?.length || 0} {t("reviews.review")})
+                </span>
+              </motion.div>
+
+              {/* Enhanced Price */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="mb-8"
+              >
+                <div className="flex items-baseline gap-4">
+                  <span className="text-4xl font-bold text-red-500">
+                    {book.price?.newPrice?.toLocaleString("vi-VN")} đ
+                  </span>
+                  {book.price?.oldPrice && (
+                    <span className="text-xl text-gray-400 line-through">
+                      {book.price.oldPrice.toLocaleString("vi-VN")} đ
+                    </span>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* Book Info Grid */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="grid grid-cols-2 gap-4 mb-8"
+              >
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-500 mb-1">
+                    {t("books.published")}
+                  </p>
+                  <p className="font-semibold">{book.publish}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-500 mb-1">
+                    {t("books.category")}
+                  </p>
+                  <p className="font-semibold capitalize">
+                    {book.category?.name || "Unknown"}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-500 mb-1">
+                    {t("books.language")}
+                  </p>
+                  <p className="font-semibold">{book.language || "Unknown"}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-500 mb-1">{t("books.tag")}</p>
+                  <p className="font-semibold">
+                    #{book.tags?.join(", ") || "Unknown"}
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Enhanced Quantity Selector */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.7 }}
+                className="flex items-center gap-6 mb-8"
+              >
+                <span className="text-lg font-semibold">
+                  {t("books.quantity")}:
+                </span>
+                <div className="flex items-center gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleDecrease}
+                    disabled={quantity <= 1}
+                    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center disabled:opacity-50 transition-colors duration-200"
+                  >
+                    <FaMinus className="w-4 h-4" />
+                  </motion.button>
+                  <span className="text-2xl font-bold w-12 text-center">
+                    {quantity}
+                  </span>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleIncrease}
+                    disabled={isOutOfStock}
+                    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center disabled:opacity-50 transition-colors duration-200"
+                  >
+                    <FaPlus className="w-4 h-4" />
+                  </motion.button>
+                </div>
+                {book.quantity && (
+                  <span className="text-sm text-gray-500">
+                    ({book.quantity} {t("books.available")})
+                  </span>
+                )}
+              </motion.div>
+            </div>
+
+            {/* Enhanced Add to Cart Button */}
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              whileHover={{
+                scale: 1.02,
+                boxShadow: "0 20px 40px rgba(59, 130, 246, 0.3)",
+              }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleAddToCart(book)}
+              disabled={isAddingToCart || isOutOfStock}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-8 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 shadow-lg"
+            >
+              {isAddingToCart ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 1,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "linear",
+                  }}
+                  className="w-6 h-6 border-2 border-white border-t-transparent rounded-full"
+                />
+              ) : (
+                <>
+                  <FaShoppingCart className="w-5 h-5" />
+                  <span>
+                    {isOutOfStock
+                      ? t("books.out_of_stock")
+                      : t("books.Add to Cart")}
+                  </span>
+                </>
+              )}
+            </motion.button>
           </div>
         </div>
+      </motion.div>
 
-        {/* Full Image Modal */}
+      {/* Enhanced Delivery Info */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.3 }}
+        className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-8 border border-blue-100"
+      >
+        <h3 className="text-xl font-bold text-gray-800 mb-4">
+          {t("books.delivery.title")}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <RiTruckFill className="text-blue-600 text-xl" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-800">
+                {t("books.delivery.free")}
+              </p>
+              <p className="text-sm text-gray-600">
+                {t("books.delivery.city")}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+              <RiSecurePaymentFill className="text-green-600 text-xl" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-800">
+                {t("books.delivery.secure")}
+              </p>
+              <p className="text-sm text-gray-600">
+                {t("books.delivery.payment")}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+              <RiRefund2Fill className="text-purple-600 text-xl" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-800">
+                {t("books.delivery.return")}
+              </p>
+              <p className="text-sm text-gray-600">
+                {t("books.delivery.policy")}
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Enhanced Tabs Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.4 }}
+        className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8"
+      >
+        {/* Tab Navigation */}
+        <div className="flex border-b border-gray-200">
+          {[
+            { id: "description", label: t("books.tabs.description") },
+            { id: "reviews", label: t("books.tabs.reviews") },
+            { id: "specifications", label: t("books.tabs.specifications") },
+          ].map((tab) => (
+            <motion.button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-4 px-6 font-semibold transition-all duration-300 ${
+                activeTab === tab.id
+                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                  : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+              }`}
+              whileHover={{ y: -2 }}
+              whileTap={{ y: 0 }}
+            >
+              {tab.label}
+            </motion.button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="p-8">
+          <AnimatePresence mode="wait">
+            {activeTab === "description" && (
+              <motion.div
+                key="description"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h3 className="text-2xl font-bold mb-4">
+                  {t("books.description")}
+                </h3>
+                <p className="text-gray-700 leading-relaxed text-lg">
+                  {book.description}
+                </p>
+              </motion.div>
+            )}
+
+            {activeTab === "reviews" && (
+              <motion.div
+                key="reviews"
+                ref={reviewsRef}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h3 className="text-2xl font-bold mb-6">
+                  {t("reviews.title")}
+                </h3>
+
+                {/* Review Form */}
+                {canReview && (
+                  <motion.form
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    onSubmit={handleReviewSubmit}
+                    className="bg-gray-50 rounded-xl p-6 mb-8"
+                  >
+                    <h4 className="text-lg font-semibold mb-4">
+                      {t("reviews.write_review")}
+                    </h4>
+
+                    <div className="mb-4">
+                      <label className="block text-gray-700 font-semibold mb-2">
+                        {t("reviews.rating")}
+                      </label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <motion.button
+                            key={star}
+                            type="button"
+                            onClick={() => setRating(star)}
+                            onMouseEnter={() => setHoverRating(star)}
+                            onMouseLeave={() => setHoverRating(0)}
+                            whileHover={{ scale: 1.2 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="text-3xl focus:outline-none transition-transform duration-200"
+                          >
+                            <IoMdStar
+                              className={`${
+                                star <= (hoverRating || rating)
+                                  ? "text-yellow-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mb-6">
+                      <label className="block text-gray-700 font-semibold mb-2">
+                        {t("reviews.comment")}
+                      </label>
+                      <textarea
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        rows="4"
+                        placeholder={t("reviews.comment_placeholder")}
+                        required
+                      />
+                    </div>
+
+                    <motion.button
+                      type="submit"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200"
+                    >
+                      {t("reviews.submit")}
+                    </motion.button>
+                  </motion.form>
+                )}
+
+                {/* Reviews List */}
+                <div className="space-y-6">
+                  {reviewsData?.data?.length > 0 ? (
+                    reviewsData.data.map((review, index) => (
+                      <motion.div
+                        key={review._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300"
+                      >
+                        <div className="flex items-center gap-4 mb-4">
+                          <img
+                            src={
+                              review.user.photoURL ||
+                              "https://via.placeholder.com/50"
+                            }
+                            alt={review.user.displayName}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                          <div>
+                            <h4 className="font-semibold text-gray-800">
+                              {review.user.displayName}
+                            </h4>
+                            <p className="text-sm text-gray-500">
+                              {review.user.email}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 mb-3">
+                          {[...Array(5)].map((_, index) => (
+                            <IoMdStar
+                              key={index}
+                              className={`text-lg ${
+                                index < review.rating
+                                  ? "text-yellow-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                          <span className="text-sm text-gray-500 ml-2">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <p className="text-gray-700 leading-relaxed">
+                          {review.comment}
+                        </p>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="text-6xl mb-4">📝</div>
+                      <p className="text-gray-500 text-lg">
+                        {t("reviews.no_reviews")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === "specifications" && (
+              <motion.div
+                key="specifications"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h3 className="text-2xl font-bold mb-6">
+                  {t("books.specifications")}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[
+                    {
+                      label: t("books.author"),
+                      value: book.author?.name || "Unknown",
+                    },
+                    { label: t("books.published"), value: book.publish },
+                    {
+                      label: t("books.category"),
+                      value: book.category?.name || "Unknown",
+                    },
+                    {
+                      label: t("books.language"),
+                      value: book.language || "Unknown",
+                    },
+                    { label: t("books.pages"), value: book.pages || "N/A" },
+                    { label: t("books.isbn"), value: book.isbn || "N/A" },
+                  ].map((spec, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="bg-gray-50 rounded-lg p-4"
+                    >
+                      <p className="text-sm text-gray-500 mb-1">{spec.label}</p>
+                      <p className="font-semibold text-gray-800">
+                        {spec.value}
+                      </p>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+
+      {/* Full Image Modal */}
+      <AnimatePresence>
         {showFullImage && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center"
-            onClick={handleCloseFullImage}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowFullImage(false)}
           >
-            <div className="relative max-w-4xl max-h-[90vh] p-4">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative max-w-4xl max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
               <LazyLoadImage
                 src={book.coverImage}
                 alt={book.title}
                 effect="blur"
                 className="max-w-full max-h-[80vh] object-contain rounded-lg"
-                wrapperClassName="w-full h-full"
               />
-              <button
-                onClick={handleCloseFullImage}
-                className="absolute top-4 right-4 text-white bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-75 transition-all duration-300"
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowFullImage(false)}
+                className="absolute top-4 right-4 text-white bg-black/50 p-3 rounded-full hover:bg-black/70 transition-all duration-300"
               >
                 <svg
                   className="w-6 h-6"
@@ -475,265 +941,24 @@ const SingleBook = () => {
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Right: Book Details */}
-        <div ref={detailsRef} className="w-full flex flex-col justify-between">
-          <div>
-            <motion.h1
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="text-5xl font-bold mb-2 uppercase bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent py-2"
-            >
-              {book.title}
-            </motion.h1>
-            <p className="text-gray-700 text-sm mb-2">
-              <strong>{t("books.author")}:</strong>{" "}
-              {book.author?.name || "Unknown"}
-            </p>
-
-            {/* Rating with Animation */}
-            <div ref={ratingRef} className="flex items-center gap-2 mb-4">
-              <div className="flex">
-                {[...Array(5)].map((_, index) => (
-                  <div
-                    key={index}
-                    ref={(el) => (starsRef.current[index] = el)}
-                    className="relative"
-                  >
-                    <IoMdStar
-                      className={`text-2xl ${
-                        index < Math.floor(book.rating || 0)
-                          ? "text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                    {index < (book.rating || 0) &&
-                      index + 1 > (book.rating || 0) && (
-                        <div
-                          className="absolute top-0 left-0 overflow-hidden"
-                          style={{
-                            width: `${((book.rating || 0) % 1) * 100}%`,
-                          }}
-                        >
-                          <IoMdStar className="text-2xl text-yellow-400" />
-                        </div>
-                      )}
-                  </div>
-                ))}
-              </div>
-              <span className="text-gray-600 font-medium">
-                {book.rating ? book.rating.toFixed(1) : "0.0"}
-              </span>
-              <span className="text-gray-500 text-sm">
-                ({reviewsData?.data?.length || 0} {t("reviews.review")})
-              </span>
-            </div>
-
-            <p className="text-gray-700 mb-2">
-              <strong>{t("books.published")}:</strong> {book.publish}
-            </p>
-            <p className="text-gray-700 mb-2 capitalize">
-              <strong>{t("books.category")}:</strong>{" "}
-              {t(`categories.${book.category?.name}`) || "Unknown"}
-            </p>
-            <p className="text-gray-700 mb-2 capitalize">
-              <strong>{t("books.tag")}:</strong> #
-              {book.tags?.join(", ") || "Unknown"}
-            </p>
-            <p className="text-gray-700 mb-2 capitalize">
-              <strong>{t("books.language")}:</strong>{" "}
-              {book.language || "Unknown"}
-            </p>
-            <p
-              ref={priceRef}
-              className="font-medium mb-3 text-5xl text-red-500"
-            >
-              {book.price?.newPrice?.toLocaleString("vi-VN")} đ
-              {book.price?.oldPrice && (
-                <span className="line-through font-normal ml-2 text-xl">
-                  {book.price.oldPrice.toLocaleString("vi-VN")} đ
-                </span>
-              )}
-            </p>
-
-            {/* Description with max length */}
-            <p ref={descriptionRef} className="text-gray-700 mb-6">
-              <strong>{t("books.description")}:</strong>{" "}
-              {book.description?.length > 200
-                ? book.description.slice(0, 200) + "..."
-                : book.description}
-            </p>
-
-            {/* Quantity Selector */}
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex items-center gap-4 mb-6"
-            >
-              <button
-                onClick={handleDecrease}
-                className="px-3 py-1 bg-gray-100 text-lg rounded-full hover:bg-gray-200 transition-colors duration-300"
-                disabled={quantity <= 1}
-              >
-                -
-              </button>
-              <span className="text-xl font-semibold">{quantity}</span>
-              <button
-                onClick={handleIncrease}
-                className="px-3 py-1 bg-gray-100 text-lg rounded-full hover:bg-gray-200 transition-colors duration-300"
-                disabled={isOutOfStock}
-              >
-                +
-              </button>
+              </motion.button>
             </motion.div>
-          </div>
-
-          {/* Add to Cart Button */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => handleAddToCart(book)}
-            disabled={isAddingToCart || isOutOfStock}
-            className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-8 py-3 text-base rounded-full flex items-center gap-2 hover:from-blue-500 hover:to-blue-300 transition-all duration-300 w-[280px] justify-center whitespace-nowrap disabled:opacity-50 shadow-lg hover:shadow-xl"
-          >
-            <FaShoppingCart className="text-lg" />
-            <span>{t("books.Add to Cart")}</span>
-          </motion.button>
-        </div>
-      </div>
-
-      {/* Delivery Info with enhanced design */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="bg-gradient-to-r from-blue-50 to-blue-100 text-gray-700 mt-8 px-8 py-6 flex justify-end flex-col gap-2 text-sm rounded-lg shadow-md border border-blue-200"
-      >
-        <p className="font-semibold text-blue-600">
-          {t("books.delivery.free")}
-        </p>
-        <div className="flex gap-2 items-center">
-          <FaBuilding className="text-blue-600 text-xl" />
-          <span>{t("books.delivery.city")}</span>
-        </div>
-        <div className="flex gap-2 items-center">
-          <IoShieldCheckmarkSharp className="text-blue-600 text-xl" />
-          <span>{t("books.delivery.province")}</span>
-        </div>
-      </motion.div>
-
-      {/* Reviews Section with enhanced design */}
-      <motion.div
-        ref={reviewsRef}
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className="mt-8 bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow duration-300"
-      >
-        <h2 className="text-2xl font-bold mb-6">{t("reviews.title")}</h2>
-
-        {/* Review Form */}
-        {canReview && !hasReviewed && (
-          <form onSubmit={handleReviewSubmit} className="mb-8">
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                {t("reviews.rating")}
-              </label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setRating(star)}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    className="text-2xl focus:outline-none"
-                  >
-                    <IoMdStar
-                      className={`${
-                        star <= (hoverRating || rating)
-                          ? "text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                {t("reviews.comment")}
-              </label>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows="4"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              {t("reviews.submit")}
-            </button>
-          </form>
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* Reviews List */}
-        <div className="space-y-6">
-          {reviewsData?.data?.length > 0 ? (
-            reviewsData.data.map((review) => (
-              <div key={review._id} className="border-b pb-6 last:border-b-0">
-                <div className="flex items-center gap-4 mb-2">
-                  <img
-                    src={
-                      review.user.photoURL || "https://via.placeholder.com/40"
-                    }
-                    alt={review.user.displayName}
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div>
-                    <h3 className="font-semibold">{review.user.displayName}</h3>
-                    <p className="text-sm text-gray-500">{review.user.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 mb-2">
-                  {[...Array(5)].map((_, index) => (
-                    <IoMdStar
-                      key={index}
-                      className={`${
-                        index < review.rating
-                          ? "text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className="text-gray-700">{review.comment}</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  {new Date(review.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">{t("reviews.no_reviews")}</p>
-            </div>
-          )}
-        </div>
-      </motion.div>
-
-      {book._id && <BookRecommendations bookId={book._id} />}
+      {/* Book Recommendations */}
+      {book._id && (
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+        >
+          <BookRecommendations bookId={book._id} />
+        </motion.div>
+      )}
     </motion.div>
   );
 };
 
-export default SingleBook;
+export default EnhancedSingleBook;

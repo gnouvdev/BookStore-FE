@@ -31,6 +31,7 @@ import BookRecommendations from "./../components/BookRecommendations";
 import WishlistPage from "../pages/wishlist/WishlistPage";
 import VNPayCallback from './../pages/vnpaycallback/VNPayCallback';
 import ForgotPassword from './../components/ForgotPassword';
+import HomePage from './../pages/home/HomePage';
 
 const router = createBrowserRouter([
   {
@@ -82,6 +83,10 @@ const router = createBrowserRouter([
         element: <ForgotPassword />,
       },
       {
+        path: "/home",
+        element: <HomePage />,
+      },
+      {
         path: "/wishlist",
         element: (
           <PrivateRoute>
@@ -118,7 +123,7 @@ const router = createBrowserRouter([
         element: <GridBooks genre={"adventure"} />,
       },
       {
-        path: "/product/bussines",
+        path: "/product/business",
         element: <GridBooks genre={"bussines"} />,
       },
       {

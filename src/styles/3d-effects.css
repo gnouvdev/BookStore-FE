@@ -1,0 +1,183 @@
+/* 3D Perspective and Transform Styles */
+.perspective-1000 {
+  perspective: 1000px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  backface-visibility: hidden;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+/* Enhanced Swiper Pagination */
+.swiper-pagination {
+  bottom: 10px !important;
+}
+
+.swiper-pagination-bullet {
+  background: rgba(255, 206, 26, 0.7) !important;
+  opacity: 1 !important;
+  width: 14px !important;
+  height: 14px !important;
+  margin: 0 8px !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 15px rgba(255, 206, 26, 0.3) !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.swiper-pagination-bullet-active {
+  background: #ffce1a !important;
+  transform: scale(1.3) !important;
+  box-shadow: 0 6px 20px rgba(255, 206, 26, 0.6) !important;
+}
+
+.swiper-pagination-bullet:hover {
+  transform: scale(1.2) !important;
+  background: rgba(255, 206, 26, 0.9) !important;
+}
+
+/* Coverflow Effect Enhancements */
+.swiper-slide-shadow-left,
+.swiper-slide-shadow-right {
+  background-image: none !important;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.3),
+    transparent
+  ) !important;
+}
+
+/* Custom 3D Button Effects */
+.btn-3d {
+  transform-style: preserve-3d;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.btn-3d:hover {
+  transform: translateZ(10px) rotateX(5deg);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+}
+
+/* Floating Animation Keyframes */
+@keyframes float3D {
+  0%,
+  100% {
+    transform: translateY(0px) translateZ(0px) rotateY(0deg);
+  }
+  33% {
+    transform: translateY(-10px) translateZ(5px) rotateY(120deg);
+  }
+  66% {
+    transform: translateY(5px) translateZ(-5px) rotateY(240deg);
+  }
+}
+
+@keyframes pulse3D {
+  0%,
+  100% {
+    transform: scale(1) translateZ(0px);
+    box-shadow: 0 0 0 0 rgba(255, 206, 26, 0.7);
+  }
+  50% {
+    transform: scale(1.1) translateZ(10px);
+    box-shadow: 0 0 0 20px rgba(255, 206, 26, 0);
+  }
+}
+
+/* Enhanced Backdrop Blur */
+.backdrop-blur-3d {
+  backdrop-filter: blur(15px) saturate(180%);
+  -webkit-backdrop-filter: blur(15px) saturate(180%);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  will-change: backdrop-filter;
+}
+
+/* Gradient Text Effects */
+.gradient-text {
+  background: linear-gradient(45deg, #fbbf24, #f97316, #ef4444);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 3s ease infinite;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes gradientShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Enhanced Shadow Effects */
+.shadow-3d {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1),
+    0 16px 32px rgba(0, 0, 0, 0.1);
+  will-change: box-shadow;
+}
+
+.shadow-3d-hover:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15), 0 16px 32px rgba(0, 0, 0, 0.15),
+    0 32px 64px rgba(0, 0, 0, 0.15);
+}
+
+/* Smooth Transitions */
+.transition-3d {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+/* Image Sharpness */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Text Sharpness */
+.text-sharp {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Container Sharpness */
+.container-sharp {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar for 3D Effect */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: linear-gradient(45deg, #f3f4f6, #e5e7eb);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, #ffce1a, #f97316);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(255, 206, 26, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(45deg, #f97316, #ef4444);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
