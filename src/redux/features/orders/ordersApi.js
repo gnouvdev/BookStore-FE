@@ -6,7 +6,8 @@ export const ordersApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: baseUrl,
     credentials: "include",
-    prepareHeaders: (headers) => {
+    prepareHeaders: (headers, { getState }) => {
+      // Get token from localStorage instead of Redux state
       const token = localStorage.getItem("token");
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
@@ -41,6 +42,10 @@ export const ordersApi = createApi({
     }),
     getOrderById: builder.query({
       query: (id) => `/orders/${id}`,
+      transformErrorResponse: (response) => {
+        console.error("Order details error:", response);
+        return response;
+      },
       providesTags: (result, error, id) => [{ type: "Orders", id }],
     }),
     createOrder: builder.mutation({

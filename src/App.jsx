@@ -10,8 +10,8 @@ import Footer from "./components/Footer";
 function App() {
   return (
     <Provider store={store}>
-      <SocketProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <SocketProvider>
           <div className="min-h-screen bg-gray-100">
             <Navbar />
             <main className="min-h-screen max-w-screen-2xl mx-auto px-4 py-4 font-primary">
@@ -20,8 +20,8 @@ function App() {
             <Footer />
             <Toaster position="top-center" reverseOrder={false} />
           </div>
-        </AuthProvider>
-      </SocketProvider>
+        </SocketProvider>
+      </AuthProvider>
     </Provider>
   );
 }

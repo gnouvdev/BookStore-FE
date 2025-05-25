@@ -1,5 +1,6 @@
 {
   "common": {
+    "go_back": "Quay lại",
     "home": "Trang chủ",
     "books": "Tất cả sách",
     "bussines": "Sách kinh doanh",
@@ -382,5 +383,32 @@
       "unread": "Chưa đọc",
       "read": "Đã đọc"
     }
+  },
+  "orders":{
+    "order_details": "Chi tiết đơn hàng",
+    "customer_info": "Thông tin khách hàng",
+    "shipping_info": "Thông tin vận chuyển",
+    "payment_info": "Thông tin thanh toán",
+    "customer_name": "Tên khách hàng",
+    "phone_number": "Số điện thoại",
+    "email": "Email",
+    "shipping_address": "Địa chỉ vận chuyển",
+    "city": "Thành phố",
+    "country": "Quốc gia",
+    "state": "Tỉnh/Thành phố",
+    "zipcode": "Mã bưu điện",
+    "status.pending": "Chờ xác nhận",
+    "status.processing": "Đang xử lý",
+    "status.shipped": "Đã giao hàng",
+    "status.delivered": "Đã giao hàng",
+    "items": "Sản phẩm",
+    "subtotal": "Tổng cộng",
+    "summary": "Tóm tắt",
+    "total": "Tổng cộng",
+    "payment_method": "Phương thức thanh toán",
+    "payment_status": "Trạng thái thanh toán",
+    "payment_status_pending": "Chờ thanh toán",
+    "payment_status_paid": "Đã thanh toán",
+    "payment_status_failed": "Thất bại"
   }
 }

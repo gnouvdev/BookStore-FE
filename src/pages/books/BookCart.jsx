@@ -148,7 +148,6 @@ const BookCard = ({ book }) => {
         bookId: book._id,
         quantity: 1,
       }).unwrap();
-      toast.success(t("cart.added_to_cart"));
     } catch (error) {
       toast.error(error.data?.message || t("cart.add_failed"));
     }

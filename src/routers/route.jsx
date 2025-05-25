@@ -34,7 +34,7 @@ import ForgotPassword from './../components/ForgotPassword';
 import HomePage from './../pages/home/HomePage';
 import AboutUs from './../pages/home/AboutUs';
 import Notifications from './../pages/notifications/Notifications';
-
+import OrderDetails from './../pages/orders/OrderDetails';
 
 const router = createBrowserRouter([
   {
@@ -84,6 +84,10 @@ const router = createBrowserRouter([
       {
         path: "/home",
         element: <HomePage />,
+      },
+      {
+        path: "/orders/:id",
+        element: <OrderDetails />,
       },
       {
         path: "/wishlist",

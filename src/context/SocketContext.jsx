@@ -1,49 +1,61 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { io } from "socket.io-client";
-import { useSelector } from "react-redux";
-import { toast } from "react-hot-toast";
+import io from "socket.io-client";
+import { auth } from "../firebase/firebase.config";
 
-const SocketContext = createContext();
-
-export const useSocket = () => {
-  return useContext(SocketContext);
-};
+const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
-  const { currentUser } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (currentUser) {
-      const newSocket = io("http://localhost:5000", {
-        auth: {
-          token: currentUser.token,
-        },
-      });
+    console.log("Checking Firebase auth...");
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          const userId = user.uid;
+          console.log("Firebase userId:", userId);
+          console.log("Firebase token:", token);
 
-      newSocket.on("connect", () => {
-        console.log("Connected to WebSocket server");
-      });
+          const newSocket = io("http://localhost:5000", {
+            auth: { token },
+          });
 
-      newSocket.on("orderStatusUpdate", (data) => {
-        toast.success(
-          `Đơn hàng #${data.orderId} đã được cập nhật: ${data.status}`
-        );
-      });
+          newSocket.on("connect", () => {
+            console.log("Socket connected:", newSocket.id);
+            newSocket.emit("register", userId);
+            console.log("Registered user:", userId);
+          });
 
-      newSocket.on("error", (error) => {
-        console.error("Socket error:", error);
-      });
+          newSocket.on("connect_error", (err) => {
+            console.error("Socket connection error:", err.message);
+          });
 
-      setSocket(newSocket);
+          setSocket(newSocket);
 
-      return () => {
-        newSocket.close();
-      };
-    }
-  }, [currentUser]);
+          return () => {
+            newSocket.disconnect();
+          };
+        } catch (error) {
+          console.error("Error getting Firebase token:", error);
+        }
+      } else {
+        console.log("No Firebase user, disconnecting socket...");
+        if (socket) {
+          socket.disconnect();
+          setSocket(null);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
-    <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
+    <SocketContext.Provider value={socket}>
+      {children}
+    </SocketContext.Provider>
   );
 };
+
+export const useSocket = () => useContext(SocketContext);

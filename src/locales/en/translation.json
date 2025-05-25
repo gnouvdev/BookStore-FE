@@ -1,5 +1,6 @@
 {
   "common": {
+    "go_back": "Go Back",
     "home": "Home",
     "books": "Books",
     "bussines": "Business",
@@ -405,5 +406,32 @@
       "unread": "Unread",
       "read": "Read"
     }
+  },
+  "orders":{
+    "order_details": "Orders Details",
+    "customer_info": "Customer Info",
+    "shipping_info": "Shipping Info",
+    "payment_info": "Payment Info",
+    "customer_name": "Customer Name",
+    "phone_number": "Phone Number",
+    "email": "Email",
+    "shipping_address": "Address",
+    "city": "City",
+    "country": "Country",
+    "state": "State",
+    "zipcode": "Zipcode",
+    "status.pending": "Pending",
+    "status.processing": "Processing",
+    "status.shipped": "Shipped",
+    "status.delivered": "Delivered",
+    "items": "Items",
+    "subtotal": "Subtotal",
+    "summary": "Summary",
+    "total": "Total",
+    "payment_method": "Payment Method",
+    "payment_status": "Payment Status",
+    "payment_status_pending": "Pending",
+    "payment_status_paid": "Paid",
+    "payment_status_failed": "Failed"
   }
 }
