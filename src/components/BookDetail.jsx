@@ -3,12 +3,12 @@ import { useParams } from "react-router-dom";
 import BookRecommendations from "./BookRecommendations";
 // Giả định bạn có API để lấy chi tiết sách
 import { useGetBookByIdQuery } from "../../redux/features/books/booksApi";
-
+import Loading from "./Loading";
 const BookDetail = () => {
   const { id } = useParams();
   const { data: book, isLoading, isError, error } = useGetBookByIdQuery(id);
 
-  if (isLoading) return <div className="container mx-auto p-6">Loading...</div>;
+  if (isLoading) return <div className="container mx-auto p-6"><Loading /></div>;
   if (isError) return <div className="container mx-auto p-6 text-red-600">Error: {error?.data?.message}</div>;
 
   return (

@@ -402,18 +402,26 @@ const EnhancedManageUsers = () => {
     if (!isOpen) return null;
 
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 z-[100] overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div
             className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
             onClick={onClose}
+            aria-hidden="true"
           ></div>
+
+          <span
+            className="hidden sm:inline-block sm:align-middle sm:h-screen"
+            aria-hidden="true"
+          >
+            &#8203;
+          </span>
 
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`inline-block w-full ${sizes[size]} p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl`}
+            className={`inline-block w-full ${sizes[size]} p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl relative z-[101]`}
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
@@ -922,12 +930,19 @@ const EnhancedManageUsers = () => {
                 <div className="flex items-start gap-3">
                   <MapPin className="h-4 w-4 text-gray-400 mt-1" />
                   <div>
-                    <p>{selectedUser.address.street}</p>
-                    <p>
-                      {selectedUser.address.city}, {selectedUser.address.state}{" "}
-                      {selectedUser.address.zipcode}
-                    </p>
-                    <p>{selectedUser.address.country}</p>
+                    {selectedUser.address ? (
+                      <>
+                        <p>{selectedUser.address.street || "N/A"}</p>
+                        <p>
+                          {selectedUser.address.city || "N/A"},{" "}
+                          {selectedUser.address.state || "N/A"}{" "}
+                          {selectedUser.address.zipcode || "N/A"}
+                        </p>
+                        <p>{selectedUser.address.country || "N/A"}</p>
+                      </>
+                    ) : (
+                      <p>No address information available</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -994,36 +1009,42 @@ const EnhancedManageUsers = () => {
             <div className="lg:col-span-2 space-y-4">
               <h3 className="font-semibold text-lg">Preferences</h3>
               <div className="grid grid-cols-3 gap-4">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-4 h-4 rounded ${
-                      selectedUser.preferences.newsletter
-                        ? "bg-green-500"
-                        : "bg-gray-300"
-                    }`}
-                  ></div>
-                  <span className="text-sm">Newsletter</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-4 h-4 rounded ${
-                      selectedUser.preferences.notifications
-                        ? "bg-green-500"
-                        : "bg-gray-300"
-                    }`}
-                  ></div>
-                  <span className="text-sm">Notifications</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-4 h-4 rounded ${
-                      selectedUser.preferences.marketing
-                        ? "bg-green-500"
-                        : "bg-gray-300"
-                    }`}
-                  ></div>
-                  <span className="text-sm">Marketing</span>
-                </div>
+                {selectedUser.preferences ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-4 h-4 rounded ${
+                          selectedUser.preferences.newsletter
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                      ></div>
+                      <span className="text-sm">Newsletter</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-4 h-4 rounded ${
+                          selectedUser.preferences.notifications
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                      ></div>
+                      <span className="text-sm">Notifications</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-4 h-4 rounded ${
+                          selectedUser.preferences.marketing
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                      ></div>
+                      <span className="text-sm">Marketing</span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-gray-500">No preferences set</p>
+                )}
               </div>
             </div>
 

@@ -1,76 +1,118 @@
 /* eslint-disable no-unused-vars */
 
-import { useState, useEffect, useRef } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { motion, AnimatePresence } from "framer-motion"
-import { IoSearchOutline, IoClose } from "react-icons/io5"
-import { FaRegUser, FaRegHeart, FaCartShopping, FaBars, FaChevronDown } from "react-icons/fa6"
-import { RiBookOpenLine, RiSparklingFill } from "react-icons/ri"
-import avatarImg from "../assets/avatar.png"
-import { useSelector } from "react-redux"
-import { useAuth } from "./../context/AuthContext"
-import { useTranslation } from "react-i18next"
-import LanguageSwitcher from "./LanguageSwitcher"
-import SearchSuggestions from "./SearchSuggestions"
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { IoSearchOutline, IoClose } from "react-icons/io5";
+import {
+  FaRegUser,
+  FaRegHeart,
+  FaCartShopping,
+  FaBars,
+  FaChevronDown,
+} from "react-icons/fa6";
+import { RiBookOpenLine, RiSparklingFill } from "react-icons/ri";
+import avatarImg from "../assets/avatar.png";
+import { useSelector } from "react-redux";
+import { useAuth } from "./../context/AuthContext";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./LanguageSwitcher";
+import SearchSuggestions from "./SearchSuggestions";
 import {
   useGetSearchSuggestionsQuery,
   useAddSearchHistoryMutation,
   useGetSearchHistoryQuery,
   useDeleteSearchHistoryMutation,
-} from "../redux/features/search/searchApi"
-import { debounce } from "lodash"
-import SearchHistory from "./SearchHistory"
-import gsap from "gsap"
-import "../styles/nav.css"
+} from "../redux/features/search/searchApi";
+import { debounce } from "lodash";
+import SearchHistory from "./SearchHistory";
+import gsap from "gsap";
+import "../styles/nav.css";
+import { useGetNotificationsQuery } from "../redux/features/notifications/notificationsApi";
 
 const navigation = [
   { name: "Profile", href: "/profile", icon: "👤" },
   { name: "Orders", href: "/orders", icon: "📦" },
   { name: "Cart Page", href: "/cart", icon: "🛒" },
-  { name: "Check Out", href: "/checkout", icon: "💳" },
-]
+  { name: "Notifications", href: "/notifications", icon: "🔔" },
+];
 
 const categories = [
-  { name: "Books", href: "/product", icon: "📚", color: "from-blue-500 to-blue-600" },
-  { name: "Business", href: "/product/business", icon: "💼", color: "from-green-500 to-green-600" },
-  { name: "Fiction", href: "/product/fiction", icon: "📖", color: "from-purple-500 to-purple-600" },
-  { name: "Adventure", href: "/product/adventure", icon: "🗺️", color: "from-orange-500 to-orange-600" },
-  { name: "Manga", href: "/product/manga", icon: "🎌", color: "from-pink-500 to-pink-600" },
-]
+  {
+    name: "Books",
+    href: "/product",
+    icon: "📚",
+    color: "from-blue-500 to-blue-600",
+  },
+  {
+    name: "Business",
+    href: "/product/business",
+    icon: "💼",
+    color: "from-green-500 to-green-600",
+  },
+  {
+    name: "Fiction",
+    href: "/product/fiction",
+    icon: "📖",
+    color: "from-purple-500 to-purple-600",
+  },
+  {
+    name: "Adventure",
+    href: "/product/adventure",
+    icon: "🗺️",
+    color: "from-orange-500 to-orange-600",
+  },
+  {
+    name: "Manga",
+    href: "/product/manga",
+    icon: "🎌",
+    color: "from-pink-500 to-pink-600",
+  },
+];
 
 const EnhancedNavbar = () => {
-  const [query, setQuery] = useState("")
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [inputValue, setInputValue] = useState("")
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
-  const [showHistory, setShowHistory] = useState(false)
-  const [isSearchFocused, setIsSearchFocused] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [query, setQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navigate = useNavigate()
-  const cartItems = useSelector((state) => state.cart.cartItems)
-  const wishlistItems = useSelector((state) => state.wishlist.wishlistItems)
-  const { currentUser, logout } = useAuth()
-  const { t } = useTranslation()
+  const navigate = useNavigate();
+  const cartItems = useSelector((state) => state.cart.cartItems);
+  const wishlistItems = useSelector((state) => state.wishlist.wishlistItems);
+  const { currentUser, logout } = useAuth();
+  const { t } = useTranslation();
 
-  const searchRef = useRef(null)
-  const categoryRef = useRef(null)
-  const dropdownRef = useRef(null)
-  const logoRef = useRef(null)
-  const navRef = useRef(null)
+  const searchRef = useRef(null);
+  const categoryRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const logoRef = useRef(null);
+  const navRef = useRef(null);
 
-  const [deleteSearchHistory] = useDeleteSearchHistoryMutation()
-  const [addSearchHistory] = useAddSearchHistoryMutation()
+  const [deleteSearchHistory] = useDeleteSearchHistoryMutation();
+  const [addSearchHistory] = useAddSearchHistoryMutation();
 
   // API calls
   const { data: suggestions } = useGetSearchSuggestionsQuery(query, {
     skip: !query || query.length < 2,
-  })
+  });
 
   const { data: searchHistoryData } = useGetSearchHistoryQuery(undefined, {
     skip: !currentUser || !showHistory,
-  })
+  });
+
+  // Get notifications
+  const { data: notificationsData } = useGetNotificationsQuery(undefined, {
+    skip: !currentUser,
+    pollingInterval: 30000, // Poll every 30 seconds
+  });
+
+  const unreadNotifications =
+    notificationsData?.data?.filter((n) => !n.isRead) || [];
+  const unreadCount = unreadNotifications.length;
 
   // Enhanced animations
   useEffect(() => {
@@ -89,8 +131,8 @@ const EnhancedNavbar = () => {
           duration: 0.8,
           stagger: 0.1,
           ease: "back.out(1.7)",
-        },
-      )
+        }
+      );
     }
 
     if (navRef.current) {
@@ -105,131 +147,131 @@ const EnhancedNavbar = () => {
           y: 0,
           duration: 1,
           ease: "power3.out",
-        },
-      )
+        }
+      );
     }
-  }, [])
+  }, []);
 
   // Click outside handlers
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowSuggestions(false)
-        setShowHistory(false)
-        setIsSearchFocused(false)
+        setShowSuggestions(false);
+        setShowHistory(false);
+        setIsSearchFocused(false);
       }
       if (categoryRef.current && !categoryRef.current.contains(event.target)) {
-        setIsCategoryOpen(false)
+        setIsCategoryOpen(false);
       }
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false)
+        setIsDropdownOpen(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Debounced search
   const debouncedSearch = debounce((value) => {
     if (value.length >= 2) {
-      setQuery(value)
-      setShowSuggestions(true)
+      setQuery(value);
+      setShowSuggestions(true);
     } else {
-      setQuery("")
-      setShowSuggestions(false)
+      setQuery("");
+      setShowSuggestions(false);
     }
-  }, 300)
+  }, 300);
 
   const handleSearchChange = (e) => {
-    const value = e.target.value
-    setInputValue(value)
-    debouncedSearch(value)
-  }
+    const value = e.target.value;
+    setInputValue(value);
+    debouncedSearch(value);
+  };
 
   const handleSearch = async () => {
     if (inputValue.trim()) {
-      navigate(`/search?query=${encodeURIComponent(inputValue)}`)
-      setShowSuggestions(false)
-      setIsSearchFocused(false)
+      navigate(`/search?query=${encodeURIComponent(inputValue)}`);
+      setShowSuggestions(false);
+      setIsSearchFocused(false);
 
       if (currentUser) {
         try {
-          await addSearchHistory({ query: inputValue.trim() }).unwrap()
+          await addSearchHistory({ query: inputValue.trim() }).unwrap();
         } catch (error) {
-          console.error("Error tracking search:", error)
+          console.error("Error tracking search:", error);
         }
       }
     }
-  }
+  };
 
   const handleSuggestionSelect = async (selectedQuery) => {
-    setInputValue(selectedQuery)
-    setQuery(selectedQuery)
-    setShowSuggestions(false)
-    setIsSearchFocused(false)
-    navigate(`/search?query=${encodeURIComponent(selectedQuery)}`)
+    setInputValue(selectedQuery);
+    setQuery(selectedQuery);
+    setShowSuggestions(false);
+    setIsSearchFocused(false);
+    navigate(`/search?query=${encodeURIComponent(selectedQuery)}`);
 
     if (currentUser) {
       try {
-        await addSearchHistory({ query: selectedQuery.trim() }).unwrap()
+        await addSearchHistory({ query: selectedQuery.trim() }).unwrap();
       } catch (error) {
-        console.error("Error tracking search from suggestion:", error)
+        console.error("Error tracking search from suggestion:", error);
       }
     }
-  }
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      handleSearch()
+      handleSearch();
     }
     if (e.key === "Escape") {
-      setShowSuggestions(false)
-      setShowHistory(false)
-      setIsSearchFocused(false)
+      setShowSuggestions(false);
+      setShowHistory(false);
+      setIsSearchFocused(false);
     }
-  }
+  };
 
   const handleLogout = () => {
     if (logout) {
-      logout()
-      setIsDropdownOpen(false)
+      logout();
+      setIsDropdownOpen(false);
     }
-  }
+  };
 
   const getAvatarUrl = () => {
-    if (currentUser?.photoURL) return currentUser.photoURL
+    if (currentUser?.photoURL) return currentUser.photoURL;
 
-    const storedUser = localStorage.getItem("user")
+    const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      const userData = JSON.parse(storedUser)
-      if (userData.photoURL) return userData.photoURL
+      const userData = JSON.parse(storedUser);
+      if (userData.photoURL) return userData.photoURL;
     }
 
-    return avatarImg
-  }
+    return avatarImg;
+  };
 
   const handleHistorySelect = (query) => {
-    setInputValue(query)
-    setQuery(query)
-    setShowHistory(false)
-    setShowSuggestions(true)
-  }
+    setInputValue(query);
+    setQuery(query);
+    setShowHistory(false);
+    setShowSuggestions(true);
+  };
 
   const handleHistoryDelete = async (historyId) => {
     try {
-      await deleteSearchHistory(historyId).unwrap()
+      await deleteSearchHistory(historyId).unwrap();
     } catch (error) {
-      console.error("Error deleting search history:", error)
+      console.error("Error deleting search history:", error);
     }
-  }
+  };
 
   const handleInputFocus = () => {
-    setIsSearchFocused(true)
+    setIsSearchFocused(true);
     if (currentUser && inputValue.length === 0) {
-      setShowHistory(true)
+      setShowHistory(true);
     }
-  }
+  };
 
   return (
     <motion.header
@@ -290,7 +332,9 @@ const EnhancedNavbar = () => {
             >
               <div
                 className={`relative flex items-center bg-gray-50 rounded-2xl transition-all duration-300 ${
-                  isSearchFocused ? "ring-2 ring-blue-500 bg-white shadow-lg" : "hover:bg-gray-100 hover:shadow-md"
+                  isSearchFocused
+                    ? "ring-2 ring-blue-500 bg-white shadow-lg"
+                    : "hover:bg-gray-100 hover:shadow-md"
                 }`}
               >
                 <motion.button
@@ -319,9 +363,9 @@ const EnhancedNavbar = () => {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
                       onClick={() => {
-                        setInputValue("")
-                        setQuery("")
-                        setShowSuggestions(false)
+                        setInputValue("");
+                        setQuery("");
+                        setShowSuggestions(false);
                       }}
                       className="absolute right-12 p-1 rounded-full hover:bg-gray-200 transition-colors duration-200"
                     >
@@ -339,7 +383,10 @@ const EnhancedNavbar = () => {
                     whileTap={{ scale: 0.95 }}
                   >
                     <FaBars className="w-4 h-4" />
-                    <motion.div animate={{ rotate: isCategoryOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                    <motion.div
+                      animate={{ rotate: isCategoryOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
                       <FaChevronDown className="w-3 h-3" />
                     </motion.div>
                   </motion.button>
@@ -369,13 +416,17 @@ const EnhancedNavbar = () => {
                                 <div
                                   className={`w-10 h-10 rounded-lg bg-gradient-to-r ${category.color} flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform duration-200`}
                                 >
-                                  <span className="text-lg">{category.icon}</span>
+                                  <span className="text-lg">
+                                    {category.icon}
+                                  </span>
                                 </div>
                                 <div>
                                   <p className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors duration-200">
                                     {t(`common.${category.name.toLowerCase()}`)}
                                   </p>
-                                  <p className="text-xs text-gray-500">Explore {category.name.toLowerCase()}</p>
+                                  <p className="text-xs text-gray-500">
+                                    Explore {category.name.toLowerCase()}
+                                  </p>
                                 </div>
                               </Link>
                             </motion.div>
@@ -440,13 +491,16 @@ const EnhancedNavbar = () => {
                         alt="User Avatar"
                         className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500 shadow-md"
                         onError={(e) => {
-                          e.target.onerror = null
-                          e.target.src = avatarImg
+                          e.target.onerror = null;
+                          e.target.src = avatarImg;
                         }}
                       />
                       <motion.div
                         animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                        transition={{
+                          duration: 2,
+                          repeat: Number.POSITIVE_INFINITY,
+                        }}
                         className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"
                       />
                     </div>
@@ -462,8 +516,12 @@ const EnhancedNavbar = () => {
                         className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50"
                       >
                         <div className="p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                          <p className="font-semibold">{currentUser.displayName || "User"}</p>
-                          <p className="text-sm opacity-90">{currentUser.email}</p>
+                          <p className="font-semibold">
+                            {currentUser.displayName || "User"}
+                          </p>
+                          <p className="text-sm opacity-90">
+                            {currentUser.email}
+                          </p>
                         </div>
                         <div className="p-2">
                           {navigation.map((item, index) => (
@@ -480,8 +538,18 @@ const EnhancedNavbar = () => {
                               >
                                 <span className="text-lg">{item.icon}</span>
                                 <span className="font-medium text-gray-700 group-hover:text-blue-600 transition-colors duration-200">
-                                  {t(`common.${item.name.toLowerCase().replace(" ", "_")}`)}
+                                  {t(
+                                    `common.${item.name
+                                      .toLowerCase()
+                                      .replace(" ", "_")}`
+                                  )}
                                 </span>
+                                {item.name === "Notifications" &&
+                                  unreadCount > 0 && (
+                                    <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                      {unreadCount}
+                                    </span>
+                                  )}
                               </Link>
                             </motion.div>
                           ))}
@@ -503,7 +571,10 @@ const EnhancedNavbar = () => {
                   </AnimatePresence>
                 </>
               ) : (
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   <Link
                     to="/login"
                     className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all duration-200 shadow-md"
@@ -517,7 +588,10 @@ const EnhancedNavbar = () => {
 
             {/* Enhanced Wishlist */}
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link to="/wishlist" className="relative p-2 rounded-xl hover:bg-gray-100 transition-all duration-200">
+              <Link
+                to="/wishlist"
+                className="relative p-2 rounded-xl hover:bg-gray-100 transition-all duration-200"
+              >
                 <FaRegHeart className="w-6 h-6 text-gray-600" />
                 <AnimatePresence>
                   {wishlistItems.length > 0 && (
@@ -567,7 +641,10 @@ const EnhancedNavbar = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <motion.div animate={{ rotate: isMobileMenuOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+              <motion.div
+                animate={{ rotate: isMobileMenuOpen ? 90 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
                 <FaBars className="w-5 h-5 text-gray-600" />
               </motion.div>
             </motion.button>
@@ -598,7 +675,9 @@ const EnhancedNavbar = () => {
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <span className="text-lg">{category.icon}</span>
-                      <span className="font-medium text-gray-700">{t(`common.${category.name.toLowerCase()}`)}</span>
+                      <span className="font-medium text-gray-700">
+                        {t(`common.${category.name.toLowerCase()}`)}
+                      </span>
                     </Link>
                   </motion.div>
                 ))}
@@ -608,7 +687,7 @@ const EnhancedNavbar = () => {
         </AnimatePresence>
       </div>
     </motion.header>
-  )
-}
+  );
+};
 
-export default EnhancedNavbar
+export default EnhancedNavbar;

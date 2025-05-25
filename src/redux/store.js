@@ -15,6 +15,7 @@ import { cartApi } from './features/cart/cartApi';
 import { reviewsApi } from './features/reviews/reviewsApi';
 import { searchApi } from './features/search/searchApi';
 import { recommendationsv2Api } from './features/recommendationv2/recommendationsv2Api';
+import { notificationsApi } from './features/notifications/notificationsApi';
 
 export const store = configureStore({
   reducer: {
@@ -33,6 +34,7 @@ export const store = configureStore({
     [reviewsApi.reducerPath]: reviewsApi.reducer,
     [searchApi.reducerPath]: searchApi.reducer,
     [recommendationsv2Api.reducerPath]: recommendationsv2Api.reducer,
+    [notificationsApi.reducerPath]: notificationsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -47,7 +49,8 @@ export const store = configureStore({
       cartApi.middleware,
       reviewsApi.middleware,
       searchApi.middleware,
-      recommendationsv2Api.middleware
+      recommendationsv2Api.middleware,
+      notificationsApi.middleware
     ),
 });
 

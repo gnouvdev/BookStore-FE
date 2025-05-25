@@ -1,85 +1,127 @@
 /* eslint-disable no-unused-vars */
 
-import { useState, useRef, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { motion, AnimatePresence } from "framer-motion"
-import { FaGoogle, FaLock, FaEye, FaEyeSlash, FaEnvelope, FaSpinner } from "react-icons/fa"
-import { RiBookOpenLine, RiSparklingFill, RiShieldCheckLine } from "react-icons/ri"
-import { useForm } from "react-hook-form"
-import { useAuth } from "./../context/AuthContext"
-import { toast } from "react-hot-toast"
-import axios from "axios"
-import gsap from "gsap"
-import "../styles/auth.css"
+import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaGoogle,
+  FaLock,
+  FaEye,
+  FaEyeSlash,
+  FaEnvelope,
+  FaSpinner,
+} from "react-icons/fa";
+import {
+  RiBookOpenLine,
+  RiSparklingFill,
+  RiShieldCheckLine,
+} from "react-icons/ri";
+import { useForm } from "react-hook-form";
+import { useAuth } from "./../context/AuthContext";
+import { toast } from "react-hot-toast";
+import axios from "axios";
+import gsap from "gsap";
+import "../styles/auth.css";
 
 const EnhancedLogin = () => {
-  const { loginUser, signInWithGoogle, setCurrentUser } = useAuth()
-  const navigate = useNavigate()
+  const { loginUser, signInWithGoogle, setCurrentUser } = useAuth();
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
-  } = useForm()
+  } = useForm();
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
-  const formRef = useRef(null)
-  const logoRef = useRef(null)
-  const backgroundRef = useRef(null)
+  const formRef = useRef(null);
+  const logoRef = useRef(null);
+  const backgroundRef = useRef(null);
 
-  const email = watch("email")
-  const password = watch("password")
+  const email = watch("email");
+  const password = watch("password");
 
   // Enhanced animations
   useEffect(() => {
-    const tl = gsap.timeline()
+    const tl = gsap.timeline();
 
     tl.fromTo(
       backgroundRef.current,
       { opacity: 0, scale: 1.1 },
-      { opacity: 1, scale: 1, duration: 1.5, ease: "power2.out" },
+      { opacity: 1, scale: 1, duration: 1.5, ease: "power2.out" }
     )
       .fromTo(
         logoRef.current,
         { y: -50, opacity: 0, rotationY: -90 },
         { y: 0, opacity: 1, rotationY: 0, duration: 1, ease: "back.out(1.7)" },
-        "-=1",
+        "-=1"
       )
       .fromTo(
         formRef.current?.children || [],
         { y: 30, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out" },
-        "-=0.5",
-      )
-  }, [])
+        "-=0.5"
+      );
+  }, []);
 
   // Helper functions
   const fetchUserProfile = async (token) => {
     try {
-      const response = await axios.get("http://localhost:5000/api/users/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      return response.data.user
+      if (!token) {
+        throw new Error("No authentication token provided");
+      }
+
+      console.log(
+        "Fetching profile with token:",
+        token.substring(0, 10) + "..."
+      );
+      const response = await axios.get(
+        "http://localhost:5000/api/users/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          validateStatus: function (status) {
+            return status < 500;
+          },
+        }
+      );
+
+      console.log("Profile response status:", response.status);
+
+      if (response.status === 401) {
+        console.error("Unauthorized profile fetch");
+        throw new Error("Unauthorized");
+      }
+
+      if (!response.data || !response.data.user) {
+        console.error("Invalid profile data:", response.data);
+        throw new Error("Invalid profile data");
+      }
+
+      return response.data.user;
     } catch (error) {
-      console.error("Error fetching user profile:", error)
-      return null
+      console.error("Profile fetch error:", error);
+      throw error;
     }
-  }
+  };
 
   const createCleanUserObject = (user, profileData, role) => {
-    const { email, uid, photoURL: firebasePhotoURL } = user
+    const { email, uid, photoURL: firebasePhotoURL } = user;
 
-    let finalPhotoURL = null
+    let finalPhotoURL = null;
     if (profileData?.photoURL) {
-      finalPhotoURL = profileData.photoURL
+      finalPhotoURL = profileData.photoURL;
     } else if (firebasePhotoURL) {
-      finalPhotoURL = firebasePhotoURL
+      finalPhotoURL = firebasePhotoURL;
     } else {
-      finalPhotoURL = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
+      finalPhotoURL =
+        "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
     }
 
     return {
@@ -90,37 +132,92 @@ const EnhancedLogin = () => {
       displayName: profileData?.fullName || user.displayName || null,
       fullName: profileData?.fullName || null,
       address: profileData?.address || null,
-    }
-  }
+    };
+  };
 
   // Enhanced login handler
   const onSubmit = async (data) => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
       // 1. Firebase authentication
-      const result = await loginUser(data.email, data.password)
-      const user = result.user
+      const result = await loginUser(data.email, data.password);
+      if (!result || !result.user) {
+        throw new Error("Authentication failed");
+      }
+      const user = result.user;
+      console.log("Firebase auth successful:", user.uid);
 
-      // 2. Get Firebase token
-      const idToken = await user.getIdToken()
+      // 2. Get Firebase token with force refresh
+      let idToken;
+      try {
+        idToken = await user.getIdToken(true);
+        if (!idToken) {
+          throw new Error("Failed to get authentication token");
+        }
+        console.log("Got Firebase token");
+      } catch (tokenError) {
+        console.error("Token error:", tokenError);
+        throw new Error("Failed to get authentication token");
+      }
 
       // 3. Backend authentication
-      const response = await axios.post("http://localhost:5000/api/auth/login", { idToken })
-      const { token, role = "user" } = response.data
+      console.log("Attempting backend authentication...");
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        {
+          idToken,
+          email: user.email,
+          uid: user.uid,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          validateStatus: function (status) {
+            return status < 500;
+          },
+        }
+      );
 
-      localStorage.setItem("token", token)
+      console.log("Backend response:", response.status);
 
-      // 4. Fetch user profile
-      const profileData = await fetchUserProfile(token)
+      if (response.status === 401) {
+        console.error("Backend authentication failed:", response.data);
+        throw new Error("Invalid credentials");
+      }
+
+      if (!response.data || !response.data.token) {
+        console.error("Invalid backend response:", response.data);
+        throw new Error("Invalid server response");
+      }
+
+      const { token, role = "user" } = response.data;
+      console.log("Got backend token and role:", role);
+
+      // 4. Fetch user profile with the new token
+      console.log("Fetching user profile...");
+      const profileData = await fetchUserProfile(token);
+      if (!profileData) {
+        console.error("Failed to get profile data");
+        throw new Error("Failed to fetch user profile");
+      }
+      console.log("Got user profile:", profileData);
 
       // 5. Create clean user object
-      const cleanUser = createCleanUserObject(user, profileData, role)
+      const cleanUser = createCleanUserObject(user, profileData, role);
+      console.log("Created clean user object");
 
       // 6. Save to localStorage
-      localStorage.setItem("user", JSON.stringify(cleanUser))
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(cleanUser));
+      console.log("Saved to localStorage");
 
       // 7. Update context
-      setCurrentUser(cleanUser)
+      setCurrentUser(cleanUser);
+      console.log("Updated context");
 
       // Success animation
       gsap.to(formRef.current, {
@@ -129,60 +226,79 @@ const EnhancedLogin = () => {
         yoyo: true,
         repeat: 1,
         ease: "power2.inOut",
-      })
+      });
 
-      toast.success("Đăng nhập thành công! 🎉")
-      setTimeout(() => navigate("/"), 1000)
+      toast.success("Đăng nhập thành công! 🎉");
+      setTimeout(() => navigate("/"), 1000);
     } catch (error) {
-      console.error("Login error:", error)
+      console.error("Login error details:", {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
 
       // Error animation
       gsap.to(formRef.current, {
         x: [-10, 10, -10, 10, 0],
         duration: 0.5,
         ease: "power2.inOut",
-      })
+      });
 
+      // Handle specific error cases
       if (error.code === "auth/user-not-found") {
-        toast.error("Email chưa được đăng ký. Vui lòng đăng ký trước.")
+        toast.error("Email chưa được đăng ký. Vui lòng đăng ký trước.");
       } else if (error.code === "auth/wrong-password") {
-        toast.error("Mật khẩu không đúng. Vui lòng thử lại.")
+        toast.error("Mật khẩu không đúng. Vui lòng thử lại.");
+      } else if (error.code === "auth/too-many-requests") {
+        toast.error("Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau.");
+      } else if (error.message === "Invalid credentials") {
+        toast.error("Thông tin đăng nhập không hợp lệ.");
+      } else if (error.message === "Failed to get authentication token") {
+        toast.error("Không thể xác thực. Vui lòng thử lại.");
+      } else if (error.message === "Failed to fetch user profile") {
+        toast.error("Không thể lấy thông tin người dùng.");
+      } else if (error.response?.data?.message?.includes("duplicate key")) {
+        toast.error("Tài khoản đã tồn tại. Vui lòng thử lại sau.");
       } else {
-        toast.error("Đăng nhập thất bại. Vui lòng thử lại.")
+        toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
       }
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   // Enhanced Google sign-in
   const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true)
+    setIsGoogleLoading(true);
     try {
-      const result = await signInWithGoogle()
-      const user = result.user
-      const idToken = await user.getIdToken()
+      const result = await signInWithGoogle();
+      const user = result.user;
+      const idToken = await user.getIdToken();
 
-      const response = await axios.post("http://localhost:5000/api/auth/google", { idToken })
-      const { token, role = "user" } = response.data
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/google",
+        { idToken }
+      );
+      const { token, role = "user" } = response.data;
 
-      localStorage.setItem("token", token)
+      localStorage.setItem("token", token);
 
-      const profileData = await fetchUserProfile(token)
-      const cleanUser = createCleanUserObject(user, profileData, role)
+      const profileData = await fetchUserProfile(token);
+      const cleanUser = createCleanUserObject(user, profileData, role);
 
-      localStorage.setItem("user", JSON.stringify(cleanUser))
-      setCurrentUser(cleanUser)
+      localStorage.setItem("user", JSON.stringify(cleanUser));
+      setCurrentUser(cleanUser);
 
-      toast.success("Đăng nhập bằng Google thành công! 🎉")
-      setTimeout(() => navigate("/profile"), 1000)
+      toast.success("Đăng nhập bằng Google thành công! 🎉");
+      setTimeout(() => navigate("/profile"), 1000);
     } catch (error) {
-      console.error("Google sign-in error:", error)
-      toast.error("Đăng nhập bằng Google thất bại!")
+      console.error("Google sign-in error:", error);
+      toast.error("Đăng nhập bằng Google thất bại!");
     } finally {
-      setIsGoogleLoading(false)
+      setIsGoogleLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -256,8 +372,16 @@ const EnhancedLogin = () => {
                 scale: [1, 1.1, 1],
               }}
               transition={{
-                rotateY: { duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "linear" },
-                scale: { duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" },
+                rotateY: {
+                  duration: 4,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "linear",
+                },
+                scale: {
+                  duration: 2,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "easeInOut",
+                },
               }}
             >
               <RiBookOpenLine className="text-white text-3xl" />
@@ -298,7 +422,9 @@ const EnhancedLogin = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4, duration: 0.6 }}
               >
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address
+                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <FaEnvelope className="h-5 w-5 text-gray-400" />
@@ -307,7 +433,8 @@ const EnhancedLogin = () => {
                     {...register("email", {
                       required: "Vui lòng nhập email",
                       pattern: {
-                        value: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/,
+                        value:
+                          /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/,
                         message: "Email không hợp lệ",
                       },
                     })}
@@ -316,8 +443,8 @@ const EnhancedLogin = () => {
                       errors.email
                         ? "border-red-500 focus:border-red-500"
                         : email
-                          ? "border-green-500 focus:border-green-500"
-                          : "border-gray-200 focus:border-blue-500"
+                        ? "border-green-500 focus:border-green-500"
+                        : "border-gray-200 focus:border-blue-500"
                     }`}
                     placeholder="Enter your email"
                   />
@@ -354,7 +481,9 @@ const EnhancedLogin = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5, duration: 0.6 }}
               >
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password
+                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <FaLock className="h-5 w-5 text-gray-400" />
@@ -372,8 +501,8 @@ const EnhancedLogin = () => {
                       errors.password
                         ? "border-red-500 focus:border-red-500"
                         : password
-                          ? "border-green-500 focus:border-green-500"
-                          : "border-gray-200 focus:border-blue-500"
+                        ? "border-green-500 focus:border-green-500"
+                        : "border-gray-200 focus:border-blue-500"
                     }`}
                     placeholder="Enter your password"
                   />
@@ -425,10 +554,14 @@ const EnhancedLogin = () => {
                   />
                   <div
                     className={`w-5 h-5 rounded border-2 mr-3 flex items-center justify-center transition-all duration-200 ${
-                      rememberMe ? "bg-blue-500 border-blue-500" : "border-gray-300"
+                      rememberMe
+                        ? "bg-blue-500 border-blue-500"
+                        : "border-gray-300"
                     }`}
                   >
-                    {rememberMe && <span className="text-white text-xs">✓</span>}
+                    {rememberMe && (
+                      <span className="text-white text-xs">✓</span>
+                    )}
                   </div>
                   <span className="text-sm text-gray-700">Remember me</span>
                 </motion.label>
@@ -446,7 +579,10 @@ const EnhancedLogin = () => {
                 type="submit"
                 disabled={isSubmitting}
                 className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-3 px-6 rounded-xl hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 transition-all duration-300 shadow-lg"
-                whileHover={{ scale: 1.02, boxShadow: "0 20px 40px -10px rgba(59, 130, 246, 0.4)" }}
+                whileHover={{
+                  scale: 1.02,
+                  boxShadow: "0 20px 40px -10px rgba(59, 130, 246, 0.4)",
+                }}
                 whileTap={{ scale: 0.98 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -474,7 +610,9 @@ const EnhancedLogin = () => {
                 <div className="w-full border-t border-gray-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">Or continue with</span>
+                <span className="px-4 bg-white text-gray-500">
+                  Or continue with
+                </span>
               </div>
             </motion.div>
 
@@ -526,7 +664,7 @@ const EnhancedLogin = () => {
         </motion.div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default EnhancedLogin
+export default EnhancedLogin;

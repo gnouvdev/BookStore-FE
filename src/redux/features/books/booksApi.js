@@ -37,6 +37,14 @@ export const booksApi = createApi({
       query: (title) => `/books/search?title=${title}`,
       providesTags: ["Books"],
     }),
+    getBooksWithStats: builder.query({
+      query: () => "/books/stats",
+      providesTags: ["Books"],
+    }),
+    getBookSalesByGenre: builder.query({
+      query: () => "/books/sales-by-genre",
+      providesTags: ["Books"],
+    }),
     addBook: builder.mutation({
       query: (data) => ({
         url: "/books/create-book",
@@ -75,6 +83,8 @@ export const {
   useGetBooksByCategoryQuery,
   useGetBookByIdQuery,
   useSearchBooksQuery,
+  useGetBooksWithStatsQuery,
+  useGetBookSalesByGenreQuery,
   useAddBookMutation,
   useUpdateBookMutation,
   useDeleteBookMutation,

@@ -21,7 +21,10 @@
     "business": "Business",
     "no_discounts": "No discounts available at the moment",
     "cart_page": "Cart Page",
-    "check_out": "Check Out"
+    "check_out": "Check Out",
+    "wishlist": "Wishlist",
+    "add_to_wishlist": "Add to Wishlist",
+    "notifications": "Notifications"
   },
   "filter": {
     "title": "Filter",
@@ -333,13 +336,15 @@
     "more_items": "more items",
     "total_items": "Total Items",
     "track_and_manage_your_orders": "Track and Manage Your Orders",
-    "my_orders": "My Orders"
+    "my_orders": "My Orders",
+    "write_review": "Write Review",
+    "buy_again": "Buy Again"
   },
   "reviews": {
     "title": "Reviews",
     "no_reviews": "No reviews found",
     "write_a_review": "Write a Review",
-    "review": "Your Review",
+    "review": "Review",
     "rating": "Your Rating",
     "comment": "Comment",
     "submit": "Submit",
@@ -382,5 +387,23 @@
     "title5": "Fiction Favorites",
     "subtitle5": "Dive into captivating fictional worlds",
     "cta5": "Read More"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "all": "All",
+    "unread": "Unread",
+    "read": "Read",
+    "mark_as_read": "Mark as Read",
+    "mark_all_as_read": "Mark All as Read",
+    "no_notifications": "No notifications found",
+    "no_unread_notifications": "No unread notifications found",
+    "no_read_notifications": "No read notifications found",
+    "notification_details": "Notification Details",
+    "no_notifications_desc": "No notifications found",
+    "filters": {
+      "all": "All",
+      "unread": "Unread",
+      "read": "Read"
+    }
   }
 }

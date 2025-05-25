@@ -21,7 +21,10 @@
     "business": "Sách Kinh doanh",
     "no_discounts": "Không có khuyến mãi",
     "cart_page": "Trang giỏ hàng",
-    "check_out": "Thanh toán"
+    "check_out": "Thanh toán",
+    "wishlist": "Danh sách yêu thích",
+    "add_to_wishlist": "Thêm vào danh sách yêu thích",
+    "notifications": "Thông báo"
   },
   "filter": {
     "title": "Bộ lọc",
@@ -360,5 +363,24 @@
     "title5": "Sách viễn tưởng",
     "subtitle5": "Khám phá thế giới viễn tưởng",
     "cta5": "Đọc thêm"
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "all": "Tất cả",
+    "unread": "Chưa đọc",
+    "read": "Đã đọc",
+    "mark_as_read": "Đánh dấu đã đọc",
+    "mark_all_as_read": "Đánh dấu tất cả đã đọc",
+    "no_notifications": "Không có thông báo",
+    "no_unread_notifications": "Không có thông báo chưa đọc",
+    "no_read_notifications": "Không có thông báo đã đọc",
+    "no_notifications_desc": "Không có thông báo nào",
+    "no_unread_notifications_desc": "Không có thông báo chưa đọc",
+    "no_read_notifications_desc": "Không có thông báo đã đọc",
+    "filters": {
+      "all": "Tất cả",
+      "unread": "Chưa đọc",
+      "read": "Đã đọc"
+    }
   }
 }

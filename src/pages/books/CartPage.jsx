@@ -503,6 +503,17 @@ const EnhancedCartPage = () => {
                             </span>
                           </div>
 
+                          {/* Low Stock Warning */}
+                          {item.book.quantity < 10 && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="text-red-500 text-sm font-medium mb-4"
+                            >
+                              Chỉ còn lại {item.book.quantity} sản phẩm
+                            </motion.div>
+                          )}
+
                           {/* Quantity Controls */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -603,12 +614,16 @@ const EnhancedCartPage = () => {
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600">
-                  <span>{t("cart.subtotal")} ({cartItems.length} {t("cart.items")})</span>
+                  <span>
+                    {t("cart.subtotal")} ({cartItems.length} {t("cart.items")})
+                  </span>
                   <span>{totalAmount.toLocaleString("vi-VN")} đ</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>{t("cart.shipping")}</span>
-                  <span className="text-green-600 font-semibold">{t("cart.free")}</span>
+                  <span className="text-green-600 font-semibold">
+                    {t("cart.free")}
+                  </span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>{t("cart.tax")}</span>

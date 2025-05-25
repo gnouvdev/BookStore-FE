@@ -6,12 +6,14 @@ import News from "./News";
 import GenreBooks from "../../components/GenreBooks";
 import MiniBanner from "../../components/miniBanner";
 import Recommendationsv2 from "../../components/Recommendationsv2";
+import InteractiveBookExplorer from "./InteractiveBook";
 const Home = () => {
   return (
     <>
       <Banner />
       <Recommended />
       <Recommendationsv2 />
+      <InteractiveBookExplorer />
       <GenreBooks genre={"Fiction"} />
       <MiniBanner genre1={"Business1"} genre2={"Business2"} />
       <GenreBooks genre={"Bussines"} />

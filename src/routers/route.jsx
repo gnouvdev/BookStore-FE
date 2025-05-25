@@ -32,6 +32,9 @@ import WishlistPage from "../pages/wishlist/WishlistPage";
 import VNPayCallback from './../pages/vnpaycallback/VNPayCallback';
 import ForgotPassword from './../components/ForgotPassword';
 import HomePage from './../pages/home/HomePage';
+import AboutUs from './../pages/home/AboutUs';
+import Notifications from './../pages/notifications/Notifications';
+
 
 const router = createBrowserRouter([
   {
@@ -61,10 +64,6 @@ const router = createBrowserRouter([
       {
         path: "/vnpay/callback",
         element: <VNPayCallback />,
-      },
-      {
-        path: "/about",
-        element: <div>About</div>,
       },
       {
         path: "/login",
@@ -135,10 +134,22 @@ const router = createBrowserRouter([
         element: <SearchBook />,
       },
       {
+        path: "/about",
+        element: <AboutUs />,
+      },
+      {
         path: "/profile",
         element: (
           <PrivateRoute>
             <Profile />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "/notifications",
+        element: (
+          <PrivateRoute>
+            <Notifications />
           </PrivateRoute>
         ),
       },
