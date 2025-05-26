@@ -1,12 +1,12 @@
 /* eslint-disable no-unused-vars */
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { useSelector, useDispatch } from "react-redux"
-import { useForm } from "react-hook-form"
-import { Link, useNavigate } from "react-router-dom"
-import { motion } from "framer-motion"
-import "../../styles/cart-checkout.css"
+import { useState, useRef, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import "../../styles/cart-checkout.css";
 import {
   FaCreditCard,
   FaMoneyBillWave,
@@ -19,41 +19,63 @@ import {
   FaMapMarkerAlt,
   FaLock,
   FaShoppingCart,
-} from "react-icons/fa"
-import { RiSecurePaymentLine, RiTruckLine, RiShieldCheckLine } from "react-icons/ri"
-import { useAuth } from "../../context/AuthContext"
-import Swal from "sweetalert2"
-import { useCreateOrderMutation } from "../../redux/features/orders/ordersApi"
-import { clearCart } from "../../redux/features/cart/cartSlice"
-import { useGetPaymentMethodsQuery, useCreateVNPayUrlMutation } from "../../redux/features/payments/paymentsApi"
-import { useGetCurrentUserQuery } from "../../redux/features/users/userApi"
-import baseUrl from "../../utils/baseURL"
-import { useClearCartMutation } from "../../redux/features/cart/cartApi"
-import gsap from "gsap"
-import { t } from "i18next"
+} from "react-icons/fa";
+import {
+  RiSecurePaymentLine,
+  RiTruckLine,
+  RiShieldCheckLine,
+} from "react-icons/ri";
+import { useAuth } from "../../context/AuthContext";
+import Swal from "sweetalert2";
+import { useCreateOrderMutation } from "../../redux/features/orders/ordersApi";
+import { clearCart } from "../../redux/features/cart/cartSlice";
+import {
+  useGetPaymentMethodsQuery,
+  useCreateVNPayUrlMutation,
+} from "../../redux/features/payments/paymentsApi";
+import {
+  useGetCurrentUserQuery,
+  useGetUserProfileQuery,
+} from "../../redux/features/users/userApi";
+import baseUrl from "../../utils/baseURL";
+import { useClearCartMutation } from "../../redux/features/cart/cartApi";
+import gsap from "gsap";
+import { t } from "i18next";
+import { toast } from "react-hot-toast";
 
 const EnhancedCheckoutPage = () => {
-  const { currentUser } = useAuth()
-  const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const [selectedPayment, setSelectedPayment] = useState(null)
-  const [isChecked, setIsChecked] = useState(false)
-  const [currentStep, setCurrentStep] = useState(1)
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [isChecked, setIsChecked] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
 
-  const cartItems = useSelector((state) => state.cart.cartItems)
-  const [createOrder, { isLoading }] = useCreateOrderMutation()
+  const cartItems = useSelector((state) => state.cart.cartItems);
+  const [createOrder, { isLoading }] = useCreateOrderMutation();
 
-  const { data: paymentMethodsData, isLoading: isLoadingPayments, error: paymentError } = useGetPaymentMethodsQuery()
+  const {
+    data: paymentMethodsData,
+    isLoading: isLoadingPayments,
+    error: paymentError,
+  } = useGetPaymentMethodsQuery();
 
-  const { data: userData, isLoading: isLoadingUser, error: userError } = useGetCurrentUserQuery()
+  const {
+    data: userData,
+    isLoading: isLoadingUser,
+    error: userError,
+  } = useGetCurrentUserQuery();
 
-  const paymentMethods = paymentMethodsData?.data || []
-  const [createVNPayUrl] = useCreateVNPayUrlMutation()
-  const [clearCartApi] = useClearCartMutation()
+  const { data: userProfileData, isLoading: isLoadingUserProfile } =
+    useGetUserProfileQuery();
 
-  const formRef = useRef(null)
-  const stepsRef = useRef([])
-  const summaryRef = useRef(null)
+  const paymentMethods = paymentMethodsData?.data || [];
+  const [createVNPayUrl] = useCreateVNPayUrlMutation();
+  const [clearCartApi] = useClearCartMutation();
+
+  const formRef = useRef(null);
+  const stepsRef = useRef([]);
+  const summaryRef = useRef(null);
 
   const {
     register,
@@ -70,86 +92,86 @@ const EnhancedCheckoutPage = () => {
       zipcode: currentUser?.address?.zipcode || "",
       phone: currentUser?.phone || "",
     },
-  })
+  });
 
-  const watchedFields = watch()
+  const watchedFields = watch();
 
   // Enhanced animations
   useEffect(() => {
     if (formRef.current) {
-      const tl = gsap.timeline()
+      const tl = gsap.timeline();
 
       tl.fromTo(
         stepsRef.current,
         { y: -30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out" },
+        { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out" }
       ).fromTo(
         formRef.current.children,
         { y: 30, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out" },
-        "-=0.3",
-      )
+        "-=0.3"
+      );
     }
-  }, [])
+  }, []);
 
   if (!currentUser) {
-    navigate("/login")
-    return null
+    navigate("/login");
+    return null;
   }
 
   const totalPrice = cartItems.reduce((acc, item) => {
-    const price = item.price || 0
-    const quantity = item.quantity || 1
-    return acc + price * quantity
-  }, 0)
+    const price = item.price || 0;
+    const quantity = item.quantity || 1;
+    return acc + price * quantity;
+  }, 0);
 
   const handlePaymentMethodSelect = (method) => {
-    setSelectedPayment(method)
+    setSelectedPayment(method);
 
     // Animate selection
     gsap.to(".payment-option", {
       scale: 1,
       duration: 0.2,
       ease: "power2.out",
-    })
+    });
 
     gsap.to(`[data-payment-id="${method._id}"]`, {
       scale: 1.02,
       duration: 0.2,
       ease: "power2.out",
-    })
-  }
+    });
+  };
 
   const validateStock = async () => {
     for (const item of cartItems) {
       try {
-        const bookId = item._id || item.bookId
+        const bookId = item._id || item.bookId;
         const response = await fetch(`${baseUrl}/books/${bookId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-        })
+        });
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch book: ${response.status}`)
+          throw new Error(`Failed to fetch book: ${response.status}`);
         }
 
-        const book = await response.json()
-        const bookData = book.data || book
+        const book = await response.json();
+        const bookData = book.data || book;
 
         if (!bookData || typeof bookData.quantity === "undefined") {
-          throw new Error(`Invalid book data for ${bookId}`)
+          throw new Error(`Invalid book data for ${bookId}`);
         }
 
         if (bookData.quantity < item.quantity) {
-          throw new Error(`Insufficient stock for ${bookData.title || bookId}`)
+          throw new Error(`Insufficient stock for ${bookData.title || bookId}`);
         }
       } catch (error) {
-        throw new Error(`Stock validation failed: ${error.message}`)
+        throw new Error(`Stock validation failed: ${error.message}`);
       }
     }
-    return true
-  }
+    return true;
+  };
 
   const onSubmit = async (data) => {
     if (!cartItems.length) {
@@ -161,8 +183,8 @@ const EnhancedCheckoutPage = () => {
           popup: "rounded-2xl",
           confirmButton: "rounded-xl",
         },
-      })
-      return
+      });
+      return;
     }
 
     if (!selectedPayment) {
@@ -174,11 +196,16 @@ const EnhancedCheckoutPage = () => {
           popup: "rounded-2xl",
           confirmButton: "rounded-xl",
         },
-      })
-      return
+      });
+      return;
     }
 
-    if (!userData?.data?._id) {
+    if (isLoadingUser) {
+      toast.error("Please wait while we load your profile data");
+      return;
+    }
+
+    if (!userProfileData?.user?._id) {
       Swal.fire({
         title: "Error",
         text: "User data not loaded. Please try again.",
@@ -187,23 +214,23 @@ const EnhancedCheckoutPage = () => {
           popup: "rounded-2xl",
           confirmButton: "rounded-xl",
         },
-      })
-      return
+      });
+      return;
     }
 
     try {
-      await validateStock()
+      await validateStock();
 
       const orderItems = cartItems.map((item) => ({
         productId: item._id || item.bookId,
         quantity: item.quantity || 1,
-      }))
+      }));
 
       if (selectedPayment.code === "VNPAY") {
         try {
           const vnpayData = {
             orderItems,
-            user: userData.data,
+            user: userProfileData.user,
             shippingInfo: {
               name: data.name,
               email: currentUser?.email,
@@ -217,29 +244,31 @@ const EnhancedCheckoutPage = () => {
             },
             paymentMethodId: selectedPayment._id,
             returnUrl: `${window.location.origin}/vnpay/callback`,
-          }
+          };
 
-          const response = await createVNPayUrl(vnpayData).unwrap()
+          const response = await createVNPayUrl(vnpayData).unwrap();
 
           if (response.paymentUrl) {
-            window.location.href = response.paymentUrl
+            window.location.href = response.paymentUrl;
           } else {
-            throw new Error("No payment URL received from VNPay")
+            throw new Error("No payment URL received from VNPay");
           }
         } catch (error) {
           Swal.fire({
             title: "Payment Error",
-            text: error.data?.message || "Failed to create VNPay payment. Please try again.",
+            text:
+              error.data?.message ||
+              "Failed to create VNPay payment. Please try again.",
             icon: "error",
             customClass: {
               popup: "rounded-2xl",
               confirmButton: "rounded-xl",
             },
-          })
+          });
         }
       } else if (selectedPayment.code === "COD") {
         const orderData = {
-          user: userData.data._id,
+          user: userProfileData.user._id,
           name: data.name,
           email: currentUser?.email,
           address: {
@@ -258,11 +287,11 @@ const EnhancedCheckoutPage = () => {
             paymentAmount: totalPrice,
             paymentCurrency: "VND",
           },
-        }
+        };
 
-        const order = await createOrder(orderData).unwrap()
-        await clearCartApi()
-        dispatch(clearCart())
+        const order = await createOrder(orderData).unwrap();
+        await clearCartApi();
+        dispatch(clearCart());
 
         Swal.fire({
           title: "Order Confirmed! 🎉",
@@ -272,22 +301,22 @@ const EnhancedCheckoutPage = () => {
             popup: "rounded-2xl",
             confirmButton: "rounded-xl",
           },
-        })
+        });
 
-        navigate("/orders/thanks")
+        navigate("/orders/thanks");
       } else {
-        throw new Error("Unsupported payment method")
+        throw new Error("Unsupported payment method");
       }
     } catch (error) {
-      console.error("API Error:", error)
+      console.error("API Error:", error);
 
-      let errorMessage = "Failed to process the order"
+      let errorMessage = "Failed to process the order";
       if (error?.data?.message) {
-        errorMessage = error.data.message
+        errorMessage = error.data.message;
       } else if (error?.status === "FETCH_ERROR") {
-        errorMessage = "Network error. Please check your connection."
+        errorMessage = "Network error. Please check your connection.";
       } else if (error?.message) {
-        errorMessage = error.message
+        errorMessage = error.message;
       }
 
       Swal.fire({
@@ -298,32 +327,44 @@ const EnhancedCheckoutPage = () => {
           popup: "rounded-2xl",
           confirmButton: "rounded-xl",
         },
-      })
+      });
     }
-  }
+  };
 
   if (isLoading || isLoadingPayments || isLoadingUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+            transition={{
+              duration: 1,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "linear",
+            }}
             className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"
           />
-          <p className="text-xl font-semibold text-gray-700">{t("cart.loading_checkout")}</p>
+          <p className="text-xl font-semibold text-gray-700">
+            {t("cart.loading_checkout")}
+          </p>
         </motion.div>
       </div>
-    )
+    );
   }
 
-  const supportedMethods = paymentMethods.filter((method) => method.isActive && ["COD", "VNPAY"].includes(method.code))
+  const supportedMethods = paymentMethods.filter(
+    (method) => method.isActive && ["COD", "VNPAY"].includes(method.code)
+  );
 
   const steps = [
     { id: 1, title: "Shipping Info", icon: FaUser },
     { id: 2, title: "Payment", icon: FaCreditCard },
     { id: 3, title: "Review", icon: FaCheckCircle },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -354,11 +395,17 @@ const EnhancedCheckoutPage = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
             {t("cart.secure_checkout")}
           </h1>
-          <p className="text-gray-600 text-lg">{t("cart.complete_your_order_safely_and_securely")}</p>
+          <p className="text-gray-600 text-lg">
+            {t("cart.complete_your_order_safely_and_securely")}
+          </p>
         </motion.div>
 
         {/* Progress Steps */}
@@ -381,12 +428,18 @@ const EnhancedCheckoutPage = () => {
                 >
                   <div
                     className={`flex items-center justify-center w-12 h-12 rounded-full ${
-                      currentStep >= step.id ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"
+                      currentStep >= step.id
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-200 text-gray-500"
                     } transition-all duration-300`}
                   >
                     <step.icon className="w-5 h-5" />
                   </div>
-                  <span className={`ml-3 font-medium ${currentStep >= step.id ? "text-blue-600" : "text-gray-500"}`}>
+                  <span
+                    className={`ml-3 font-medium ${
+                      currentStep >= step.id ? "text-blue-600" : "text-gray-500"
+                    }`}
+                  >
                     {step.title}
                   </span>
                   {index < steps.length - 1 && (
@@ -411,18 +464,29 @@ const EnhancedCheckoutPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <h3 className="text-xl font-bold text-gray-800 mb-4">{t("cart.order_summary")}</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-4">
+                {t("cart.order_summary")}
+              </h3>
               <div className="space-y-3">
                 {cartItems.slice(0, 2).map((item) => (
-                  <div key={item._id || item.bookId} className="flex items-center gap-3">
+                  <div
+                    key={item._id || item.bookId}
+                    className="flex items-center gap-3"
+                  >
                     <img
-                      src={item.coverImage || "/placeholder.svg?height=60&width=45"}
+                      src={
+                        item.coverImage || "/placeholder.svg?height=60&width=45"
+                      }
                       alt={item.title}
                       className="w-12 h-16 object-cover rounded"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{item.title}</p>
-                      <p className="text-sm text-gray-500">{t("cart.quantity")}: {item.quantity}</p>
+                      <p className="font-medium text-gray-900 truncate">
+                        {item.title}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {t("cart.quantity")}: {item.quantity}
+                      </p>
                     </div>
                     <p className="font-semibold text-gray-900">
                       {(item.price * item.quantity).toLocaleString("vi-VN")}đ
@@ -430,12 +494,16 @@ const EnhancedCheckoutPage = () => {
                   </div>
                 ))}
                 {cartItems.length > 2 && (
-                  <p className="text-sm text-gray-500 text-center">+{cartItems.length - 2} {t("cart.more_items")}</p>
+                  <p className="text-sm text-gray-500 text-center">
+                    +{cartItems.length - 2} {t("cart.more_items")}
+                  </p>
                 )}
                 <hr className="border-gray-200" />
                 <div className="flex justify-between font-bold text-lg">
                   <span>{t("cart.total")}:</span>
-                  <span className="text-blue-600">{totalPrice.toLocaleString("vi-VN")}đ</span>
+                  <span className="text-blue-600">
+                    {totalPrice.toLocaleString("vi-VN")}đ
+                  </span>
                 </div>
               </div>
             </motion.div>
@@ -452,7 +520,9 @@ const EnhancedCheckoutPage = () => {
                 <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
                   <FaUser className="text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800">{t("cart.shipping_information")}</h2>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {t("cart.shipping_information")}
+                </h2>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -464,14 +534,16 @@ const EnhancedCheckoutPage = () => {
                       {t("cart.full_name")} *
                     </label>
                     <input
-                      {...register("name", { required: "Full Name is required" })}
+                      {...register("name", {
+                        required: "Full Name is required",
+                      })}
                       type="text"
                       className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
                         errors.name
                           ? "border-red-500"
                           : watchedFields.name
-                            ? "border-green-500"
-                            : "border-gray-200 focus:border-blue-500"
+                          ? "border-green-500"
+                          : "border-gray-200 focus:border-blue-500"
                       }`}
                       placeholder={t("cart.enter_your_full_name")}
                     />
@@ -519,8 +591,8 @@ const EnhancedCheckoutPage = () => {
                         errors.phone
                           ? "border-red-500"
                           : watchedFields.phone
-                            ? "border-green-500"
-                            : "border-gray-200 focus:border-blue-500"
+                          ? "border-green-500"
+                          : "border-gray-200 focus:border-blue-500"
                       }`}
                       placeholder={t("cart.enter_your_phone_number")}
                     />
@@ -548,8 +620,8 @@ const EnhancedCheckoutPage = () => {
                         errors.city
                           ? "border-red-500"
                           : watchedFields.city
-                            ? "border-green-500"
-                            : "border-gray-200 focus:border-blue-500"
+                          ? "border-green-500"
+                          : "border-gray-200 focus:border-blue-500"
                       }`}
                       placeholder={t("cart.enter_your_city")}
                     />
@@ -618,7 +690,9 @@ const EnhancedCheckoutPage = () => {
                   {isLoadingPayments ? (
                     <div className="flex items-center justify-center py-8">
                       <FaSpinner className="animate-spin text-2xl text-blue-500" />
-                      <span className="ml-3 text-gray-600">{t("cart.loading_payment_methods")}</span>
+                      <span className="ml-3 text-gray-600">
+                        {t("cart.loading_payment_methods")}
+                      </span>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -644,7 +718,9 @@ const EnhancedCheckoutPage = () => {
                           />
                           <div
                             className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                              selectedPayment?._id === method._id ? "border-blue-500" : "border-gray-300"
+                              selectedPayment?._id === method._id
+                                ? "border-blue-500"
+                                : "border-gray-300"
                             }`}
                           >
                             {selectedPayment?._id === method._id && (
@@ -657,17 +733,28 @@ const EnhancedCheckoutPage = () => {
                           </div>
                           <div className="flex items-center gap-4 flex-1">
                             <img
-                              src={method.icon || "/placeholder.svg?height=40&width=40"}
+                              src={
+                                method.icon ||
+                                "/placeholder.svg?height=40&width=40"
+                              }
                               alt={method.name}
                               className="w-10 h-10 object-contain"
                             />
                             <div>
-                              <h4 className="font-semibold text-gray-800">{method.name}</h4>
-                              <p className="text-sm text-gray-600">{method.description}</p>
+                              <h4 className="font-semibold text-gray-800">
+                                {method.name}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {method.description}
+                              </p>
                             </div>
                           </div>
-                          {method.code === "VNPAY" && <RiSecurePaymentLine className="text-green-500 text-xl" />}
-                          {method.code === "COD" && <FaMoneyBillWave className="text-green-500 text-xl" />}
+                          {method.code === "VNPAY" && (
+                            <RiSecurePaymentLine className="text-green-500 text-xl" />
+                          )}
+                          {method.code === "COD" && (
+                            <FaMoneyBillWave className="text-green-500 text-xl" />
+                          )}
                         </motion.label>
                       ))}
                     </div>
@@ -688,16 +775,28 @@ const EnhancedCheckoutPage = () => {
                     onChange={(e) => setIsChecked(e.target.checked)}
                     className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
                   />
-                  <label htmlFor="terms" className="text-sm text-gray-700 leading-relaxed">
+                  <label
+                    htmlFor="terms"
+                    className="text-sm text-gray-700 leading-relaxed"
+                  >
                     {t("cart.i_agree_to_the")}{" "}
-                    <Link to="/terms" className="text-blue-600 hover:text-blue-500 font-medium">
+                    <Link
+                      to="/terms"
+                      className="text-blue-600 hover:text-blue-500 font-medium"
+                    >
                       {t("cart.terms_and_conditions")}
                     </Link>{" "}
                     {t("cart.and")}{" "}
-                    <Link to="/privacy" className="text-blue-600 hover:text-blue-500 font-medium">
+                    <Link
+                      to="/privacy"
+                      className="text-blue-600 hover:text-blue-500 font-medium"
+                    >
                       {t("cart.privacy_policy")}
                     </Link>
-                    {t("cart.i_understand_that_my_order_will_be_processed_according_to_these_terms")}.
+                    {t(
+                      "cart.i_understand_that_my_order_will_be_processed_according_to_these_terms"
+                    )}
+                    .
                   </label>
                 </motion.div>
 
@@ -706,7 +805,10 @@ const EnhancedCheckoutPage = () => {
                   type="submit"
                   disabled={!isChecked || isLoading || !selectedPayment}
                   className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-8 rounded-xl hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 transition-all duration-300 shadow-lg flex items-center justify-center gap-3"
-                  whileHover={{ scale: 1.02, boxShadow: "0 20px 40px -10px rgba(59, 130, 246, 0.4)" }}
+                  whileHover={{
+                    scale: 1.02,
+                    boxShadow: "0 20px 40px -10px rgba(59, 130, 246, 0.4)",
+                  }}
                   whileTap={{ scale: 0.98 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -752,13 +854,19 @@ const EnhancedCheckoutPage = () => {
                     animate={{ opacity: 1, y: 0 }}
                   >
                     <img
-                      src={item.coverImage || "/placeholder.svg?height=60&width=45"}
+                      src={
+                        item.coverImage || "/placeholder.svg?height=60&width=45"
+                      }
                       alt={item.title}
                       className="w-12 h-16 object-cover rounded-lg shadow-sm"
                     />
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-900 truncate">{item.title}</h4>
-                      <p className="text-sm text-gray-500">{t("cart.quantity")}: {item.quantity}</p>
+                      <h4 className="font-medium text-gray-900 truncate">
+                        {item.title}
+                      </h4>
+                      <p className="text-sm text-gray-500">
+                        {t("cart.quantity")}: {item.quantity}
+                      </p>
                       <p className="text-sm font-semibold text-blue-600">
                         {(item.price * item.quantity).toLocaleString("vi-VN")}đ
                       </p>
@@ -770,12 +878,16 @@ const EnhancedCheckoutPage = () => {
               {/* Price Breakdown */}
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">
-                  <span>{t("cart.subtotal")} ({cartItems.length} {t("cart.items")})</span>
+                  <span>
+                    {t("cart.subtotal")} ({cartItems.length} {t("cart.items")})
+                  </span>
                   <span>{totalPrice.toLocaleString("vi-VN")}đ</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>{t("cart.shipping")}</span>
-                  <span className="text-green-600 font-semibold">{t("cart.free")}</span>
+                  <span className="text-green-600 font-semibold">
+                    {t("cart.free")}
+                  </span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>{t("cart.tax")}</span>
@@ -784,7 +896,9 @@ const EnhancedCheckoutPage = () => {
                 <hr className="border-gray-200" />
                 <div className="flex justify-between text-xl font-bold text-gray-900">
                   <span>{t("cart.total")}</span>
-                  <span className="text-blue-600">{totalPrice.toLocaleString("vi-VN")}đ</span>
+                  <span className="text-blue-600">
+                    {totalPrice.toLocaleString("vi-VN")}đ
+                  </span>
                 </div>
               </div>
 
@@ -809,7 +923,7 @@ const EnhancedCheckoutPage = () => {
                       {t("cart.fast_delivery")}
                     </p>
                     <p className="text-xs text-blue-600">
-                        {t("cart.free_shipping_nationwide")}
+                      {t("cart.free_shipping_nationwide")}
                     </p>
                   </div>
                 </div>
@@ -831,7 +945,7 @@ const EnhancedCheckoutPage = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default EnhancedCheckoutPage
+export default EnhancedCheckoutPage;

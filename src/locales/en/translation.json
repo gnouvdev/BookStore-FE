@@ -123,6 +123,7 @@
     "available": "Available",
     "pages": "Pages",
     "isbn": "ISBN",
+    "out_of_stock": "Out of Stock",
     "delivery": {
       "free": "Free nationwide express delivery for orders over 20$",
       "city": "Within the city can receive goods within 1-2 days",

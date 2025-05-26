@@ -19,38 +19,30 @@ import {
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import { useGetOrderByIdQuery } from "../../redux/features/orders/ordersApi";
+import { useAuth } from "../../context/AuthContext";
 
 const OrderDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { currentUser } = useAuth();
+  const { data: orderData, isLoading, error } = useGetOrderByIdQuery(id);
 
+  // Redirect if not logged in
   useEffect(() => {
-    const fetchOrderDetails = async () => {
-      try {
-        const response = await fetch(`http://localhost:5000/api/orders/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch order details");
-        }
-        setOrder(data.data);
-      } catch (err) {
-        setError(err.message);
-        toast.error("Không thể tải thông tin đơn hàng");
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (!currentUser) {
+      navigate("/login");
+    }
+  }, [currentUser, navigate]);
 
-    fetchOrderDetails();
-  }, [id]);
+  // Handle unauthorized access
+  useEffect(() => {
+    if (error?.status === 403) {
+      toast.error(t("orders.unauthorized_access"));
+      navigate("/orders");
+    }
+  }, [error, navigate, t]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -86,7 +78,7 @@ const OrderDetails = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
@@ -109,13 +101,17 @@ const OrderDetails = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {t("orders.error_loading")}
             </h2>
-            <p className="text-gray-500 mb-4">{error}</p>
+            <p className="text-gray-500 mb-4">
+              {error?.data?.message ||
+                error?.message ||
+                t("orders.unknown_error")}
+            </p>
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/orders")}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
               <FaArrowLeft className="mr-2" />
-              {t("common.go_back")}
+              {t("orders.back_to_orders")}
             </button>
           </div>
         </div>
@@ -123,6 +119,7 @@ const OrderDetails = () => {
     );
   }
 
+  const order = orderData?.data;
   if (!order) {
     return null;
   }

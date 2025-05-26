@@ -1,23 +1,122 @@
+/* eslint-disable no-unused-vars */
+"use client";
+
 import { useState, useEffect, useRef } from "react";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Send,
+  MessageCircle,
+  X,
+  Minus,
+  Maximize2,
+  Minimize2,
+  Circle,
+  Smile,
+  Paperclip,
+} from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 import {
   useGetChatHistoryQuery,
   useSendMessageMutation,
 } from "../redux/features/chat/chatApi";
-import { useAuth } from "../context/AuthContext";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
+import { toast } from "react-hot-toast";
 import { FaPaperPlane, FaUser, FaTimes, FaComments } from "react-icons/fa";
-import { AnimatePresence } from "framer-motion";
+import { auth } from "../firebase/firebase.config";
+
+// Animation variants
+const buttonVariants = {
+  hidden: { scale: 0 },
+  visible: {
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 15,
+      delay: 1,
+    },
+  },
+  hover: { scale: 1.1 },
+  tap: { scale: 0.9 },
+};
+
+const chatBoxVariants = {
+  hidden: { scale: 0, opacity: 0, y: 50 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 20,
+    },
+  },
+  exit: {
+    scale: 0,
+    opacity: 0,
+    y: 50,
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 20,
+    },
+  },
+};
+
+const messageVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 25,
+    },
+  },
+};
+
+const welcomeVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 20,
+    },
+  },
+};
 
 const ChatBox = () => {
+  const { currentUser } = useAuth();
+  const socket = useSocket();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const [message, setMessage] = useState("");
-  const [adminId, setAdminId] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
-  const socket = useSocket();
-  const { currentUser } = useAuth();
+  const chatBoxRef = useRef(null);
+  const buttonRef = useRef(null);
+  const [adminId, setAdminId] = useState(null);
+
+  console.log("ChatBox render:", {
+    currentUser,
+    isOpen,
+    socket: !!socket,
+  });
 
   // Debug logs
   useEffect(() => {
@@ -26,13 +125,24 @@ const ChatBox = () => {
   }, [currentUser, adminId]);
 
   // Lấy lịch sử chat với admin
-  const { data: chatHistory, refetch: refetchChatHistory } =
-    useGetChatHistoryQuery(adminId, {
-      skip: !isOpen || !adminId,
-    });
-  const [sendMessage, { error: sendMessageError }] = useSendMessageMutation();
+  const {
+    data: chatHistoryData,
+    isLoading: isLoadingHistory,
+    error: chatHistoryError,
+    refetch: refetchChatHistory,
+  } = useGetChatHistoryQuery(adminId, {
+    skip: !adminId || !currentUser?.uid,
+    refetchOnMountOrArgChange: true,
+  });
+
+  // Debug log cho chat history
+  useEffect(() => {
+    console.log("Chat history data:", chatHistoryData);
+  }, [chatHistoryData]);
 
   // Debug log cho lỗi gửi tin nhắn
+  const [sendMessage, { error: sendMessageError, isLoading: isSending }] =
+    useSendMessageMutation();
   useEffect(() => {
     if (sendMessageError) {
       console.error("Send message error details:", sendMessageError);
@@ -43,11 +153,27 @@ const ChatBox = () => {
   useEffect(() => {
     const fetchAdminId = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("No token found");
+        if (!currentUser?.uid) {
+          console.log("No current user, skipping admin fetch");
           return;
         }
+
+        const firebaseUser = auth.currentUser;
+        if (!firebaseUser) {
+          console.error("No Firebase user found");
+          return;
+        }
+
+        const token = await firebaseUser.getIdToken();
+        if (!token) {
+          console.error("No token available");
+          return;
+        }
+
+        console.log(
+          "Fetching admin with token:",
+          token.substring(0, 10) + "..."
+        );
 
         const response = await fetch("http://localhost:5000/api/users/admin", {
           headers: {
@@ -73,11 +199,8 @@ const ChatBox = () => {
       }
     };
 
-    if (currentUser?.uid) {
-      // Chỉ fetch khi có user
-      fetchAdminId();
-    }
-  }, [currentUser]); // Thêm currentUser vào dependencies
+    fetchAdminId();
+  }, [currentUser]);
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -85,24 +208,28 @@ const ChatBox = () => {
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && chatHistoryData?.data) {
       scrollToBottom();
     }
-  }, [chatHistory, isOpen]);
+  }, [chatHistoryData, isOpen]);
 
   // Handle socket events
   useEffect(() => {
-    if (!socket || !isOpen || !adminId) return;
+    if (!socket || !isOpen || !adminId || !currentUser?.uid) return;
 
-    socket.emit("joinChat", adminId);
+    const userRoom = `chat:${currentUser.uid}`;
+    console.log("Joining chat room:", userRoom);
+
+    socket.emit("joinChat", userRoom, (response) => {
+      console.log("Join chat room response:", response);
+    });
 
     const handleNewMessage = (data) => {
-      if (
-        data.message.senderId === adminId ||
-        data.message.receiverId === adminId
-      ) {
-        refetchChatHistory();
-        // Hiển thị thông báo khi có tin nhắn mới và chat box đang đóng
+      console.log("New message received:", data);
+      if (data.message) {
+        if (adminId) {
+          refetchChatHistory();
+        }
         if (!isOpen) {
           setIsMinimized(true);
         }
@@ -112,10 +239,22 @@ const ChatBox = () => {
     socket.on("newMessage", handleNewMessage);
 
     return () => {
-      socket.emit("leaveChat", adminId);
+      console.log("Leaving chat room:", userRoom);
+      socket.emit("leaveChat", userRoom);
       socket.off("newMessage", handleNewMessage);
     };
-  }, [socket, isOpen, adminId, refetchChatHistory]);
+  }, [socket, isOpen, adminId, currentUser?.uid, refetchChatHistory]);
+
+  // Simulate typing indicator
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        setIsTyping(true);
+        setTimeout(() => setIsTyping(false), 3000);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -124,158 +263,316 @@ const ChatBox = () => {
         message: message.trim(),
         adminId,
         userId: currentUser?.uid,
-        userContext: currentUser,
-        token: localStorage.getItem("token"),
       });
       return;
     }
 
     try {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) {
+        throw new Error("No Firebase user found");
+      }
+
+      const token = await firebaseUser.getIdToken();
+      if (!token) {
+        throw new Error("No token available");
+      }
+
       const messageData = {
         receiverId: adminId,
         message: message.trim(),
       };
 
-      console.log("Attempting to send message:", {
-        messageData,
-        currentUser,
-        token: localStorage.getItem("token"),
-      });
-
+      console.log(
+        "Sending message with token:",
+        token.substring(0, 10) + "..."
+      );
       const result = await sendMessage(messageData).unwrap();
-
       console.log("Message sent successfully:", result);
+
       setMessage("");
+      if (adminId) {
+        await refetchChatHistory();
+      }
     } catch (error) {
-      console.error("Error sending message:", {
-        error,
-        messageData: {
-          receiverId: adminId,
-          message: message.trim(),
-        },
-        currentUser,
-        token: localStorage.getItem("token"),
-      });
+      console.error("Error sending message:", error);
     }
   };
+
+  const handleOpen = async () => {
+    console.log("Opening chat box");
+    setIsOpen(true);
+    setIsMinimized(false);
+
+    if (adminId && currentUser?.uid) {
+      try {
+        await refetchChatHistory();
+        console.log("Chat history refetched after opening");
+      } catch (error) {
+        console.error("Error refetching chat history:", error);
+      }
+    }
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setIsMaximized(false);
+  };
+
+  const handleToggleSize = () => {
+    setIsMaximized(!isMaximized);
+  };
+
+  if (!currentUser?.uid) {
+    return null; // Không hiển thị chat box nếu chưa đăng nhập
+  }
 
   return (
     <>
       {/* Chat Button */}
-      <button
-        onClick={() => {
-          setIsOpen(true);
-          setIsMinimized(false);
-        }}
-        className="fixed bottom-4 right-4 z-50 bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      <motion.div
+        ref={buttonRef}
+        className="fixed bottom-6 right-6 z-50"
+        variants={buttonVariants}
+        initial="hidden"
+        animate="visible"
+        whileHover="hover"
+        whileTap="tap"
       >
-        <FaComments className="w-6 h-6" />
-      </button>
+        <Button
+          onClick={handleOpen}
+          className="relative w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-2xl border-4 border-white"
+        >
+          <FaComments className="w-6 h-6 text-white" />
+          {unreadCount > 0 && (
+            <Badge className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center animate-pulse">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </Badge>
+          )}
+        </Button>
+      </motion.div>
 
       {/* Chat Box */}
       <AnimatePresence>
         {isOpen && (
-          <div
-            className={`fixed bottom-20 right-4 z-50 w-80 bg-white rounded-lg shadow-xl overflow-hidden ${
-              isMinimized ? "h-12" : "h-96"
-            } transition-all duration-300`}
+          <motion.div
+            ref={chatBoxRef}
+            variants={chatBoxVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className={`fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden backdrop-blur-sm ${
+              isMaximized
+                ? "inset-4 w-auto h-auto"
+                : "bottom-24 right-6 w-96 h-[500px]"
+            } ${isMinimized ? "h-16" : ""}`}
           >
-            {/* Chat Header */}
-            <div
-              className="p-3 bg-blue-500 text-white flex items-center justify-between cursor-pointer"
-              onClick={() => setIsMinimized(!isMinimized)}
-            >
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <FaUser className="text-blue-500" />
+            {/* Header */}
+            <div className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Avatar className="w-8 h-8 border-2 border-white/30">
+                    <AvatarFallback className="bg-white/20 text-white text-sm">
+                      A
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-semibold text-sm">Admin Support</h3>
+                    <div className="flex items-center gap-1 text-xs text-blue-100">
+                      <Circle className="w-2 h-2 fill-green-400 text-green-400" />
+                      {isTyping ? "Đang nhập..." : "Trực tuyến"}
+                    </div>
+                  </div>
                 </div>
-                <span className="font-medium">Chat với Admin</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsMinimized(!isMinimized);
-                  }}
-                  className="p-1 hover:bg-blue-600 rounded"
-                >
-                  {isMinimized ? "▼" : "▲"}
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsOpen(false);
-                  }}
-                  className="p-1 hover:bg-blue-600 rounded"
-                >
-                  <FaTimes />
-                </button>
+                <div className="flex items-center space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsMinimized(!isMinimized)}
+                    className="text-white hover:bg-white/20 w-8 h-8 p-0 rounded-full"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleToggleSize}
+                    className="text-white hover:bg-white/20 w-8 h-8 p-0 rounded-full"
+                  >
+                    {isMaximized ? (
+                      <Minimize2 className="w-4 h-4" />
+                    ) : (
+                      <Maximize2 className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClose}
+                    className="text-white hover:bg-white/20 w-8 h-8 p-0 rounded-full"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
             {!isMinimized && (
               <>
                 {/* Messages */}
-                <div className="h-64 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                  {chatHistory?.data?.map((msg) => (
-                    <div
-                      key={msg._id}
-                      className={`flex ${
-                        msg.senderId === currentUser?.uid
-                          ? "justify-end"
-                          : "justify-start"
-                      }`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-lg px-3 py-2 ${
-                          msg.senderId === currentUser?.uid
-                            ? "bg-blue-500 text-white"
-                            : "bg-gray-100 text-gray-900"
-                        }`}
-                      >
-                        <p className="text-sm">{msg.message}</p>
-                        <p
-                          className={`text-xs mt-1 ${
-                            msg.senderId === currentUser?.uid
-                              ? "text-blue-100"
-                              : "text-gray-500"
-                          }`}
+                <ScrollArea
+                  className={`bg-gray-50/50 ${
+                    isMaximized ? "h-[calc(100%-140px)]" : "h-80"
+                  }`}
+                >
+                  <div className="p-4 space-y-4">
+                    {isLoadingHistory ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      </div>
+                    ) : chatHistoryError ? (
+                      <div className="text-center py-8 text-red-500">
+                        <p>Không thể tải tin nhắn. Vui lòng thử lại sau.</p>
+                        <Button
+                          variant="ghost"
+                          onClick={() => refetchChatHistory()}
+                          className="mt-2"
                         >
-                          {format(new Date(msg.createdAt), "HH:mm", {
-                            locale: vi,
-                          })}
+                          Thử lại
+                        </Button>
+                      </div>
+                    ) : !chatHistoryData?.data ||
+                      chatHistoryData.data.length === 0 ? (
+                      <motion.div
+                        variants={welcomeVariants}
+                        initial="hidden"
+                        animate="visible"
+                        className="text-center py-8"
+                      >
+                        <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                          <MessageCircle className="w-8 h-8 text-blue-500" />
+                        </div>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Chào mừng!
+                        </h4>
+                        <p className="text-sm text-gray-500">
+                          Hãy gửi tin nhắn để bắt đầu cuộc trò chuyện với admin
                         </p>
+                      </motion.div>
+                    ) : (
+                      <AnimatePresence mode="popLayout">
+                        {chatHistoryData.data.map((msg) => (
+                          <motion.div
+                            key={msg._id}
+                            variants={messageVariants}
+                            initial="hidden"
+                            animate="visible"
+                            layout
+                            className={`flex ${
+                              msg.senderId === currentUser.uid
+                                ? "justify-end"
+                                : "justify-start"
+                            }`}
+                          >
+                            <motion.div
+                              layout
+                              className={`max-w-[85%] rounded-2xl px-4 py-2 shadow-sm ${
+                                msg.senderId === currentUser.uid
+                                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                                  : "bg-white text-gray-900 border border-gray-200"
+                              }`}
+                            >
+                              <p className="text-sm leading-relaxed">
+                                {msg.message}
+                              </p>
+                              <p
+                                className={`text-xs mt-1 ${
+                                  msg.senderId === currentUser.uid
+                                    ? "text-blue-100"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {format(new Date(msg.createdAt), "HH:mm", {
+                                  locale: vi,
+                                })}
+                              </p>
+                            </motion.div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    )}
+
+                    {isTyping && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex justify-start"
+                      >
+                        <div className="bg-white rounded-2xl px-4 py-2 border border-gray-200">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div
+                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              style={{ animationDelay: "0.1s" }}
+                            ></div>
+                            <div
+                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              style={{ animationDelay: "0.2s" }}
+                            ></div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+
+                {/* Input */}
+                <div className="p-4 bg-white border-t border-gray-200/50">
+                  <form
+                    onSubmit={handleSendMessage}
+                    className="flex items-end space-x-2"
+                  >
+                    <div className="flex-1 relative">
+                      <Input
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="Nhập tin nhắn..."
+                        className="pr-16 rounded-2xl border-gray-200 focus:border-blue-300 focus:ring-blue-200"
+                        disabled={isSending}
+                      />
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="w-6 h-6 p-0 rounded-full"
+                        >
+                          <Paperclip className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="w-6 h-6 p-0 rounded-full"
+                        >
+                          <Smile className="w-3 h-3" />
+                        </Button>
                       </div>
                     </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Message Input */}
-                <form
-                  onSubmit={handleSendMessage}
-                  className="p-3 border-t border-gray-200 bg-white"
-                >
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Nhập tin nhắn..."
-                      className="flex-1 text-sm rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <button
+                    <Button
                       type="submit"
-                      disabled={!message.trim()}
-                      className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!message.trim() || isSending}
+                      className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 p-0"
                     >
-                      <FaPaperPlane className="w-4 h-4" />
-                    </button>
-                  </div>
-                </form>
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </form>
+                </div>
               </>
             )}
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

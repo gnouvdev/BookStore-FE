@@ -170,7 +170,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <AdminRoute />,
+    element: (
+      <AuthProvider>
+        <AdminRoute />
+      </AuthProvider>
+    ),
     children: [
       {
         path: "",

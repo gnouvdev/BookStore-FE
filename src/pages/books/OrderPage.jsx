@@ -1,9 +1,9 @@
 /* eslint-disable no-unused-vars */
-"use client"
+"use client";
 
-import { useState, useEffect, useRef } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   FaBox,
   FaSearch,
@@ -14,48 +14,62 @@ import {
   FaTruck,
   FaCheckCircle,
   FaClock,
-} from "react-icons/fa"
-import { RiShoppingBag3Line } from "react-icons/ri"
-import { useGetOrdersQuery } from "../../redux/features/orders/ordersApi"
-import { useAuth } from "../../context/AuthContext"
-import { toast } from "react-hot-toast"
-import { useTranslation } from "react-i18next"
-import gsap from "gsap"
+} from "react-icons/fa";
+import { RiShoppingBag3Line } from "react-icons/ri";
+import { useGetOrdersQuery } from "../../redux/features/orders/ordersApi";
+import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import gsap from "gsap";
 
 const EnhancedOrderPage = () => {
-  const { currentUser } = useAuth()
-  const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
 
-  const [filter, setFilter] = useState("all")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [showFilters, setShowFilters] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const headerRef = useRef(null)
-  const filtersRef = useRef(null)
-  const ordersRef = useRef([])
+  const headerRef = useRef(null);
+  const filtersRef = useRef(null);
+  const ordersRef = useRef([]);
 
-  const { data, isLoading, isError, error } = useGetOrdersQuery(currentUser?.email, {
-    skip: !currentUser?.email,
-  })
+  const { data, isLoading, isError, error } = useGetOrdersQuery(
+    currentUser?.email,
+    {
+      skip: !currentUser?.email,
+    }
+  );
 
-  const orders = data?.data || []
+  const orders = data?.data || [];
 
   // Enhanced animations
   useEffect(() => {
     if (headerRef.current) {
-      gsap.fromTo(headerRef.current, { y: -50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" })
+      gsap.fromTo(
+        headerRef.current,
+        { y: -50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
+      );
     }
 
     if (filtersRef.current) {
       gsap.fromTo(
         filtersRef.current.children,
         { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out", delay: 0.3 },
-      )
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.6,
+          stagger: 0.1,
+          ease: "power2.out",
+          delay: 0.3,
+        }
+      );
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     ordersRef.current.forEach((order, index) => {
@@ -70,11 +84,11 @@ const EnhancedOrderPage = () => {
             duration: 0.6,
             delay: index * 0.1,
             ease: "power2.out",
-          },
-        )
+          }
+        );
       }
-    })
-  }, [orders, filter, searchQuery])
+    });
+  }, [orders, filter, searchQuery]);
 
   // Filter and search orders
   const filteredOrders = orders.filter((order) => {
@@ -83,60 +97,81 @@ const EnhancedOrderPage = () => {
       (filter === "pending" && order.status === "pending") ||
       (filter === "shipped" && order.status === "shipped") ||
       (filter === "delivered" && order.status === "delivered") ||
-      (filter === "completed" && order.status === "completed")
+      (filter === "completed" && order.status === "completed");
 
-    if (!searchQuery) return matchesFilter
+    if (!searchQuery) return matchesFilter;
 
-    const searchLower = searchQuery.toLowerCase()
+    const searchLower = searchQuery.toLowerCase();
     const matchesSearch =
       order._id.toLowerCase().includes(searchLower) ||
-      order.productIds.some((product) => product.productId?.title?.toLowerCase().includes(searchLower))
+      order.productIds.some((product) =>
+        product.productId?.title?.toLowerCase().includes(searchLower)
+      );
 
-    return matchesFilter && matchesSearch
-  })
+    return matchesFilter && matchesSearch;
+  });
 
   const getStatusIcon = (status) => {
     switch (status) {
       case "pending":
-        return <FaClock className="text-orange-500" />
+        return <FaClock className="text-orange-500" />;
       case "shipped":
-        return <FaTruck className="text-blue-500" />
+        return <FaTruck className="text-blue-500" />;
       case "delivered":
-        return <FaBox className="text-green-500" />
+        return <FaBox className="text-green-500" />;
       case "completed":
-        return <FaCheckCircle className="text-purple-500" />
+        return <FaCheckCircle className="text-purple-500" />;
       default:
-        return <FaClock className="text-gray-500" />
+        return <FaClock className="text-gray-500" />;
     }
-  }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
-        return "bg-orange-100 text-orange-800 border-orange-200"
+        return "bg-orange-100 text-orange-800 border-orange-200";
       case "shipped":
-        return "bg-blue-100 text-blue-800 border-blue-200"
+        return "bg-blue-100 text-blue-800 border-blue-200";
       case "delivered":
-        return "bg-green-100 text-green-800 border-green-200"
+        return "bg-green-100 text-green-800 border-green-200";
       case "completed":
-        return "bg-purple-100 text-purple-800 border-purple-200"
+        return "bg-purple-100 text-purple-800 border-purple-200";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
-  }
+  };
 
   const filters = [
     { key: "all", label: "All Orders", icon: FaBox, count: orders.length },
-    { key: "pending", label: "Pending", icon: FaClock, count: orders.filter((o) => o.status === "pending").length },
-    { key: "shipped", label: "Shipped", icon: FaTruck, count: orders.filter((o) => o.status === "shipped").length },
-    { key: "delivered", label: "Delivered", icon: FaBox, count: orders.filter((o) => o.status === "delivered").length },
+    {
+      key: "pending",
+      label: "Pending",
+      icon: FaClock,
+      count: orders.filter((o) => o.status === "pending").length,
+    },
+    {
+      key: "shipped",
+      label: "Shipped",
+      icon: FaTruck,
+      count: orders.filter((o) => o.status === "shipped").length,
+    },
+    {
+      key: "delivered",
+      label: "Delivered",
+      icon: FaBox,
+      count: orders.filter((o) => o.status === "delivered").length,
+    },
     {
       key: "completed",
       label: "Completed",
       icon: FaCheckCircle,
       count: orders.filter((o) => o.status === "completed").length,
     },
-  ]
+  ];
+
+  const handleOrderClick = (orderId) => {
+    navigate(`/orders/${orderId}`);
+  };
 
   // Handle unauthenticated users
   if (!currentUser || !currentUser.email) {
@@ -154,8 +189,12 @@ const EnhancedOrderPage = () => {
           >
             🔐
           </motion.div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">{t("order.login_required")}</h2>
-          <p className="text-gray-600 mb-6">{t("order.you_need_to_login_to_view_your_orders")}</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            {t("order.login_required")}
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {t("order.you_need_to_login_to_view_your_orders")}
+          </p>
           <motion.button
             onClick={() => navigate("/login")}
             className="bg-blue-500 text-white px-8 py-3 rounded-xl hover:bg-blue-600 transition-colors duration-200 font-semibold"
@@ -166,35 +205,45 @@ const EnhancedOrderPage = () => {
           </motion.button>
         </motion.div>
       </div>
-    )
+    );
   }
 
   // Handle loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+            transition={{
+              duration: 1,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "linear",
+            }}
             className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"
           />
-          <p className="text-xl font-semibold text-gray-700">{t("order.loading_your_orders")}</p>
+          <p className="text-xl font-semibold text-gray-700">
+            {t("order.loading_your_orders")}
+          </p>
         </motion.div>
       </div>
-    )
+    );
   }
 
   // Handle error state
   if (isError) {
-    const errorMessage = error?.data?.message || "Error loading orders"
+    const errorMessage = error?.data?.message || "Error loading orders";
 
     if (error?.status === 401) {
-      toast.error(t("order.session_expired"))
-      localStorage.removeItem("token")
-      localStorage.removeItem("user")
-      navigate("/login")
-      return null
+      toast.error(t("order.session_expired"));
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login");
+      return null;
     }
 
     return (
@@ -205,11 +254,13 @@ const EnhancedOrderPage = () => {
           className="text-center bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-4"
         >
           <div className="text-6xl mb-4">😞</div>
-          <h2 className="text-2xl font-bold text-red-600 mb-2">{t("order.error_loading_orders")}</h2>
+          <h2 className="text-2xl font-bold text-red-600 mb-2">
+            {t("order.error_loading_orders")}
+          </h2>
           <p className="text-gray-600">{errorMessage}</p>
         </motion.div>
       </div>
-    )
+    );
   }
 
   return (
@@ -260,15 +311,21 @@ const EnhancedOrderPage = () => {
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {t("order.my_orders")}
                 </h1>
-                <p className="text-gray-600 mt-1">{t("order.track_and_manage_your_orders")}</p>
+                <p className="text-gray-600 mt-1">
+                  {t("order.track_and_manage_your_orders")}
+                </p>
               </div>
             </div>
 
             {/* Quick Stats */}
             <div className="flex items-center gap-4">
               <div className="bg-blue-50 rounded-xl p-3 text-center">
-                <p className="text-sm text-gray-600">{t("order.total_orders")}</p>
-                <p className="text-2xl font-bold text-blue-600">{orders.length}</p>
+                <p className="text-sm text-gray-600">
+                  {t("order.total_orders")}
+                </p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {orders.length}
+                </p>
               </div>
               <div className="bg-green-50 rounded-xl p-3 text-center">
                 <p className="text-sm text-gray-600">{t("order.completed")}</p>
@@ -289,7 +346,9 @@ const EnhancedOrderPage = () => {
           transition={{ delay: 0.2 }}
         >
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-800">{t("order.filter_and_search")}</h2>
+            <h2 className="text-xl font-bold text-gray-800">
+              {t("order.filter_and_search")}
+            </h2>
             <motion.button
               onClick={() => setShowFilters(!showFilters)}
               className="lg:hidden flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-xl"
@@ -301,10 +360,14 @@ const EnhancedOrderPage = () => {
             </motion.button>
           </div>
 
-          <div className={`space-y-6 ${showFilters ? "block" : "hidden lg:block"}`}>
+          <div
+            className={`space-y-6 ${showFilters ? "block" : "hidden lg:block"}`}
+          >
             {/* Status Filters */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">{t("order.order_status")}</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                {t("order.order_status")}
+              </label>
               <div className="flex flex-wrap gap-3">
                 {filters.map((f) => (
                   <motion.button
@@ -321,7 +384,9 @@ const EnhancedOrderPage = () => {
                     <f.icon />
                     {f.label}
                     <span
-                      className={`px-2 py-1 rounded-full text-xs ${filter === f.key ? "bg-white/20" : "bg-gray-200"}`}
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        filter === f.key ? "bg-white/20" : "bg-gray-200"
+                      }`}
                     >
                       {f.count}
                     </span>
@@ -332,7 +397,9 @@ const EnhancedOrderPage = () => {
 
             {/* Search */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">{t("order.search_orders")}</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t("order.search_orders")}
+              </label>
               <div className="relative max-w-md">
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
@@ -362,9 +429,13 @@ const EnhancedOrderPage = () => {
               >
                 📦
               </motion.div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">{t("order.no_orders_found")}</h3>
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                {t("order.no_orders_found")}
+              </h3>
               <p className="text-gray-600 mb-6">
-                {orders.length === 0 ? t("order.you_haven_t_placed_any_orders_yet") : t("order.no_orders_match_your_search_criteria")}
+                {orders.length === 0
+                  ? t("order.you_haven_t_placed_any_orders_yet")
+                  : t("order.no_orders_match_your_search_criteria")}
               </p>
               <motion.button
                 onClick={() => navigate("/")}
@@ -372,7 +443,7 @@ const EnhancedOrderPage = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                  {t("order.start_shopping")}
+                {t("order.start_shopping")}
               </motion.button>
             </motion.div>
           ) : (
@@ -381,34 +452,46 @@ const EnhancedOrderPage = () => {
                 <motion.div
                   key={order._id}
                   ref={(el) => (ordersRef.current[index] = el)}
-                  className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 overflow-hidden hover:shadow-3xl transition-all duration-300"
+                  className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 overflow-hidden cursor-pointer"
                   initial={{ opacity: 0, y: 50 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.01 }}
+                  onClick={() => handleOrderClick(order._id)}
                 >
                   {/* Order Header */}
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200">
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200 hover:bg-gradient-to-r hover:from-blue-100 hover:to-purple-100 transition-colors duration-200">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center hover:bg-blue-600 transition-colors duration-200">
                           {getStatusIcon(order.status)}
                         </div>
                         <div>
-                          <h3 className="text-xl font-bold text-gray-800">Order #{order._id.slice(-8)}</h3>
-                          <p className="text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                          <h3 className="text-xl font-bold text-gray-800 hover:text-blue-600 transition-colors duration-200">
+                            Order #{order._id.slice(-8)}
+                          </h3>
+                          <p className="text-gray-600">
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-4">
                         <span
-                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(order.status)}`}
+                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(
+                            order.status
+                          )} hover:shadow-md transition-all duration-200`}
                         >
                           {getStatusIcon(order.status)}
-                          {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
+                          {order.status?.charAt(0).toUpperCase() +
+                            order.status?.slice(1)}
                         </span>
                         <motion.button
-                          onClick={() => setSelectedOrder(selectedOrder === order._id ? null : order._id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOrder(
+                              selectedOrder === order._id ? null : order._id
+                            );
+                          }}
                           className="p-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors duration-200"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
@@ -424,38 +507,54 @@ const EnhancedOrderPage = () => {
                     {/* Products Preview */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                       {order.productIds?.slice(0, 3).map((item) => {
-                        const product = item.productId || item
-                        const quantity = item.quantity || 1
+                        const product = item.productId || item;
+                        const quantity = item.quantity || 1;
 
                         return (
                           <motion.div
                             key={product._id || Math.random()}
                             className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
-                            onClick={() => navigate(`/books/${product._id}`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/books/${product._id}`);
+                            }}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                           >
                             <img
-                              src={product.coverImage || "/placeholder.svg?height=60&width=45"}
+                              src={
+                                product.coverImage ||
+                                "/placeholder.svg?height=60&width=45"
+                              }
                               alt={product.title || "Product"}
-                              className="w-12 h-16 object-cover rounded-lg shadow-sm"
+                              className="w-12 h-16 object-cover rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
                             />
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-gray-800 truncate">
+                              <h4 className="font-semibold text-gray-800 truncate hover:text-blue-600 transition-colors duration-200">
                                 {product.title || "Unknown Product"}
                               </h4>
-                              <p className="text-sm text-gray-600">Qty: {quantity}</p>
+                              <p className="text-sm text-gray-600">
+                                Qty: {quantity}
+                              </p>
                               <p className="text-sm font-semibold text-blue-600">
-                                {((product.price?.newPrice || product.price || 0) * quantity).toLocaleString("vi-VN")}đ
+                                {(
+                                  (product.price?.newPrice ||
+                                    product.price ||
+                                    0) * quantity
+                                ).toLocaleString("vi-VN")}
+                                đ
                               </p>
                             </div>
                           </motion.div>
-                        )
+                        );
                       })}
 
                       {order.productIds?.length > 3 && (
-                        <div className="flex items-center justify-center p-3 bg-gray-50 rounded-xl">
-                          <p className="text-gray-600 font-medium">+{order.productIds.length - 3} {t("order.more_items")}</p>
+                        <div className="flex items-center justify-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                          <p className="text-gray-600 font-medium">
+                            +{order.productIds.length - 3}{" "}
+                            {t("order.more_items")}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -463,21 +562,31 @@ const EnhancedOrderPage = () => {
                     {/* Order Summary */}
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                       <div className="flex items-center gap-6">
-                        <div>
-                          <p className="text-sm text-gray-600">{t("order.total_items")}</p>
-                          <p className="font-semibold text-gray-800">{order.productIds?.length || 0}</p>
+                        <div className="hover:text-blue-600 transition-colors duration-200">
+                          <p className="text-sm text-gray-600">
+                            {t("order.total_items")}
+                          </p>
+                          <p className="font-semibold text-gray-800">
+                            {order.productIds?.length || 0}
+                          </p>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-600">{t("order.order_date")}</p>
+                        <div className="hover:text-blue-600 transition-colors duration-200">
+                          <p className="text-sm text-gray-600">
+                            {t("order.order_date")}
+                          </p>
                           <p className="font-semibold text-gray-800">
                             {new Date(order.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">{t("order.total_amount")}</p>
-                        <p className="text-2xl font-bold text-blue-600">{order.totalPrice?.toLocaleString("vi-VN")}đ</p>
+                      <div className="text-right hover:text-blue-600 transition-colors duration-200">
+                        <p className="text-sm text-gray-600">
+                          {t("order.total_amount")}
+                        </p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {order.totalPrice?.toLocaleString("vi-VN")}đ
+                        </p>
                       </div>
                     </div>
 
@@ -485,14 +594,18 @@ const EnhancedOrderPage = () => {
                     <div className="flex items-center justify-end gap-3 mt-6">
                       {order.status === "completed" && (
                         <motion.button
-                          onClick={() => {
-                            navigate(`/books/${order.productIds[0].productId._id}`, {
-                              state: {
-                                orderId: order._id,
-                                orderStatus: order.status,
-                                productId: order.productIds[0].productId._id,
-                              },
-                            })
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(
+                              `/books/${order.productIds[0].productId._id}`,
+                              {
+                                state: {
+                                  orderId: order._id,
+                                  orderStatus: order.status,
+                                  productId: order.productIds[0].productId._id,
+                                },
+                              }
+                            );
                           }}
                           className="flex items-center gap-2 bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600 transition-colors duration-200"
                           whileHover={{ scale: 1.05 }}
@@ -504,7 +617,12 @@ const EnhancedOrderPage = () => {
                       )}
 
                       <motion.button
-                        onClick={() => navigate(`/books/${order.productIds[0].productId._id}`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(
+                            `/books/${order.productIds[0].productId._id}`
+                          );
+                        }}
                         className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors duration-200"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -526,11 +644,13 @@ const EnhancedOrderPage = () => {
                         className="border-t border-gray-200 bg-gray-50"
                       >
                         <div className="p-6">
-                          <h4 className="text-lg font-bold text-gray-800 mb-4">{t("order.order_details")}</h4>
+                          <h4 className="text-lg font-bold text-gray-800 mb-4">
+                            {t("order.order_details")}
+                          </h4>
                           <div className="space-y-3">
                             {order.productIds?.map((item) => {
-                              const product = item.productId || item
-                              const quantity = item.quantity || 1
+                              const product = item.productId || item;
+                              const quantity = item.quantity || 1;
 
                               return (
                                 <div
@@ -539,7 +659,10 @@ const EnhancedOrderPage = () => {
                                 >
                                   <div className="flex items-center gap-3">
                                     <img
-                                      src={product.coverImage || "/placeholder.svg?height=50&width=38"}
+                                      src={
+                                        product.coverImage ||
+                                        "/placeholder.svg?height=50&width=38"
+                                      }
                                       alt={product.title || "Product"}
                                       className="w-10 h-12 object-cover rounded"
                                     />
@@ -547,14 +670,21 @@ const EnhancedOrderPage = () => {
                                       <h5 className="font-semibold text-gray-800">
                                         {product.title || "Unknown Product"}
                                       </h5>
-                                      <p className="text-sm text-gray-600">{t("order.quantity")}: {quantity}</p>
+                                      <p className="text-sm text-gray-600">
+                                        {t("order.quantity")}: {quantity}
+                                      </p>
                                     </div>
                                   </div>
                                   <p className="font-semibold text-gray-800">
-                                    {((product.price?.newPrice || product.price || 0) * quantity).toLocaleString("vi-VN")}đ
+                                    {(
+                                      (product.price?.newPrice ||
+                                        product.price ||
+                                        0) * quantity
+                                    ).toLocaleString("vi-VN")}
+                                    đ
                                   </p>
                                 </div>
-                              )
+                              );
                             })}
                           </div>
                         </div>
@@ -568,7 +698,7 @@ const EnhancedOrderPage = () => {
         </AnimatePresence>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default EnhancedOrderPage
+export default EnhancedOrderPage;

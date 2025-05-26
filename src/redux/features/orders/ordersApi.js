@@ -5,12 +5,17 @@ export const ordersApi = createApi({
   reducerPath: "ordersApi",
   baseQuery: fetchBaseQuery({
     baseUrl: baseUrl,
-    credentials: "include",
-    prepareHeaders: (headers, { getState }) => {
-      // Get token from localStorage instead of Redux state
+    prepareHeaders: (headers) => {
+      // Get token from localStorage
       const token = localStorage.getItem("token");
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
+        console.log(
+          "Setting Authorization header with token:",
+          token.substring(0, 10) + "..."
+        );
+      } else {
+        console.log("No token found in localStorage");
       }
       return headers;
     },
@@ -41,7 +46,14 @@ export const ordersApi = createApi({
       providesTags: ["Orders"],
     }),
     getOrderById: builder.query({
-      query: (id) => `/orders/${id}`,
+      query: (id) => ({
+        url: `/orders/${id}`,
+        method: "GET",
+      }),
+      transformResponse: (response) => {
+        console.log("Order details response:", response);
+        return response;
+      },
       transformErrorResponse: (response) => {
         console.error("Order details error:", response);
         return response;
