@@ -395,7 +395,7 @@
     "unread": "Unread",
     "read": "Read",
     "mark_as_read": "Mark as Read",
-    "mark_all_as_read": "Mark All as Read",
+    "mark_all_read": "Mark All as Read",
     "no_notifications": "No notifications found",
     "no_unread_notifications": "No unread notifications found",
     "no_read_notifications": "No read notifications found",

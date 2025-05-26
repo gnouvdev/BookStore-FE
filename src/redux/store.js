@@ -9,13 +9,14 @@ import authReducer from "./features/auth/authSlice";
 import cartReducer from "./features/cart/cartSlice";
 import { userApi } from "./features/users/userApi";
 import recommendationsApi from "./features/recommendations/recommendationsApi";
-import wishlistReducer from './features/wishlist/wishlistSlice';
+import wishlistReducer from "./features/wishlist/wishlistSlice";
 import paymentsApi from "./features/payments/paymentsApi";
-import { cartApi } from './features/cart/cartApi';
-import { reviewsApi } from './features/reviews/reviewsApi';
-import { searchApi } from './features/search/searchApi';
-import { recommendationsv2Api } from './features/recommendationv2/recommendationsv2Api';
-import { notificationsApi } from './features/notifications/notificationsApi';
+import { cartApi } from "./features/cart/cartApi";
+import { reviewsApi } from "./features/reviews/reviewsApi";
+import { searchApi } from "./features/search/searchApi";
+import { recommendationsv2Api } from "./features/recommendationv2/recommendationsv2Api";
+import { notificationsApi } from "./features/notifications/notificationsApi";
+import { chatApi } from "./features/chat/chatApi";
 
 export const store = configureStore({
   reducer: {
@@ -35,6 +36,7 @@ export const store = configureStore({
     [searchApi.reducerPath]: searchApi.reducer,
     [recommendationsv2Api.reducerPath]: recommendationsv2Api.reducer,
     [notificationsApi.reducerPath]: notificationsApi.reducer,
+    [chatApi.reducerPath]: chatApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -50,7 +52,8 @@ export const store = configureStore({
       reviewsApi.middleware,
       searchApi.middleware,
       recommendationsv2Api.middleware,
-      notificationsApi.middleware
+      notificationsApi.middleware,
+      chatApi.middleware
     ),
 });
 

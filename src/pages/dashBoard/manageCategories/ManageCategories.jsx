@@ -258,14 +258,37 @@ const EnhancedManageCategories = () => {
       setIsLoading(true);
       const token = localStorage.getItem("token");
 
-      const response = await axios.post(`${baseUrl}/categories`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.post(
+        `${baseUrl}/categories/create`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.data) {
-        setCategories([response.data, ...categories]);
+        // Tạo một category mới với cấu trúc đầy đủ
+        const newCategory = {
+          _id: response.data._id,
+          name: response.data.name,
+          description: response.data.description,
+          status: response.data.status || "active",
+          color: response.data.color || "#4CAF50",
+          trending: response.data.trending || false,
+          createdAt: response.data.createdAt || new Date().toISOString(),
+          booksCount: 0, // Khởi tạo số lượng sách là 0
+        };
+
+        // Cập nhật state với category mới
+        setCategories((prev) => [newCategory, ...prev]);
+        setFilteredCategories((prev) => [newCategory, ...prev]);
+        setCategoryBookCounts((prev) => ({
+          ...prev,
+          [newCategory._id]: 0,
+        }));
+
         setShowAddDialog(false);
         resetForm();
         toast.success("Category added successfully");
@@ -680,7 +703,7 @@ const EnhancedManageCategories = () => {
                 <AnimatePresence mode="wait">
                   {getCurrentPageItems().map((category, index) => (
                     <motion.tr
-                      key={category._id}
+                      key={category._id || `category-${index}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
@@ -691,12 +714,14 @@ const EnhancedManageCategories = () => {
                         <div className="flex items-center gap-4">
                           <div
                             className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: category.color }}
+                            style={{
+                              backgroundColor: category.color || "#4CAF50",
+                            }}
                           />
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-gray-900">
-                                {category.name}
+                                {category.name || "Unnamed Category"}
                               </p>
                               {category.trending && (
                                 <Badge variant="secondary" className="text-xs">
@@ -706,14 +731,14 @@ const EnhancedManageCategories = () => {
                               )}
                             </div>
                             <p className="text-sm text-gray-500">
-                              ID: {category._id}
+                              ID: {category._id || "N/A"}
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-gray-900 line-clamp-2 max-w-xs">
-                          {category.description}
+                          {category.description || "No description"}
                         </p>
                       </td>
                       <td className="px-6 py-4">
@@ -739,7 +764,7 @@ const EnhancedManageCategories = () => {
                               : "secondary"
                           }
                         >
-                          {category.status}
+                          {category.status || "active"}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-right">

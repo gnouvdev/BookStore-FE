@@ -7,6 +7,7 @@ import GenreBooks from "../../components/GenreBooks";
 import MiniBanner from "../../components/miniBanner";
 import Recommendationsv2 from "../../components/Recommendationsv2";
 import InteractiveBookExplorer from "./InteractiveBook";
+import ChatBox from "../../components/ChatBox";
 const Home = () => {
   return (
     <>
@@ -24,7 +25,7 @@ const Home = () => {
       <MiniBanner genre1={"Horror1"} genre2={"Horror2"} />
       <GenreBooks genre={"Manga"} />
       {/* <TopSales /> */}
-
+      <ChatBox />
       <News />
     </>
   );

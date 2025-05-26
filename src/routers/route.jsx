@@ -10,6 +10,7 @@ import GenreBooks from "../components/GenreBooks";
 import GridBooks from "../components/GridBooks";
 import PrivateRoute from "./PrivateRoute";
 import AdminRoute from "./AdminRoute";
+import { AuthProvider } from "../context/AuthContext";
 
 import OrderPage from "../pages/books/OrderPage";
 import ThanksPage from "./../pages/thanksPage/ThanksPage";
@@ -29,13 +30,13 @@ import ManageOrders from "./../pages/dashBoard/manageOrders/ManageOrders";
 import Recommended from "../pages/home/Recommended";
 import BookRecommendations from "./../components/BookRecommendations";
 import WishlistPage from "../pages/wishlist/WishlistPage";
-import VNPayCallback from './../pages/vnpaycallback/VNPayCallback';
-import ForgotPassword from './../components/ForgotPassword';
-import HomePage from './../pages/home/HomePage';
-import AboutUs from './../pages/home/AboutUs';
-import Notifications from './../pages/notifications/Notifications';
-import OrderDetails from './../pages/orders/OrderDetails';
-
+import VNPayCallback from "./../pages/vnpaycallback/VNPayCallback";
+import ForgotPassword from "./../components/ForgotPassword";
+import HomePage from "./../pages/home/HomePage";
+import AboutUs from "./../pages/home/AboutUs";
+import Notifications from "./../pages/notifications/Notifications";
+import OrderDetails from "./../pages/orders/OrderDetails";
+import Chat from "../pages/dashBoard/chat/Chat";
 const router = createBrowserRouter([
   {
     path: "",
@@ -161,7 +162,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/admin",
-    element: <AdminLogin />,
+    element: (
+      <AuthProvider>
+        <AdminLogin />
+      </AuthProvider>
+    ),
   },
   {
     path: "/dashboard",
@@ -206,6 +211,10 @@ const router = createBrowserRouter([
           {
             path: "manage-orders",
             element: <ManageOrders />,
+          },
+          {
+            path: "chat",
+            element: <Chat />,
           },
         ],
       },

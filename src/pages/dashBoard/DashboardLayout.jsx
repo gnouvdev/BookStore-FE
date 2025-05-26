@@ -5,7 +5,7 @@ import { MdOutlineManageHistory } from "react-icons/md";
 import { FaBook } from "react-icons/fa";
 import { BsFileEarmarkPersonFill } from "react-icons/bs";
 import { FaLuggageCart } from "react-icons/fa";
-import { FaUserTie } from "react-icons/fa6";
+import { FaFacebookMessenger, FaUserTie } from "react-icons/fa6";
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
@@ -99,6 +99,13 @@ const DashboardLayout = () => {
             >
               <span className="sr-only">Manage Orders</span>
               <FaLuggageCart className="h-6 w-6" />
+            </Link>
+            <Link
+              to="/dashboard/chat"
+              className={getMenuItemClasses("/dashboard/chat")}
+            >
+              <span className="sr-only">Chat</span>
+              <FaFacebookMessenger className="h-6 w-6" />
             </Link>
           </nav>
           <div className="inline-flex items-center justify-center h-20 w-20 border-t border-gray-700">

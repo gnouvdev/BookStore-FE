@@ -6,9 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { FaUserShield, FaLock } from "react-icons/fa";
 import gsap from "gsap";
+import { useAuth } from "../context/AuthContext";
 
 const AdminLogin = () => {
   const [message, setMessage] = useState("");
+  const { setCurrentUser } = useAuth();
   const {
     register,
     handleSubmit,
@@ -133,8 +135,17 @@ const AdminLogin = () => {
       const { token, user } = response.data;
 
       if (token && user?.role === "admin") {
+        // Tạo clean user object với firebaseId
+        const cleanUser = {
+          ...user,
+          uid: user.id, // Sử dụng id từ backend làm uid
+          firebaseId: user.id, // Sử dụng id từ backend làm firebaseId
+          role: "admin",
+        };
+
         localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("user", JSON.stringify(cleanUser));
+        setCurrentUser(cleanUser); // Cập nhật AuthContext
 
         const storedToken = localStorage.getItem("token");
         console.log("Token đã lưu:", storedToken);
