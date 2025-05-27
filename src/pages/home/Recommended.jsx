@@ -1,29 +1,29 @@
 /* eslint-disable no-unused-vars */
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, useInView } from "framer-motion";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { FaFire, FaClock } from "react-icons/fa";
-import { RiFireFill } from "react-icons/ri";
+import {
+  Flame,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Zap,
+  TrendingUp,
+} from "lucide-react";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
-import "swiper/css/effect-coverflow";
-import {
-  Pagination,
-  Navigation,
-  Autoplay,
-  EffectCoverflow,
-} from "swiper/modules";
+import { Pagination, Navigation, Autoplay } from "swiper/modules";
 import { useGetBooksQuery } from "../../redux/features/books/booksApi";
 import { t } from "i18next";
 import BookCard from "./../books/BookCart";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import "../../styles/3d-effects.css";
-
-const RecommendedWith3D = () => {
+const OptimizedRecommended = () => {
   const { data: books = [], isLoading } = useGetBooksQuery();
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -31,11 +31,27 @@ const RecommendedWith3D = () => {
     seconds: 0,
   });
   const containerRef = useRef(null);
-  const isInView = useInView(containerRef, { once: true, margin: "-100px" });
+  const isInView = useInView(containerRef, { once: true, margin: "-50px" });
 
-  // Countdown Timer Effect
+  // Memoize processed books để tránh re-calculation
+  const discountedBooks = useMemo(() => {
+    return books
+      .map((book) => ({
+        ...book,
+        discountPercentage:
+          book.price?.oldPrice && book.price?.newPrice
+            ? ((book.price.oldPrice - book.price.newPrice) /
+                book.price.oldPrice) *
+              100
+            : 0,
+      }))
+      .filter((book) => book.discountPercentage > 0)
+      .sort((a, b) => b.discountPercentage - a.discountPercentage)
+      .slice(0, 12);
+  }, [books]);
+
+  // Optimized countdown timer
   useEffect(() => {
-    // Set sale end date (7 days from now)
     const saleEndDate = new Date();
     saleEndDate.setDate(saleEndDate.getDate() + 7);
     saleEndDate.setHours(23, 59, 59, 999);
@@ -61,244 +77,202 @@ const RecommendedWith3D = () => {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setMousePosition({
-          x: (e.clientX - rect.left) / rect.width,
-          y: (e.clientY - rect.top) / rect.height,
-        });
-      }
-    };
-
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener("mousemove", handleMouseMove);
-      return () => container.removeEventListener("mousemove", handleMouseMove);
-    }
-  }, []);
-
-  // Tính phần trăm giảm giá và sắp xếp sách
-  const discountedBooks = books
-    .map((book) => ({
-      ...book,
-      discountPercentage:
-        book.price?.oldPrice && book.price?.newPrice
-          ? ((book.price.oldPrice - book.price.newPrice) /
-              book.price.oldPrice) *
-            100
-          : 0,
-    }))
-    .filter((book) => book.discountPercentage > 0)
-    .sort((a, b) => b.discountPercentage - a.discountPercentage)
-    .slice(0, 12);
-
   if (isLoading) {
     return (
-      <div className="relative overflow-hidden bg-gradient-to-br from-red-600 via-red-500 to-orange-600 p-12 rounded-3xl mx-4 sm:mx-8 lg:mx-16 text-center perspective-1000">
-        <div className="inline-block animate-spin">
-          <FaFire className="text-8xl text-yellow-300 mb-4 drop-shadow-2xl" />
+      <div className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 p-8 sm:p-12 rounded-3xl mx-4 sm:mx-8 lg:mx-16 shadow-2xl">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-full mb-6">
+            <Flame className="w-10 h-10 text-yellow-300 animate-pulse" />
+          </div>
+          <div className="text-white text-2xl font-bold">{t("loading")}</div>
         </div>
-        <div className="text-white text-2xl font-bold">{t("loading")}</div>
       </div>
     );
   }
 
   return (
-    <div
+    <motion.div
       ref={containerRef}
-      className="relative overflow-hidden bg-gradient-to-br from-red-600 via-red-500 to-orange-600 p-8 sm:p-12 rounded-3xl mx-4 sm:mx-8 lg:mx-16 shadow-2xl perspective-1000"
-      style={{
-        transform: `rotateX(${(mousePosition.y * 2 - 1) * 0.5}deg) rotateY(${
-          (mousePosition.x * 2 - 1) * 0.5
-        }deg)`,
-        transformStyle: "preserve-3d",
-        transition: "transform 0.2s ease-out",
-        willChange: "transform",
-      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 p-6 sm:p-8 lg:p-12 rounded-3xl mx-4 sm:mx-8 lg:mx-16 shadow-2xl"
     >
-      {/* Countdown Timer - Top Right */}
+      {/* Animated Background Pattern */}
+      <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_0%,transparent_50%)] animate-pulse"></div>
+        <div className="absolute top-1/4 right-1/4 w-32 h-32 bg-white/5 rounded-full blur-xl animate-bounce"></div>
+        <div className="absolute bottom-1/4 left-1/4 w-24 h-24 bg-yellow-300/10 rounded-full blur-lg animate-pulse"></div>
+      </div>
+
+      {/* Countdown Timer */}
       <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
         className="absolute top-4 right-4 z-20 bg-black/30 backdrop-blur-sm rounded-2xl p-4 border border-white/20"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5 }}
       >
-        <div className="flex items-center gap-2 mb-2">
-          <FaClock className="text-yellow-300 text-lg animate-pulse" />
+        <div className="flex items-center gap-2 mb-3">
+          <Clock className="w-5 h-5 text-yellow-300" />
           <span className="text-white font-bold text-sm">SALE ENDS IN</span>
         </div>
-        <div className="grid grid-cols-4 gap-2 text-center">
-          <div className="bg-white/20 rounded-lg p-2">
-            <div className="text-yellow-300 font-bold text-lg">
-              {timeLeft.days}
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { value: timeLeft.days, label: "DAYS" },
+            { value: timeLeft.hours, label: "HRS" },
+            { value: timeLeft.minutes, label: "MIN" },
+            { value: timeLeft.seconds, label: "SEC" },
+          ].map((item, index) => (
+            <div
+              key={index}
+              className="bg-white/20 rounded-lg p-2 text-center min-w-[50px]"
+            >
+              <div className="text-yellow-300 font-bold text-lg leading-none">
+                {item.value}
+              </div>
+              <div className="text-white text-xs mt-1">{item.label}</div>
             </div>
-            <div className="text-white text-xs">DAYS</div>
-          </div>
-          <div className="bg-white/20 rounded-lg p-2">
-            <div className="text-yellow-300 font-bold text-lg">
-              {timeLeft.hours}
-            </div>
-            <div className="text-white text-xs">HRS</div>
-          </div>
-          <div className="bg-white/20 rounded-lg p-2">
-            <div className="text-yellow-300 font-bold text-lg">
-              {timeLeft.minutes}
-            </div>
-            <div className="text-white text-xs">MIN</div>
-          </div>
-          <div className="bg-white/20 rounded-lg p-2">
-            <div className="text-yellow-300 font-bold text-lg animate-pulse">
-              {timeLeft.seconds}
-            </div>
-            <div className="text-white text-xs">SEC</div>
-          </div>
+          ))}
         </div>
       </motion.div>
 
       {/* Header */}
-      <div
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
         className="relative z-10 mb-8"
-        style={{ transform: "translateZ(10px)" }}
       >
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <div className="relative">
-              <FaFire className="text-5xl sm:text-6xl text-yellow-300 drop-shadow-2xl animate-pulse" />
+              <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <Flame className="w-8 h-8 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                <Zap className="w-3 h-3 text-white" />
+              </div>
             </div>
             <div>
-              <h2 className="text-3xl sm:text-5xl text-white font-bold font-primary">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl text-white font-bold">
                 {t("home.Top Sales")}
               </h2>
-              <p className="text-yellow-100 text-base sm:text-lg font-secondary mt-2">
-                🔥 {t("home.Hottest deals & biggest discounts")}
+              <p className="text-yellow-100 text-base sm:text-lg mt-1 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                {t("home.Hottest deals & biggest discounts")}
               </p>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Books Carousel */}
-      <div className="relative z-10" style={{ transform: "translateZ(20px)" }}>
+      <div className="relative z-10">
         {discountedBooks.length > 0 ? (
-          <Swiper
-            slidesPerView={1}
-            spaceBetween={30}
-            breakpoints={{
-              640: { slidesPerView: 2, spaceBetween: 25 },
-              768: { slidesPerView: 3, spaceBetween: 30 },
-              1024: { slidesPerView: 4, spaceBetween: 35 },
-              1280: { slidesPerView: 5, spaceBetween: 40 },
-            }}
-            centeredSlides={true}
-            autoplay={{
-              delay: 3000,
-              disableOnInteraction: false,
-              pauseOnMouseEnter: true,
-            }}
-            pagination={{
-              clickable: true,
-              dynamicBullets: true,
-            }}
-            navigation={{
-              prevEl: ".recommended-3d-prev",
-              nextEl: ".recommended-3d-next",
-            }}
-            effect="coverflow"
-            coverflowEffect={{
-              rotate: 10,
-              stretch: 0,
-              depth: 50,
-              modifier: 1,
-              slideShadows: false,
-            }}
-            modules={[Autoplay, Pagination, Navigation, EffectCoverflow]}
-            className="pb-16"
-          >
-            {discountedBooks.map((book, index) => (
-              <SwiperSlide key={book._id}>
-                <motion.div
-                  className="relative group"
-                  whileHover={{
-                    scale: 1.02,
-                    transition: { duration: 0.2 },
-                  }}
-                  style={{
-                    filter: "none",
-                    willChange: "transform",
-                  }}
-                >
-                  {/* Discount Badge */}
-                  {/* <div className="absolute -top-3 -right-3 z-30 bg-gradient-to-r from-yellow-400 to-orange-400 text-red-600 font-bold text-sm px-3 py-2 rounded-full shadow-2xl animate-bounce">
-                    -{Math.round(book.discountPercentage)}%
-                  </div> */}
+          <div className="relative">
+            <Swiper
+              slidesPerView={1}
+              spaceBetween={120}
+              breakpoints={{
+                640: { slidesPerView: 2, spaceBetween: 20 },
+                768: { slidesPerView: 3, spaceBetween: 20 },
+                1024: { slidesPerView: 4, spaceBetween: 20 },
+                1280: { slidesPerView: 5, spaceBetween: 20 },
+              }}
+              autoplay={{
+                delay: 3000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true,
+              }}
+              pagination={{
+                clickable: true,
+                dynamicBullets: true,
+              }}
+              navigation={{
+                prevEl: ".recommended-prev",
+                nextEl: ".recommended-next",
+              }}
+              modules={[Autoplay, Pagination, Navigation]}
+              className="pb-16"
+              style={{
+                "--swiper-pagination-color": "#fbbf24",
+                "--swiper-pagination-bullet-inactive-color":
+                  "rgba(255, 255, 255, 0.5)",
+              }}
+            >
+              {discountedBooks.map((book, index) => (
+                <SwiperSlide key={book._id}>
+                  <div className="w-full h-full flex flex-col">
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="relative flex flex-col h-full"
+                    >
+                      {/* Discount Badge */}
+                      {/* <Badge className="absolute -top-2 -right-2 z-30 bg-gradient-to-r from-yellow-400 to-orange-500 text-red-700 font-bold text-sm px-3 py-1 rounded-full shadow-lg border-2 border-white">
+                        -{Math.round(book.discountPercentage)}%
+                      </Badge> */}
 
-                  {/* Hot Badge */}
-                  {index < 3 && (
-                    <div className="absolute -top-3 -left-3 z-30 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-sm px-3 py-2 rounded-full shadow-2xl flex items-center gap-1">
-                      <RiFireFill className="text-sm" />
-                      HOT
-                    </div>
-                  )}
+                      {/* Hot Badge for top 3 */}
+                      {index < 3 && (
+                        <Badge className="absolute -top-2 -left-2 z-30 bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold text-sm px-3 py-1 rounded-full shadow-lg border-2 border-white flex items-center gap-1">
+                          <Flame className="w-3 h-3" />
+                          HOT
+                        </Badge>
+                      )}
 
-                  {/* Enhanced Book Card Container */}
-                  <div className="relative rounded-2xl transition-all p-4 duration-200">
-                    <BookCard book={book} />
+                      {/* Book Card Container */}
+                      <div className="relative flex-1 rounded-2xl ">
+                        <div className="h-full">
+                          <BookCard book={book} />
+                        </div>
+                      </div>
+                    </motion.div>
                   </div>
-                </motion.div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
         ) : (
-          <div className="text-center py-16">
-            <FaFire className="text-8xl text-yellow-300 mx-auto opacity-60 drop-shadow-2xl mb-6" />
-            <p className="text-white text-2xl font-bold mb-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-16 text-white"
+          >
+            <div className="w-24 h-24 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center">
+              <Flame className="w-12 h-12 text-yellow-300" />
+            </div>
+            <h3 className="text-white text-2xl font-bold mb-4">
               {t("home.no_discounts")}
-            </p>
+            </h3>
             <p className="text-yellow-100 text-lg">
               Check back soon for amazing deals!
             </p>
-          </div>
+          </motion.div>
         )}
       </div>
 
       {/* Navigation Buttons */}
-      <div className="recommended-3d-prev absolute left-4 top-1/2 transform -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 cursor-pointer transition-all duration-200">
-        <svg
-          className="w-6 h-6 text-white"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
-      </div>
-      <div className="recommended-3d-next absolute right-4 top-1/2 transform -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 cursor-pointer transition-all duration-200">
-        <svg
-          className="w-6 h-6 text-white"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5l7 7-7 7"
-          />
-        </svg>
-      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="recommended-prev absolute left-4 top-1/2 transform -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full w-12 h-12 text-white border border-white/30 transition-all duration-200"
+      >
+        <ChevronLeft className="w-6 h-6" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="recommended-next absolute right-4 top-1/2 transform -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full w-12 h-12 text-white border border-white/30 transition-all duration-200"
+      >
+        <ChevronRight className="w-6 h-6" />
+      </Button>
 
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12"></div>
-    </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 pointer-events-none"></div>
+    </motion.div>
   );
 };
 
-export default RecommendedWith3D;
+export default OptimizedRecommended;
