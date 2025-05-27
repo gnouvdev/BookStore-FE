@@ -138,104 +138,205 @@ const EnhancedLogin = () => {
   // Enhanced login handler
   const onSubmit = async (data) => {
     setIsSubmitting(true);
+    let firebaseUser = null;
+
     try {
-      // 1. Firebase authentication
+      // 1. Firebase authentication trước
+      console.log("Starting Firebase authentication...");
       const result = await loginUser(data.email, data.password);
       if (!result || !result.user) {
         throw new Error("Authentication failed");
       }
-      const user = result.user;
-      console.log("Firebase auth successful:", user.uid);
+      firebaseUser = result.user;
+      console.log("Firebase auth successful:", {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        emailVerified: firebaseUser.emailVerified,
+        metadata: firebaseUser.metadata,
+      });
 
-      // 2. Get Firebase token with force refresh
+      // 2. Force refresh Firebase token
       let idToken;
       try {
-        idToken = await user.getIdToken(true);
+        console.log("Force refreshing Firebase token...");
+        await firebaseUser.getIdToken(true);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        idToken = await firebaseUser.getIdToken();
+
         if (!idToken) {
           throw new Error("Failed to get authentication token");
         }
-        console.log("Got Firebase token");
+
+        console.log("Got fresh Firebase token:", {
+          tokenPreview: idToken.substring(0, 10) + "...",
+          tokenLength: idToken.length,
+        });
       } catch (tokenError) {
-        console.error("Token error:", tokenError);
+        console.error("Token refresh error:", tokenError);
         throw new Error("Failed to get authentication token");
       }
 
       // 3. Backend authentication
       console.log("Attempting backend authentication...");
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        {
-          idToken,
-          email: user.email,
-          uid: user.uid,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-          validateStatus: function (status) {
-            return status < 500;
-          },
+      const loginData = {
+        idToken,
+        email: firebaseUser.email,
+        uid: firebaseUser.uid,
+        displayName: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL,
+      };
+
+      try {
+        // Thêm Bearer prefix cho token
+        const authHeader = `Bearer ${idToken}`;
+        console.log("Auth header:", authHeader.substring(0, 20) + "...");
+
+        const response = await axios.post(
+          "http://localhost:5000/api/auth/login",
+          loginData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: authHeader,
+            },
+            validateStatus: function (status) {
+              return status < 500; // Chỉ throw error cho lỗi 500+
+            },
+          }
+        );
+
+        console.log("Backend response:", {
+          status: response.status,
+          data: response.data,
+          headers: response.headers,
+        });
+
+        if (response.status === 200 && response.data?.token) {
+          const { token, role = "user" } = response.data;
+          await handleSuccessfulLogin(token, role, firebaseUser);
+          return;
         }
-      );
 
-      console.log("Backend response:", response.status);
+        // Nếu backend trả về 401, thử đăng ký lại user
+        if (response.status === 401) {
+          console.log("User not found in database, attempting to register...");
 
-      if (response.status === 401) {
-        console.error("Backend authentication failed:", response.data);
+          // Kiểm tra user đã tồn tại chưa
+          try {
+            const checkResponse = await axios.get(
+              `http://localhost:5000/api/users/check-email/${firebaseUser.email}`,
+              {
+                headers: {
+                  Authorization: authHeader,
+                },
+              }
+            );
+
+            if (checkResponse.data.exists) {
+              // User đã tồn tại, thử đăng nhập lại
+              console.log("User already exists, retrying login...");
+              const retryResponse = await axios.post(
+                "http://localhost:5000/api/auth/login",
+                loginData,
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: authHeader,
+                  },
+                }
+              );
+
+              if (retryResponse.status === 200 && retryResponse.data?.token) {
+                const { token, role = "user" } = retryResponse.data;
+                await handleSuccessfulLogin(token, role, firebaseUser);
+                return;
+              }
+            } else {
+              // User chưa tồn tại, đăng ký mới
+              const registerResponse = await axios.post(
+                "http://localhost:5000/api/users/register",
+                {
+                  idToken,
+                  email: firebaseUser.email,
+                  fullName:
+                    firebaseUser.displayName ||
+                    firebaseUser.email.split("@")[0],
+                },
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: authHeader,
+                  },
+                  validateStatus: function (status) {
+                    return status < 500;
+                  },
+                }
+              );
+
+              if (
+                registerResponse.status === 200 &&
+                registerResponse.data?.token
+              ) {
+                const { token, role = "user" } = registerResponse.data;
+                await handleSuccessfulLogin(token, role, firebaseUser);
+                return;
+              }
+            }
+          } catch (checkError) {
+            console.error("Error checking user:", checkError);
+            // Nếu không check được, thử đăng ký trực tiếp
+            const registerResponse = await axios.post(
+              "http://localhost:5000/api/users/register",
+              {
+                idToken,
+                email: firebaseUser.email,
+                fullName:
+                  firebaseUser.displayName || firebaseUser.email.split("@")[0],
+              },
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: authHeader,
+                },
+                validateStatus: function (status) {
+                  return status < 500;
+                },
+              }
+            );
+
+            if (
+              registerResponse.status === 200 &&
+              registerResponse.data?.token
+            ) {
+              const { token, role = "user" } = registerResponse.data;
+              await handleSuccessfulLogin(token, role, firebaseUser);
+              return;
+            }
+          }
+        }
+
+        throw new Error("Authentication failed");
+      } catch (error) {
+        console.error("Backend authentication error:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          headers: error.config?.headers,
+        });
         throw new Error("Invalid credentials");
       }
-
-      if (!response.data || !response.data.token) {
-        console.error("Invalid backend response:", response.data);
-        throw new Error("Invalid server response");
-      }
-
-      const { token, role = "user" } = response.data;
-      console.log("Got backend token and role:", role);
-
-      // 4. Fetch user profile with the new token
-      console.log("Fetching user profile...");
-      const profileData = await fetchUserProfile(token);
-      if (!profileData) {
-        console.error("Failed to get profile data");
-        throw new Error("Failed to fetch user profile");
-      }
-      console.log("Got user profile:", profileData);
-
-      // 5. Create clean user object
-      const cleanUser = createCleanUserObject(user, profileData, role);
-      console.log("Created clean user object");
-
-      // 6. Save to localStorage
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(cleanUser));
-      console.log("Saved to localStorage");
-
-      // 7. Update context
-      setCurrentUser(cleanUser);
-      console.log("Updated context");
-
-      // Success animation
-      gsap.to(formRef.current, {
-        scale: 1.05,
-        duration: 0.3,
-        yoyo: true,
-        repeat: 1,
-        ease: "power2.inOut",
-      });
-
-      toast.success("Đăng nhập thành công! 🎉");
-      setTimeout(() => navigate("/"), 1000);
     } catch (error) {
       console.error("Login error details:", {
         message: error.message,
         code: error.code,
         response: error.response?.data,
         status: error.response?.status,
+        user: firebaseUser
+          ? {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+            }
+          : null,
       });
 
       // Error animation
@@ -253,18 +354,55 @@ const EnhancedLogin = () => {
       } else if (error.code === "auth/too-many-requests") {
         toast.error("Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau.");
       } else if (error.message === "Invalid credentials") {
-        toast.error("Thông tin đăng nhập không hợp lệ.");
+        toast.error("Thông tin đăng nhập không hợp lệ. Vui lòng thử lại sau.");
       } else if (error.message === "Failed to get authentication token") {
-        toast.error("Không thể xác thực. Vui lòng thử lại.");
-      } else if (error.message === "Failed to fetch user profile") {
-        toast.error("Không thể lấy thông tin người dùng.");
-      } else if (error.response?.data?.message?.includes("duplicate key")) {
-        toast.error("Tài khoản đã tồn tại. Vui lòng thử lại sau.");
+        toast.error("Không thể xác thực. Vui lòng thử lại sau.");
       } else {
-        toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
+        toast.error("Đăng nhập thất bại. Vui lòng thử lại sau.");
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Helper function để xử lý đăng nhập thành công
+  const handleSuccessfulLogin = async (token, role, user) => {
+    try {
+      // 1. Fetch user profile
+      console.log("Fetching user profile...");
+      const profileData = await fetchUserProfile(token);
+      if (!profileData) {
+        throw new Error("Failed to fetch user profile");
+      }
+      console.log("Got user profile:", profileData);
+
+      // 2. Create clean user object
+      const cleanUser = createCleanUserObject(user, profileData, role);
+      console.log("Created clean user object");
+
+      // 3. Save to localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(cleanUser));
+      console.log("Saved to localStorage");
+
+      // 4. Update context
+      setCurrentUser(cleanUser);
+      console.log("Updated context");
+
+      // Success animation
+      gsap.to(formRef.current, {
+        scale: 1.05,
+        duration: 0.3,
+        yoyo: true,
+        repeat: 1,
+        ease: "power2.inOut",
+      });
+
+      toast.success("Đăng nhập thành công! 🎉");
+      setTimeout(() => navigate("/"), 1000);
+    } catch (error) {
+      console.error("Error in handleSuccessfulLogin:", error);
+      throw error;
     }
   };
 
