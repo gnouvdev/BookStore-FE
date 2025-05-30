@@ -42,6 +42,11 @@ import { useClearCartMutation } from "../../redux/features/cart/cartApi";
 import gsap from "gsap";
 import { t } from "i18next";
 import { toast } from "react-hot-toast";
+import axios from "axios";
+import {
+  useValidateVoucherMutation,
+  useApplyVoucherMutation,
+} from "../../redux/features/voucher/voucherApi";
 
 const EnhancedCheckoutPage = () => {
   const { currentUser } = useAuth();
@@ -50,6 +55,9 @@ const EnhancedCheckoutPage = () => {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [isChecked, setIsChecked] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [voucherCode, setVoucherCode] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [voucherError, setVoucherError] = useState("");
 
   const cartItems = useSelector((state) => state.cart.cartItems);
   const [createOrder, { isLoading }] = useCreateOrderMutation();
@@ -72,6 +80,8 @@ const EnhancedCheckoutPage = () => {
   const paymentMethods = paymentMethodsData?.data || [];
   const [createVNPayUrl] = useCreateVNPayUrlMutation();
   const [clearCartApi] = useClearCartMutation();
+  const [validateVoucher] = useValidateVoucherMutation();
+  const [applyVoucher] = useApplyVoucherMutation();
 
   const formRef = useRef(null);
   const stepsRef = useRef([]);
@@ -82,15 +92,16 @@ const EnhancedCheckoutPage = () => {
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm({
     defaultValues: {
       name: currentUser?.displayName || "",
       email: currentUser?.email || "",
-      city: currentUser?.address?.city || "",
-      country: currentUser?.address?.country || "",
-      state: currentUser?.address?.state || "",
-      zipcode: currentUser?.address?.zipcode || "",
-      phone: currentUser?.phone || "",
+      phone: userProfileData?.user?.phone || "",
+      street: userProfileData?.user?.address?.street || "",
+      city: userProfileData?.user?.address?.city || "",
+      country: userProfileData?.user?.address?.country || "",
+      zip: userProfileData?.user?.address?.zip || "",
     },
   });
 
@@ -113,6 +124,19 @@ const EnhancedCheckoutPage = () => {
       );
     }
   }, []);
+
+  // Thêm useEffect để cập nhật form khi userProfileData thay đổi
+  useEffect(() => {
+    if (userProfileData?.user) {
+      const { phone, address } = userProfileData.user;
+      // Cập nhật các trường form với dữ liệu từ API
+      setValue("phone", phone || "");
+      setValue("street", address?.street || "");
+      setValue("city", address?.city || "");
+      setValue("country", address?.country || "");
+      setValue("zip", address?.zip || "");
+    }
+  }, [userProfileData, setValue]);
 
   if (!currentUser) {
     navigate("/login");
@@ -173,6 +197,32 @@ const EnhancedCheckoutPage = () => {
     return true;
   };
 
+  const handleApplyVoucher = async () => {
+    if (!voucherCode.trim()) {
+      setVoucherError("Please enter a voucher code");
+      return;
+    }
+
+    try {
+      const result = await validateVoucher({
+        code: voucherCode,
+        orderAmount: totalPrice,
+      }).unwrap();
+
+      if (result.success) {
+        setAppliedVoucher({
+          ...result.data.voucher,
+          discount: result.data.discount,
+        });
+        setVoucherError(null);
+        toast.success("Voucher applied successfully!");
+      }
+    } catch (error) {
+      setVoucherError(error.data?.message || "Invalid voucher code");
+      setAppliedVoucher(null);
+    }
+  };
+
   const onSubmit = async (data) => {
     if (!cartItems.length) {
       Swal.fire({
@@ -221,92 +271,52 @@ const EnhancedCheckoutPage = () => {
     try {
       await validateStock();
 
+      let finalPrice = totalPrice;
+      let voucherDiscount = 0;
+
+      if (appliedVoucher) {
+        const result = await applyVoucher({
+          code: appliedVoucher.code,
+          orderAmount: totalPrice,
+        }).unwrap();
+        voucherDiscount = result.data.discount;
+        finalPrice = totalPrice - voucherDiscount;
+      }
+
       const orderItems = cartItems.map((item) => ({
         productId: item._id || item.bookId,
         quantity: item.quantity || 1,
       }));
 
-      if (selectedPayment.code === "VNPAY") {
-        try {
-          const vnpayData = {
-            orderItems,
-            user: userProfileData.user,
-            shippingInfo: {
-              name: data.name,
-              email: currentUser?.email,
-              phone: data.phone,
-              address: {
-                city: data.city,
-                country: data.country || "",
-                state: data.state || "",
-                zipcode: data.zipcode || "",
-              },
-            },
-            paymentMethodId: selectedPayment._id,
-            returnUrl: `${window.location.origin}/vnpay/callback`,
-          };
+      const orderData = {
+        user: userProfileData.user._id,
+        name: data.name,
+        email: currentUser?.email,
+        phone: data.phone,
+        address: {
+          street: data.street,
+          city: data.city,
+          country: data.country || "",
+          zip: data.zip || "",
+        },
+        productIds: orderItems,
+        totalPrice: finalPrice,
+        paymentMethod: selectedPayment._id,
+        status: "pending",
+        paymentStatus: "pending",
+        paymentDetails: {
+          paymentAmount: finalPrice,
+          paymentCurrency: "VND",
+        },
+        voucherCode: appliedVoucher?.code,
+        voucherDiscount,
+      };
 
-          const response = await createVNPayUrl(vnpayData).unwrap();
+      const order = await createOrder(orderData).unwrap();
+      await clearCartApi();
+      dispatch(clearCart());
 
-          if (response.paymentUrl) {
-            window.location.href = response.paymentUrl;
-          } else {
-            throw new Error("No payment URL received from VNPay");
-          }
-        } catch (error) {
-          Swal.fire({
-            title: "Payment Error",
-            text:
-              error.data?.message ||
-              "Failed to create VNPay payment. Please try again.",
-            icon: "error",
-            customClass: {
-              popup: "rounded-2xl",
-              confirmButton: "rounded-xl",
-            },
-          });
-        }
-      } else if (selectedPayment.code === "COD") {
-        const orderData = {
-          user: userProfileData.user._id,
-          name: data.name,
-          email: currentUser?.email,
-          address: {
-            city: data.city,
-            country: data.country || "",
-            state: data.state || "",
-            zipcode: data.zipcode || "",
-          },
-          phone: data.phone || "",
-          productIds: orderItems,
-          totalPrice: totalPrice,
-          paymentMethod: selectedPayment._id,
-          status: "pending",
-          paymentStatus: "pending",
-          paymentDetails: {
-            paymentAmount: totalPrice,
-            paymentCurrency: "VND",
-          },
-        };
-
-        const order = await createOrder(orderData).unwrap();
-        await clearCartApi();
-        dispatch(clearCart());
-
-        Swal.fire({
-          title: "Order Confirmed! 🎉",
-          text: "Your order has been placed successfully!",
-          icon: "success",
-          customClass: {
-            popup: "rounded-2xl",
-            confirmButton: "rounded-xl",
-          },
-        });
-
-        navigate("/orders/thanks");
-      } else {
-        throw new Error("Unsupported payment method");
-      }
+      navigate("/orders/thanks");
     } catch (error) {
       console.error("API Error:", error);
 
@@ -356,9 +366,7 @@ const EnhancedCheckoutPage = () => {
     );
   }
 
-  const supportedMethods = paymentMethods.filter(
-    (method) => method.isActive && ["COD", "VNPAY"].includes(method.code)
-  );
+  const supportedMethods = paymentMethods.filter((method) => method.isActive);
 
   const steps = [
     { id: 1, title: "Shipping Info", icon: FaUser },
@@ -585,6 +593,12 @@ const EnhancedCheckoutPage = () => {
                           value: /^\+?\d{10,15}$/,
                           message: t("cart.invalid_phone_number"),
                         },
+                        validate: (value) => {
+                          if (!/^[0-9+]+$/.test(value)) {
+                            return "Phone number can only contain numbers and +";
+                          }
+                          return true;
+                        },
                       })}
                       type="text"
                       className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
@@ -603,6 +617,37 @@ const EnhancedCheckoutPage = () => {
                         className="text-red-500 text-sm mt-1"
                       >
                         {errors.phone.message}
+                      </motion.p>
+                    )}
+                  </div>
+
+                  {/* Street Address */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <FaMapMarkerAlt className="inline mr-2" />
+                      {t("cart.street_address")} *
+                    </label>
+                    <input
+                      {...register("street", {
+                        required: "Street address is required",
+                      })}
+                      type="text"
+                      className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
+                        errors.street
+                          ? "border-red-500"
+                          : watchedFields.street
+                          ? "border-green-500"
+                          : "border-gray-200 focus:border-blue-500"
+                      }`}
+                      placeholder={t("cart.enter_your_street_address")}
+                    />
+                    {errors.street && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-red-500 text-sm mt-1"
+                      >
+                        {errors.street.message}
                       </motion.p>
                     )}
                   </div>
@@ -636,43 +681,62 @@ const EnhancedCheckoutPage = () => {
                     )}
                   </div>
 
-                  {/* State */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t("cart.state_province")}
-                    </label>
-                    <input
-                      {...register("state")}
-                      type="text"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 transition-all duration-300 focus:outline-none"
-                      placeholder={t("cart.enter_your_state")}
-                    />
-                  </div>
-
                   {/* Country */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t("cart.country")}
+                      {t("cart.country")} *
                     </label>
                     <input
-                      {...register("country")}
+                      {...register("country", {
+                        required: "Country is required",
+                      })}
                       type="text"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 transition-all duration-300 focus:outline-none"
+                      className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
+                        errors.country
+                          ? "border-red-500"
+                          : watchedFields.country
+                          ? "border-green-500"
+                          : "border-gray-200 focus:border-blue-500"
+                      }`}
                       placeholder={t("cart.enter_your_country")}
                     />
+                    {errors.country && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-red-500 text-sm mt-1"
+                      >
+                        {errors.country.message}
+                      </motion.p>
+                    )}
                   </div>
 
-                  {/* Zipcode */}
+                  {/* Zip Code */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t("cart.zipcode")}
+                      {t("cart.zip_code")} *
                     </label>
                     <input
-                      {...register("zipcode")}
+                      {...register("zip", { required: "Zip code is required" })}
                       type="text"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 transition-all duration-300 focus:outline-none"
-                      placeholder={t("cart.enter_your_zipcode")}
+                      className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
+                        errors.zip
+                          ? "border-red-500"
+                          : watchedFields.zip
+                          ? "border-green-500"
+                          : "border-gray-200 focus:border-blue-500"
+                      }`}
+                      placeholder={t("cart.enter_your_zip_code")}
                     />
+                    {errors.zip && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-red-500 text-sm mt-1"
+                      >
+                        {errors.zip.message}
+                      </motion.p>
+                    )}
                   </div>
                 </div>
 
@@ -883,6 +947,35 @@ const EnhancedCheckoutPage = () => {
                   </span>
                   <span>{totalPrice.toLocaleString("vi-VN")}đ</span>
                 </div>
+
+                {/* Voucher Input */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={voucherCode}
+                    onChange={(e) => setVoucherCode(e.target.value)}
+                    placeholder={t("cart.enter_voucher")}
+                    className="flex-1 px-4 py-2 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none border-gray-200 focus:border-blue-500"
+                  />
+                  <button
+                    onClick={handleApplyVoucher}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+                  >
+                    {t("cart.apply")}
+                  </button>
+                </div>
+                {voucherError && (
+                  <p className="text-red-500 text-sm">{voucherError}</p>
+                )}
+                {appliedVoucher && (
+                  <div className="flex justify-between text-green-600">
+                    <span>{t("cart.voucher_applied")}</span>
+                    <span>
+                      -{appliedVoucher.discount?.toLocaleString("vi-VN")}đ
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-gray-600">
                   <span>{t("cart.shipping")}</span>
                   <span className="text-green-600 font-semibold">
@@ -897,7 +990,10 @@ const EnhancedCheckoutPage = () => {
                 <div className="flex justify-between text-xl font-bold text-gray-900">
                   <span>{t("cart.total")}</span>
                   <span className="text-blue-600">
-                    {totalPrice.toLocaleString("vi-VN")}đ
+                    {(
+                      totalPrice - (appliedVoucher?.discount || 0)
+                    ).toLocaleString("vi-VN")}
+                    đ
                   </span>
                 </div>
               </div>

@@ -1,234 +1,308 @@
-import React from "react";
-import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { HiViewGridAdd } from "react-icons/hi";
-import { MdOutlineManageHistory } from "react-icons/md";
-import { FaBook } from "react-icons/fa";
-import { BsFileEarmarkPersonFill } from "react-icons/bs";
-import { FaLuggageCart } from "react-icons/fa";
-import { FaFacebookMessenger, FaUserTie } from "react-icons/fa6";
+/* eslint-disable no-unused-vars */
+"use client";
 
-const DashboardLayout = () => {
-  const navigate = useNavigate();
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link, useLocation, Outlet } from "react-router-dom";
+import {
+  LayoutDashboard,
+  BookOpen,
+  Settings,
+  Users,
+  ShoppingCart,
+  MessageCircle,
+  Bell,
+  Search,
+  Menu,
+  X,
+  LogOut,
+  User,
+  ChevronDown,
+  Plus,
+  BarChart3,
+  Package,
+  UserCheck,
+  Bookmark,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+const ImprovedDashboardLayout = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [notifications, setNotifications] = useState(3);
   const location = useLocation();
+
+  // Mock user data
+  const user = {
+    name: "Pham Quoc Vuong",
+    role: "Admin",
+    avatar:
+      "https://hoathinh4k3.top/wp-content/uploads/2025/01/007xgN06gy1hxj7l2rmqwj31o12yo4Q-1.jpg",
+    email: "admin@bookstore.com",
+  };
+
+  const menuItems = [
+    {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      path: "/dashboard",
+      badge: null,
+    },
+    {
+      title: "Add Book",
+      icon: Plus,
+      path: "/dashboard/add-new-book",
+      badge: null,
+    },
+    {
+      title: "Manage Books",
+      icon: BookOpen,
+      path: "/dashboard/manage-books",
+      badge: null,
+    },
+    {
+      title: "Categories",
+      icon: Bookmark,
+      path: "/dashboard/manage-categories",
+      badge: null,
+    },
+    {
+      title: "Authors",
+      icon: UserCheck,
+      path: "/dashboard/manage-authors",
+      badge: null,
+    },
+    {
+      title: "Users",
+      icon: Users,
+      path: "/dashboard/manage-users",
+      badge: null,
+    },
+    {
+      title: "Orders",
+      icon: ShoppingCart,
+      path: "/dashboard/manage-orders",
+      badge: "12",
+    },
+    {
+      title: "Chat",
+      icon: MessageCircle,
+      path: "/dashboard/chat",
+      badge: "5",
+    },
+  ];
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/");
+    window.location.href = "/";
   };
 
-  // Function to check if a path is active
   const isActive = (path) => {
     return location.pathname === path;
   };
 
-  // Function to get menu item classes
-  const getMenuItemClasses = (path) => {
-    const baseClasses =
-      "inline-flex items-center justify-center py-3 rounded-lg";
-    return isActive(path)
-      ? `${baseClasses} text-purple-600 bg-white`
-      : `${baseClasses} hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700`;
-  };
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   return (
-    <section className="flex md:bg-gray-100 min-h-screen overflow-hidden">
-      <aside className="hidden sm:flex sm:flex-col">
-        <a
-          href="/"
-          className="inline-flex items-center justify-center h-20 w-20 bg-purple-600 hover:bg-purple-500 focus:bg-purple-500"
-        >
-          <img src="/fav-icon.png" alt="" />
-        </a>
-        <div className="flex-grow flex flex-col justify-between text-gray-500 bg-gray-800">
-          <nav className="flex flex-col mx-4 my-6 space-y-4">
-            <Link to="/dashboard" className={getMenuItemClasses("/dashboard")}>
-              <span className="sr-only">Dashboard</span>
-              <svg
-                aria-hidden="true"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                className="h-6 w-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
-            </Link>
-            <Link
-              to="/dashboard/add-new-book"
-              className={getMenuItemClasses("/dashboard/add-new-book")}
-            >
-              <span className="sr-only">Add Book</span>
-              <FaBook className="h-6 w-6" />
-            </Link>
-            <Link
-              to="/dashboard/manage-books"
-              className={getMenuItemClasses("/dashboard/manage-books")}
-            >
-              <span className="sr-only">Manage Books</span>
-              <MdOutlineManageHistory className="h-6 w-6" />
-            </Link>
-            <Link
-              to="/dashboard/manage-categories"
-              className={getMenuItemClasses("/dashboard/manage-categories")}
-            >
-              <span className="sr-only">Manage Categories</span>
-              <HiViewGridAdd className="h-6 w-6" />
-            </Link>
-            <Link
-              to="/dashboard/manage-authors"
-              className={getMenuItemClasses("/dashboard/manage-authors")}
-            >
-              <span className="sr-only">Manage Authors</span>
-              <BsFileEarmarkPersonFill className="h-6 w-6" />
-            </Link>
-            <Link
-              to="/dashboard/manage-users"
-              className={getMenuItemClasses("/dashboard/manage-users")}
-            >
-              <span className="sr-only">Manage Users</span>
-              <FaUserTie className="h-6 w-6" />
-            </Link>
-            <Link
-              to="/dashboard/manage-orders"
-              className={getMenuItemClasses("/dashboard/manage-orders")}
-            >
-              <span className="sr-only">Manage Orders</span>
-              <FaLuggageCart className="h-6 w-6" />
-            </Link>
-            <Link
-              to="/dashboard/chat"
-              className={getMenuItemClasses("/dashboard/chat")}
-            >
-              <span className="sr-only">Chat</span>
-              <FaFacebookMessenger className="h-6 w-6" />
-            </Link>
-          </nav>
-          <div className="inline-flex items-center justify-center h-20 w-20 border-t border-gray-700">
-            <button
-              onClick={handleLogout}
-              className="p-3 hover:text-gray-400 hover:bg-gray-700 focus:text-gray-400 focus:bg-gray-700 rounded-lg"
-            >
-              <span className="sr-only">Logout</span>
-              <svg
-                aria-hidden="true"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                className="h-6 w-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </aside>
-      <div className="flex-grow text-gray-800">
-        <header className="flex items-center h-20 px-6 sm:px-10 bg-white">
-          <button className="block sm:hidden relative flex-shrink-0 p-2 mr-2 text-gray-600 hover:bg-gray-100 hover:text-gray-800 focus:bg-gray-100 focus:text-gray-800 rounded-full">
-            <span className="sr-only">Menu</span>
-            <svg
-              aria-hidden="true"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              className="h-6 w-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h16M4 18h7"
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <AnimatePresence>
+        {(sidebarOpen || window.innerWidth >= 768) && (
+          <>
+            {/* Overlay for mobile */}
+            {sidebarOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                onClick={() => setSidebarOpen(false)}
               />
-            </svg>
-          </button>
-          <div className="flex flex-shrink-0 items-center ml-auto">
-            <button className="inline-flex items-center p-2 hover:bg-gray-100 focus:bg-gray-100 rounded-lg">
-              <span className="sr-only">User Menu</span>
-              <div className="hidden md:flex md:flex-col md:items-end md:leading-tight">
-                <span className="font-semibold">Pham Quoc Vuong</span>
-                <span className="text-sm text-gray-600">Admin</span>
+            )}
+
+            {/* Sidebar */}
+            <motion.aside
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-gray-200 shadow-lg flex flex-col"
+            >
+              {/* Logo */}
+              <div className="flex-none flex items-center justify-between h-16 px-6 border-b border-gray-200">
+                <Link to="/" className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-xl font-bold text-gray-900">
+                    BookStore
+                  </span>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
               </div>
-              <span className="h-12 w-12 ml-2 sm:ml-3 mr-2 bg-gray-100 rounded-full overflow-hidden">
-                <img
-                  src="https://hoathinh4k3.top/wp-content/uploads/2025/01/007xgN06gy1hxj7l2rmqwj31o12yo4qq-1.jpg"
-                  alt="user profile photo"
-                  className="h-full w-full object-cover"
-                />
-              </span>
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className="hidden sm:block h-6 w-6 text-gray-300"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-            <div className="border-l pl-3 ml-3 space-x-1">
-              <button className="relative p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:bg-gray-100 focus:text-gray-600 rounded-full">
-                <span className="sr-only">Notifications</span>
-                <span className="absolute top-0 right-0 h-2 w-2 mt-1 mr-2 bg-red-500 rounded-full"></span>
-                <span className="absolute top-0 right-0 h-2 w-2 mt-1 mr-2 bg-red-500 rounded-full animate-ping"></span>
-                <svg
-                  aria-hidden="true"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  className="h-6 w-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  />
-                </svg>
-              </button>
 
-              <button
-                onClick={handleLogout}
-                className="relative p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:bg-gray-100 focus:text-gray-600 rounded-full"
-              >
-                <span className="sr-only">Log out</span>
-                <svg
-                  aria-hidden="true"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  className="h-6 w-6"
+              {/* Navigation */}
+              <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                {menuItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.path);
+
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 group bg-white shadow-sm border ${
+                        active
+                          ? "border-blue-500 bg-white text-blue-600 shadow-md"
+                          : "border-gray-200 hover:border-blue-200 hover:bg-blue-50/50 text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Icon
+                          className={`w-5 h-5 ${
+                            active
+                              ? "text-blue-500"
+                              : "text-gray-400 group-hover:text-blue-500"
+                          }`}
+                        />
+                        <span className="font-medium">{item.title}</span>
+                      </div>
+                      {item.badge && (
+                        <Badge
+                          variant={active ? "secondary" : "default"}
+                          className={`text-xs ${
+                            active
+                              ? "bg-blue-100 text-blue-600 border-blue-200"
+                              : "bg-blue-100 text-blue-600 border-blue-200"
+                          }`}
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {/* User Profile */}
+              <div className="flex-none p-4 border-t border-gray-200">
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-white border border-gray-200 shadow-sm">
+                  <Avatar className="w-10 h-10 border-2 border-blue-100">
+                    <AvatarImage
+                      src={user.avatar || "/placeholder.svg"}
+                      alt={user.name}
+                    />
+                    <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                      {user.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-blue-600 font-medium">
+                      {user.role}
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  onClick={handleLogout}
+                  className="w-full mt-3 justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50 bg-white border border-gray-200 shadow-sm"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-              </button>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            </motion.aside>
+
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col min-w-0 md:ml-[280px]">
+              {/* Header */}
+              <header className="sticky top-0 right-0 left-0 md:left-[280px] bg-white border-b border-gray-200 shadow-sm z-40">
+                <div className="flex items-center justify-between h-16 px-6">
+                  {/* Left side */}
+                  <div className="flex items-center space-x-4">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="md:hidden"
+                      onClick={() => setSidebarOpen(true)}
+                    >
+                      <Menu className="w-5 h-5" />
+                    </Button>
+
+                    {/* Search */}
+                    {/* <div className="hidden sm:block relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        placeholder="Search..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 w-64 bg-gray-50 border-gray-200 focus:bg-white"
+                      />
+                    </div> */}
+                  </div>
+
+                  {/* Right side */}
+                  <div className="flex items-center space-x-4">
+                    {/* Notifications */}
+                    <Button variant="ghost" size="icon" className="relative">
+                      <Bell className="w-5 h-5" />
+                      {notifications > 0 && (
+                        <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
+                          {notifications}
+                        </Badge>
+                      )}
+                    </Button>
+
+                    {/* User Menu */}
+                    <div className="flex items-center space-x-3">
+                      <div className="hidden md:block text-right">
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-gray-500">{user.role}</p>
+                      </div>
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage
+                          src={user.avatar || "/placeholder.svg"}
+                          alt={user.name}
+                        />
+                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+              </header>
+
+              {/* Page Content */}
+              <main className="flex-1 overflow-x-auto bg-gray-50">
+                <div className="min-w-full px-6 py-4">
+                  <Outlet />
+                </div>
+              </main>
             </div>
-          </div>
-        </header>
-
-        <main className="p-6 sm:p-10 space-y-6">
-          <Outlet />
-        </main>
-      </div>
-    </section>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 
-export default DashboardLayout;
+export default ImprovedDashboardLayout;

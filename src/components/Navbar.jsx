@@ -314,14 +314,14 @@ const EnhancedNavbar = () => {
                   className="text-xs text-gray-500 flex items-center gap-1"
                 >
                   <RiSparklingFill className="text-yellow-400" />
-                  Discover Amazing Books
+                  {t(`common.Discover Amazing Books`)}
                 </motion.div>
               </div>
             </Link>
           </motion.div>
 
           {/* Enhanced Search Bar */}
-          <div className="flex-1 max-w-2xl mx-8">
+          <div className="flex-1 max-w-2xl">
             <motion.div
               className="relative"
               ref={searchRef}
@@ -474,7 +474,7 @@ const EnhancedNavbar = () => {
           </div>
 
           {/* Enhanced Right Navigation */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             {/* User Profile */}
             <div className="relative" ref={dropdownRef}>
               {currentUser ? (
@@ -590,7 +590,7 @@ const EnhancedNavbar = () => {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/wishlist"
-                className="relative p-2 rounded-xl hover:bg-gray-100 transition-all duration-200"
+                className="relative p-2 rounded-xl transition-all duration-200"
               >
                 <FaRegHeart className="w-6 h-6 text-gray-600" />
                 <AnimatePresence>

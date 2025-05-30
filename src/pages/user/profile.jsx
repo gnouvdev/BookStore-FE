@@ -21,6 +21,7 @@ import axios from "axios"
 import { uploadToCloudinary } from "../../utils/uploadService"
 import { toast } from "react-hot-toast"
 import gsap from "gsap"
+import { t } from "i18next"
 
 const EnhancedProfile = () => {
   const { currentUser, setCurrentUser } = useAuth()
@@ -125,7 +126,7 @@ const EnhancedProfile = () => {
       setPreviewUrl(newFormData.photoURL)
     }
   }, [profile, currentUser])
-
+  console.log(formData.phone)
   const handleChange = (e) => {
     const { name, value } = e.target
     setHasChanges(true)
@@ -305,7 +306,9 @@ const EnhancedProfile = () => {
             transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
             className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"
           />
-          <p className="text-xl font-semibold text-gray-700">Loading your profile...</p>
+          <p className="text-xl font-semibold text-gray-700">
+            {t("profile.loading_profile")}
+          </p>
         </motion.div>
       </div>
     )
@@ -342,9 +345,11 @@ const EnhancedProfile = () => {
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            My Profile
+            {t("profile.my_profile")}
           </h1>
-          <p className="text-gray-600 text-lg">Manage your personal information and preferences</p>
+          <p className="text-gray-600 text-lg">
+            {t("profile.manage_personal_info")}
+          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -438,7 +443,7 @@ const EnhancedProfile = () => {
                   transition={{ delay: 0.6 }}
                 >
                   <RiShieldCheckLine className="w-4 h-4" />
-                  Verified Account
+                  {t("profile.verified_account")}
                 </motion.div>
               </div>
 
@@ -455,8 +460,12 @@ const EnhancedProfile = () => {
                       <FaShieldAlt className="text-white" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-800">Account Security</p>
-                      <p className="text-sm text-gray-600">Two-factor authentication enabled</p>
+                      <p className="font-semibold text-gray-800">
+                        {t("profile.account_security")}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {t("profile.two_factor_authentication_enabled")}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -467,8 +476,12 @@ const EnhancedProfile = () => {
                       <FaCheckCircle className="text-white" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-800">Profile Complete</p>
-                      <p className="text-sm text-gray-600">85% profile completion</p>
+                      <p className="font-semibold text-gray-800">
+                        {t("profile.profile_complete")}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {t("profile.profile_completion")}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -491,7 +504,9 @@ const EnhancedProfile = () => {
                   <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
                     <RiUserLine className="text-white text-xl" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-800">Personal Information</h2>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    {t("profile.personal_information")}
+                  </h2>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -503,7 +518,7 @@ const EnhancedProfile = () => {
                       whileTap={{ scale: 0.95 }}
                     >
                       <FaEdit />
-                      Edit Profile
+                      {t("profile.edit_profile")}
                     </motion.button>
                   ) : (
                     <div className="flex items-center gap-2">
@@ -514,7 +529,7 @@ const EnhancedProfile = () => {
                         whileTap={{ scale: 0.95 }}
                       >
                         <FaTimes />
-                        Cancel
+                        {t("profile.cancel")}
                       </motion.button>
                     </div>
                   )}
@@ -532,7 +547,7 @@ const EnhancedProfile = () => {
                   >
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <FaUser className="inline mr-2" />
-                      Full Name
+                      {t("profile.full_name")}
                     </label>
                     <input
                       type="text"
@@ -545,7 +560,7 @@ const EnhancedProfile = () => {
                           ? "bg-white border-gray-200 focus:border-blue-500"
                           : "bg-gray-50 border-gray-200 text-gray-600"
                       }`}
-                      placeholder="Enter your full name"
+                      placeholder={t("profile.enter_full_name")}
                     />
                   </motion.div>
 
@@ -557,7 +572,7 @@ const EnhancedProfile = () => {
                   >
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <FaEnvelope className="inline mr-2" />
-                      Email Address
+                      {t("profile.email_address")}
                     </label>
                     <input
                       type="email"
@@ -565,7 +580,7 @@ const EnhancedProfile = () => {
                       value={formData.email}
                       disabled
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-600"
-                      placeholder="Email address"
+                      placeholder={t("profile.email_address")}
                     />
                   </motion.div>
 
@@ -577,7 +592,7 @@ const EnhancedProfile = () => {
                   >
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <FaPhone className="inline mr-2" />
-                      Phone Number
+                      {t("profile.phone_number")}
                     </label>
                     <input
                       type="text"
@@ -590,7 +605,7 @@ const EnhancedProfile = () => {
                           ? "bg-white border-gray-200 focus:border-blue-500"
                           : "bg-gray-50 border-gray-200 text-gray-600"
                       }`}
-                      placeholder="Enter your phone number"
+                      placeholder={t("profile.enter_phone_number")}
                     />
                   </motion.div>
                 </div>
@@ -606,7 +621,9 @@ const EnhancedProfile = () => {
                     <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
                       <RiMapPin2Line className="text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800">Address Information</h3>
+                      <h3 className="text-xl font-bold text-gray-800">
+                      {t("profile.address_information")}
+                    </h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -614,7 +631,7 @@ const EnhancedProfile = () => {
                     <div className="md:col-span-2">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         <FaMapMarkerAlt className="inline mr-2" />
-                        Street Address
+                        {t("profile.street_address")}
                       </label>
                       <input
                         type="text"
@@ -627,13 +644,15 @@ const EnhancedProfile = () => {
                             ? "bg-white border-gray-200 focus:border-blue-500"
                             : "bg-gray-50 border-gray-200 text-gray-600"
                         }`}
-                        placeholder="Enter your street address"
+                        placeholder={t("profile.enter_street_address")}
                       />
                     </div>
 
                     {/* City */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        {t("profile.city")}
+                      </label>
                       <input
                         type="text"
                         name="address.city"
@@ -645,13 +664,15 @@ const EnhancedProfile = () => {
                             ? "bg-white border-gray-200 focus:border-blue-500"
                             : "bg-gray-50 border-gray-200 text-gray-600"
                         }`}
-                        placeholder="Enter your city"
+                        placeholder={t("profile.enter_city")}
                       />
                     </div>
 
                     {/* Country */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Country</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        {t("profile.country")}
+                      </label>
                       <input
                         type="text"
                         name="address.country"
@@ -663,13 +684,15 @@ const EnhancedProfile = () => {
                             ? "bg-white border-gray-200 focus:border-blue-500"
                             : "bg-gray-50 border-gray-200 text-gray-600"
                         }`}
-                        placeholder="Enter your country"
+                        placeholder={t("profile.enter_country")}
                       />
                     </div>
 
                     {/* Zip Code */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Zip Code</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        {t("profile.zip_code")}
+                      </label>
                       <input
                         type="text"
                         name="address.zip"
@@ -681,7 +704,7 @@ const EnhancedProfile = () => {
                             ? "bg-white border-gray-200 focus:border-blue-500"
                             : "bg-gray-50 border-gray-200 text-gray-600"
                         }`}
-                        placeholder="Enter zip code"
+                        placeholder={t("profile.enter_zip_code")}
                       />
                     </div>
                   </div>
@@ -704,7 +727,7 @@ const EnhancedProfile = () => {
                         whileTap={{ scale: 0.95 }}
                       >
                         <FaTimes />
-                        Cancel
+                        {t("profile.cancel")}
                       </motion.button>
 
                       <motion.button
@@ -717,12 +740,12 @@ const EnhancedProfile = () => {
                         {isLoading ? (
                           <>
                             <FaSpinner className="animate-spin" />
-                            Saving...
+                            {t("profile.saving")}
                           </>
                         ) : (
                           <>
                             <FaSave />
-                            Save Changes
+                            {t("profile.save_changes")}
                           </>
                         )}
                       </motion.button>

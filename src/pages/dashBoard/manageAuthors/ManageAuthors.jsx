@@ -57,66 +57,6 @@ import {
 } from "@/redux/features/authors/authorsApi";
 import { useGetBooksByAuthorQuery } from "@/redux/features/books/booksApi";
 
-// Mock data for demonstration
-// eslint-disable-next-line no-unused-vars
-const generateMockAuthors = (count = 75) => {
-  const firstNames = [
-    "John",
-    "Jane",
-    "Robert",
-    "Emily",
-    "Michael",
-    "Sarah",
-    "David",
-    "Lisa",
-    "James",
-    "Maria",
-  ];
-  const lastNames = [
-    "Smith",
-    "Johnson",
-    "Williams",
-    "Brown",
-    "Jones",
-    "Garcia",
-    "Miller",
-    "Davis",
-    "Rodriguez",
-    "Martinez",
-  ];
-  const countries = [
-    "USA",
-    "UK",
-    "Canada",
-    "Australia",
-    "Germany",
-    "France",
-    "Spain",
-    "Italy",
-    "Japan",
-    "Brazil",
-  ];
-
-  return Array.from({ length: count }, (_, i) => ({
-    _id: `author-${i + 1}`,
-    name: `${firstNames[i % firstNames.length]} ${
-      lastNames[i % lastNames.length]
-    }`,
-    bio: `Acclaimed author with ${
-      Math.floor(Math.random() * 20) + 5
-    } years of writing experience. Known for compelling storytelling and unique narrative style.`,
-    email: `author${i + 1}@example.com`,
-    phone: `+1-555-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-    country: countries[i % countries.length],
-    booksCount: Math.floor(Math.random() * 15) + 1,
-    totalSales: Math.floor(Math.random() * 100000) + 5000,
-    rating: (Math.random() * 2 + 3).toFixed(1),
-    joinDate: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
-    status: Math.random() > 0.1 ? "active" : "inactive",
-    avatar: `/placeholder.svg?height=80&width=80`,
-  }));
-};
-
 const EnhancedManageAuthors = () => {
   const navigate = useNavigate();
   const containerRef = useRef(null);
@@ -527,7 +467,7 @@ const EnhancedManageAuthors = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Total Authors</p>
-                  <p className="font-semibold">{filteredAuthors.length}</p>
+                  <p className="font-semibold">{authors.length}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -537,7 +477,10 @@ const EnhancedManageAuthors = () => {
                 <div>
                   <p className="text-sm text-gray-600">Total Books</p>
                   <p className="font-semibold">
-                    {filteredAuthors.reduce((acc, a) => acc + a.booksCount, 0)}
+                    {authors.reduce(
+                      (acc, author) => acc + (author.books?.length || 0),
+                      0
+                    )}
                   </p>
                 </div>
               </div>
@@ -549,7 +492,7 @@ const EnhancedManageAuthors = () => {
                   <p className="text-sm text-gray-600">Active Authors</p>
                   <p className="font-semibold">
                     {
-                      filteredAuthors.filter((a) => a.status === "active")
+                      authors.filter((author) => author.status === "active")
                         .length
                     }
                   </p>
@@ -562,12 +505,14 @@ const EnhancedManageAuthors = () => {
                 <div>
                   <p className="text-sm text-gray-600">Avg Rating</p>
                   <p className="font-semibold">
-                    {(
-                      filteredAuthors.reduce(
-                        (acc, a) => acc + Number.parseFloat(a.rating),
-                        0
-                      ) / filteredAuthors.length || 0
-                    ).toFixed(1)}
+                    {authors.length > 0
+                      ? (
+                          authors.reduce(
+                            (acc, author) => acc + (author.rating || 0),
+                            0
+                          ) / authors.length
+                        ).toFixed(1)
+                      : "0.0"}
                   </p>
                 </div>
               </div>
@@ -606,11 +551,17 @@ const EnhancedManageAuthors = () => {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
-                          <img
-                            src={author.avatar || "/placeholder.svg"}
-                            alt={author.name}
-                            className="w-12 h-12 rounded-full object-cover"
-                          />
+                          {author.avatar ? (
+                            <img
+                              src={author.avatar}
+                              alt={author.name}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-lg">
+                              {author.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
                           <div>
                             <p className="font-medium text-gray-900">
                               {author.name}

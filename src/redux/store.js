@@ -17,7 +17,7 @@ import { searchApi } from "./features/search/searchApi";
 import { recommendationsv2Api } from "./features/recommendationv2/recommendationsv2Api";
 import { notificationsApi } from "./features/notifications/notificationsApi";
 import { chatApi } from "./features/chat/chatApi";
-
+import { voucherApi } from "./features/voucher/voucherApi";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -37,6 +37,7 @@ export const store = configureStore({
     [recommendationsv2Api.reducerPath]: recommendationsv2Api.reducer,
     [notificationsApi.reducerPath]: notificationsApi.reducer,
     [chatApi.reducerPath]: chatApi.reducer,
+    [voucherApi.reducerPath]: voucherApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -53,7 +54,8 @@ export const store = configureStore({
       searchApi.middleware,
       recommendationsv2Api.middleware,
       notificationsApi.middleware,
-      chatApi.middleware
+      chatApi.middleware,
+      voucherApi.middleware
     ),
 });
 

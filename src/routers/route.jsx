@@ -37,6 +37,9 @@ import AboutUs from "./../pages/home/AboutUs";
 import Notifications from "./../pages/notifications/Notifications";
 import OrderDetails from "./../pages/orders/OrderDetails";
 import Chat from "../pages/dashBoard/chat/Chat";
+import ManageVoucher from './../pages/dashBoard/manageVoucher/ManageVoucher';
+import ContactPage from './../pages/home/Contact';
+
 const router = createBrowserRouter([
   {
     path: "",
@@ -143,6 +146,10 @@ const router = createBrowserRouter([
         element: <AboutUs />,
       },
       {
+        path: "/contact",
+        element: <ContactPage />,
+      },
+      {
         path: "/profile",
         element: (
           <PrivateRoute>
@@ -223,6 +230,10 @@ const router = createBrowserRouter([
           {
             path: "chat",
             element: <Chat />,
+          },
+          {
+            path: "manage-voucher",
+            element: <ManageVoucher/>,
           },
         ],
       },

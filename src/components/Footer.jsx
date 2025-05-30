@@ -47,10 +47,10 @@ const Footer = () => {
           >
             <h4 className="text-xl font-bold text-white mb-4">Quick Links</h4>
             <ul className="space-y-3">
-              {["Home", "Books", "Categories", "Authors", "About Us", "Contact"].map((item, index) => (
+              {["Home", "Books", "Categories", "Authors", "About", "Contact"].map((item, index) => (
                 <li key={index}>
                   <a
-                    href={`#${item.toLowerCase().replace(" ", "-")}`}
+                    href={item.toLowerCase() === "about" ? "/about" : "/"}
                     className="text-gray-300 hover:text-blue-400 transition-colors duration-300 flex items-center gap-2 group"
                   >
                     <span className="w-1 h-1 bg-blue-400 rounded-full group-hover:w-2 transition-all duration-300"></span>
@@ -70,10 +70,10 @@ const Footer = () => {
           >
             <h4 className="text-xl font-bold text-white mb-4">Categories</h4>
             <ul className="space-y-3">
-              {["Fiction", "Non-Fiction", "Science", "Technology", "Romance", "Mystery"].map((item, index) => (
+              {["Fiction", "Non-Fiction", "Business", "Adventure", "Horror", "Manga"].map((item, index) => (
                 <li key={index}>
                   <a
-                    href={`#${item.toLowerCase()}`}
+                    href={`/product/${item.toLowerCase()}`}
                     className="text-gray-300 hover:text-purple-400 transition-colors duration-300 flex items-center gap-2 group"
                   >
                     <span className="w-1 h-1 bg-purple-400 rounded-full group-hover:w-2 transition-all duration-300"></span>

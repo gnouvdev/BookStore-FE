@@ -1,36 +1,45 @@
 /* eslint-disable no-unused-vars */
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
-import { motion, AnimatePresence, useInView } from "framer-motion"
-import { useGetCollaborativeRecommendationsQuery } from "../redux/features/recommendationv2/recommendationsv2Api"
-import { useAuth } from "../context/AuthContext"
-import { useTranslation } from "react-i18next"
-import gsap from "gsap"
-import { ScrollTrigger } from "gsap/ScrollTrigger"
-import { FaRobot, FaMagic } from "react-icons/fa"
-import { RiAiGenerate, RiUserHeartFill, RiStarSFill, RiSparkling2Fill, RiSparklingFill } from "react-icons/ri"
-import BookCard from "./../pages/books/BookCart"
-import "../styles/recommendv2.css"
-gsap.registerPlugin(ScrollTrigger)
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
+import { useGetCollaborativeRecommendationsQuery } from "../redux/features/recommendationv2/recommendationsv2Api";
+import { useAuth } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { FaRobot, FaMagic } from "react-icons/fa";
+import {
+  RiAiGenerate,
+  RiUserHeartFill,
+  RiStarSFill,
+  RiSparkling2Fill,
+  RiSparklingFill,
+} from "react-icons/ri";
+import BookCard from "./../pages/books/BookCart";
+import "../styles/recommendv2.css";
+gsap.registerPlugin(ScrollTrigger);
 
 const EnhancedRecommendationsv2 = () => {
-  const { t } = useTranslation()
-  const { currentUser } = useAuth()
-  const sectionRef = useRef(null)
-  const cardsRef = useRef([])
-  const titleRef = useRef(null)
-  const [isVisible, setIsVisible] = useState(false)
-  const [hoveredCard, setHoveredCard] = useState(null)
-  const isInView = useInView(sectionRef, { once: true, margin: "-100px" })
+  const { t } = useTranslation();
+  const { currentUser } = useAuth();
+  const sectionRef = useRef(null);
+  const cardsRef = useRef([]);
+  const titleRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState(null);
+  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
-  const { data, error, isLoading } = useGetCollaborativeRecommendationsQuery(undefined, {
-    skip: !currentUser,
-  })
+  const { data, error, isLoading } = useGetCollaborativeRecommendationsQuery(
+    undefined,
+    {
+      skip: !currentUser,
+    }
+  );
 
   useEffect(() => {
-    setIsVisible(true)
-  }, [])
+    setIsVisible(true);
+  }, []);
 
   useEffect(() => {
     if (data?.data?.length > 0 && isInView) {
@@ -51,8 +60,8 @@ const EnhancedRecommendationsv2 = () => {
           duration: 1.2,
           ease: "power3.out",
           delay: 0.2,
-        },
-      )
+        }
+      );
 
       // Staggered card animations
       cardsRef.current.forEach((card, index) => {
@@ -78,12 +87,12 @@ const EnhancedRecommendationsv2 = () => {
               duration: 0.8,
               delay: index * 0.1,
               ease: "power2.out",
-            },
-          )
+            }
+          );
         }
-      })
+      });
     }
-  }, [data, isInView])
+  }, [data, isInView]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -94,7 +103,7 @@ const EnhancedRecommendationsv2 = () => {
         delayChildren: 0.3,
       },
     },
-  }
+  };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 50, scale: 0.9 },
@@ -107,13 +116,17 @@ const EnhancedRecommendationsv2 = () => {
         ease: "easeOut",
       },
     },
-  }
+  };
 
-  if (!currentUser) return null
+  if (!currentUser) return null;
 
   if (isLoading) {
     return (
-      <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative py-16 overflow-hidden">
+      <motion.section
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="relative py-16 overflow-hidden"
+      >
         {/* Animated Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
           <motion.div
@@ -198,12 +211,16 @@ const EnhancedRecommendationsv2 = () => {
           </motion.div>
         </div>
       </motion.section>
-    )
+    );
   }
 
   if (error) {
     return (
-      <motion.section initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="relative py-16">
+      <motion.section
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative py-16"
+      >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center"
@@ -217,12 +234,14 @@ const EnhancedRecommendationsv2 = () => {
             >
               ⚠️
             </motion.div>
-            <h3 className="text-2xl font-bold text-red-600 mb-2">{t("error")}</h3>
+            <h3 className="text-2xl font-bold text-red-600 mb-2">
+              {t("error")}
+            </h3>
             <p className="text-red-500">{error.message}</p>
           </motion.div>
         </div>
       </motion.section>
-    )
+    );
   }
 
   return (
@@ -303,11 +322,15 @@ const EnhancedRecommendationsv2 = () => {
           >
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+              transition={{
+                duration: 3,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "linear",
+              }}
             >
               <RiAiGenerate className="text-2xl text-blue-500" />
             </motion.div>
-            <span className="text-gray-700 font-semibold"></span> 
+            <span className="text-gray-700 font-semibold"></span>
             <motion.div
               animate={{ scale: [1, 1.3, 1] }}
               transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
@@ -346,15 +369,21 @@ const EnhancedRecommendationsv2 = () => {
           >
             <div className="flex items-center gap-2 text-gray-600">
               <RiUserHeartFill className="text-red-500 text-xl" />
-              <span className="font-semibold">{t("recommendations.personalized")}</span>
+              <span className="font-semibold">
+                {t("recommendations.personalized")}
+              </span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
               <RiStarSFill className="text-yellow-500 text-xl" />
-              <span className="font-semibold">{t("recommendations.high_quality")}</span>
+              <span className="font-semibold">
+                {t("recommendations.high_quality")}
+              </span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
               <FaMagic className="text-purple-500 text-xl" />
-              <span className="font-semibold">{t("recommendations.ai_enhanced")}</span>
+              <span className="font-semibold">
+                {t("recommendations.ai_enhanced")}
+              </span>
             </div>
           </motion.div>
         </motion.div>
@@ -398,9 +427,11 @@ const EnhancedRecommendationsv2 = () => {
                   className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 lg:gap-8"
                 >
                   {data.data.map((book, index) => {
-                    const price = book.price || {}
-                    const newPrice = Number(price.newPrice) || Number(book.price) || 0
-                    const oldPrice = Number(price.oldPrice) || Math.round(newPrice * 1.2)
+                    const price = book.price || {};
+                    const newPrice =
+                      Number(price.newPrice) || Number(book.price) || 0;
+                    const oldPrice =
+                      Number(price.oldPrice) || Math.round(newPrice * 1.2);
 
                     return (
                       <motion.div
@@ -422,7 +453,11 @@ const EnhancedRecommendationsv2 = () => {
                           className="absolute -top-3 -right-3 z-20 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg"
                           initial={{ scale: 0, rotate: -180 }}
                           animate={{ scale: 1, rotate: 0 }}
-                          transition={{ delay: index * 0.1 + 0.5, duration: 0.5, type: "spring" }}
+                          transition={{
+                            delay: index * 0.1 + 0.5,
+                            duration: 0.5,
+                            type: "spring",
+                          }}
                           whileHover={{ scale: 1.1, rotate: 5 }}
                         >
                           <div className="flex items-center gap-1">
@@ -437,7 +472,11 @@ const EnhancedRecommendationsv2 = () => {
                             className="absolute -top-3 -left-3 z-20 bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-bold text-sm w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
                             initial={{ scale: 0, rotate: 180 }}
                             animate={{ scale: 1, rotate: 0 }}
-                            transition={{ delay: index * 0.1 + 0.7, duration: 0.5, type: "spring" }}
+                            transition={{
+                              delay: index * 0.1 + 0.7,
+                              duration: 0.5,
+                              type: "spring",
+                            }}
                             whileHover={{ scale: 1.2, rotate: 360 }}
                           >
                             {index + 1}
@@ -470,11 +509,13 @@ const EnhancedRecommendationsv2 = () => {
                                 newPrice: newPrice,
                                 oldPrice: oldPrice,
                               },
+                              rating: book.rating || 0,
+                              totalRatings: book.totalRatings || 0,
                             }}
                           />
                         </motion.div>
                       </motion.div>
-                    )
+                    );
                   })}
                 </motion.div>
               ) : (
@@ -485,13 +526,20 @@ const EnhancedRecommendationsv2 = () => {
                 >
                   <motion.div
                     animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                    transition={{
+                      duration: 2,
+                      repeat: Number.POSITIVE_INFINITY,
+                    }}
                     className="text-8xl mb-6"
                   >
                     🤖
                   </motion.div>
-                  <h3 className="text-2xl font-bold text-gray-700 mb-4">{t("recommendations.no_recommendations")}</h3>
-                  <p className="text-gray-500 text-lg">Start exploring books to get personalized recommendations!</p>
+                  <h3 className="text-2xl font-bold text-gray-700 mb-4">
+                    {t("recommendations.no_recommendations")}
+                  </h3>
+                  <p className="text-gray-500 text-lg">
+                    Start exploring books to get personalized recommendations!
+                  </p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -507,7 +555,7 @@ const EnhancedRecommendationsv2 = () => {
         transition={{ duration: 1.5, delay: 1 }}
       />
     </motion.section>
-  )
-}
+  );
+};
 
-export default EnhancedRecommendationsv2
+export default EnhancedRecommendationsv2;

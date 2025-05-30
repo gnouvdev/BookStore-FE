@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { FiShoppingCart } from "react-icons/fi";
 import { FaHeart, FaRegHeart, FaStar, FaRegStar } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useAddToCartMutation } from "../../redux/features/cart/cartApi";
 import {
@@ -18,6 +18,8 @@ const BookCard = ({ book }) => {
   const wishlistItems = useSelector((state) => state.wishlist.wishlistItems);
   const isInWishlist = wishlistItems.some((item) => item._id === book._id);
   const [addToCart, { isLoading }] = useAddToCartMutation();
+  const navigate = useNavigate();
+  const user = useSelector((state) => state.auth.user);
 
   // Refs cho các phần tử
   const cardRef = useRef(null);
@@ -143,6 +145,11 @@ const BookCard = ({ book }) => {
 
   const handleAddToCart = async (e) => {
     e.preventDefault(); // Ngăn chặn chuyển hướng khi click vào nút
+    if (!user) {
+      toast.error("Bạn cần đăng nhập để thêm vào giỏ hàng!");
+      navigate("/login");
+      return;
+    }
     try {
       await addToCart({
         bookId: book._id,
@@ -163,8 +170,12 @@ const BookCard = ({ book }) => {
   };
 
   // Tính số sao hiển thị
-  const rating = Number(book.rating) || 0;
-  const numReviews = Number(book.numReviews) || 0;
+  console.log("Book data:", book);
+  console.log("Rating:", book.rating);
+  const rating =
+    typeof book.rating === "number"
+      ? book.rating
+      : parseFloat(book.rating) || 0;
   const roundedRating = Math.round(rating * 2) / 2;
 
   // Hàm render sao
@@ -172,19 +183,35 @@ const BookCard = ({ book }) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       if (i <= Math.floor(roundedRating)) {
+        // Sao đầy
         stars.push(<FaStar key={i} className="text-yellow-400 text-sm" />);
       } else if (i - 0.5 === roundedRating) {
+        // Sao nửa
         stars.push(
-          <div key={i} className="relative">
-            <FaRegStar className="text-gray-400 text-sm" />
-            <FaStar className="text-yellow-400 text-sm absolute left-0 w-1/2 overflow-hidden" />
+          <div key={i} className="relative inline-block w-[14px] h-[14px]">
+            <FaRegStar className="text-gray-400 text-sm absolute inset-0" />
+            <div className="absolute inset-0 overflow-hidden w-1/2">
+              <FaStar className="text-yellow-400 text-sm" />
+            </div>
           </div>
         );
       } else {
+        // Sao rỗng
         stars.push(<FaRegStar key={i} className="text-gray-400 text-sm" />);
       }
     }
     return stars;
+  };
+
+  // Thêm hàm xử lý click vào card
+  const handleCardClick = (e) => {
+    // Chỉ scroll khi click vào card, không scroll khi click vào các nút khác
+    if (!e.target.closest("button")) {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
   };
 
   return (
@@ -192,7 +219,11 @@ const BookCard = ({ book }) => {
       ref={cardRef}
       className="bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl h-[450px] flex flex-col w-[280px]"
     >
-      <Link to={`/books/${book._id}`} className="block relative">
+      <Link
+        to={`/books/${book._id}`}
+        className="block relative"
+        onClick={handleCardClick}
+      >
         <div className="relative overflow-hidden h-[250px]">
           <img
             ref={imageRef}
@@ -230,7 +261,7 @@ const BookCard = ({ book }) => {
         </div>
       </Link>
       <div className="p-4 flex-1 flex flex-col">
-        <Link to={`/books/${book._id}`}>
+        <Link to={`/books/${book._id}`} onClick={handleCardClick}>
           <h3
             ref={titleRef}
             className="text-lg font-semibold text-gray-800 mb-2 hover:text-blue-600 transition-colors line-clamp-2"
@@ -241,11 +272,9 @@ const BookCard = ({ book }) => {
         {/* Rating */}
         <div ref={ratingRef} className="flex items-center gap-1 mb-2">
           {renderStars()}
-          {numReviews > 0 && (
-            <span className="text-gray-500 text-sm ml-1">
-              ({rating.toFixed(1)})
-            </span>
-          )}
+          <span className="text-gray-500 text-sm ml-1">
+            ({rating.toFixed(1)})
+          </span>
         </div>
         <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-1">
           {book?.description}

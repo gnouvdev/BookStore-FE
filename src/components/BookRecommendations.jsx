@@ -1,17 +1,24 @@
 /* eslint-disable no-unused-vars */
-"use client"
-import { motion } from "framer-motion"
-import { useGetRecommendationsQuery } from "../redux/features/recommendations/recommendationsApi"
-import { Link } from "react-router-dom"
-import { FaStar, FaEye } from "react-icons/fa"
-import BookCard from "./../pages/books/BookCart"
+"use client";
+import { motion } from "framer-motion";
+import { useGetRecommendationsQuery } from "../redux/features/recommendations/recommendationsApi";
+import { Link } from "react-router-dom";
+import { FaStar, FaEye } from "react-icons/fa";
+import BookCard from "./../pages/books/BookCart";
+import { t } from "i18next";
 
 const BookRecommendations = ({ bookId }) => {
-  const { data, isLoading, isError, error } = useGetRecommendationsQuery(bookId, {
-    skip: !bookId,
-  })
+  const { data, isLoading, isError, error } = useGetRecommendationsQuery(
+    bookId,
+    {
+      skip: !bookId,
+    }
+  );
 
-  const recommendations = data?.recommendations || []
+  const recommendations = data?.recommendations || [];
+  console.log("Recommendations data:", data);
+  console.log("Recommendations:", recommendations);
+  console.log("First book:", recommendations[0]);
 
   if (isLoading) {
     return (
@@ -21,24 +28,34 @@ const BookRecommendations = ({ bookId }) => {
             <motion.div
               className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
               animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+              transition={{
+                duration: 1,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "linear",
+              }}
             />
-            <span className="ml-4 text-lg font-medium text-gray-700">Loading recommendations...</span>
+            <span className="ml-4 text-lg font-medium text-gray-700">
+              Loading recommendations...
+            </span>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (isError) {
     return (
       <div className="container mx-auto p-6">
         <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
-          <div className="text-red-600 text-lg font-medium mb-2">Oops! Something went wrong</div>
-          <div className="text-red-500">{error?.data?.message || "Failed to load recommendations"}</div>
+          <div className="text-red-600 text-lg font-medium mb-2">
+            Oops! Something went wrong
+          </div>
+          <div className="text-red-500">
+            {error?.data?.message || "Failed to load recommendations"}
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (!recommendations.length) {
@@ -46,11 +63,15 @@ const BookRecommendations = ({ bookId }) => {
       <div className="container mx-auto p-6">
         <div className="bg-gray-50 rounded-2xl p-8 text-center">
           <FaEye className="text-4xl text-gray-400 mx-auto mb-4" />
-          <div className="text-gray-600 text-lg font-medium">No recommendations available</div>
-          <div className="text-gray-500 mt-2">Check back later for personalized book suggestions</div>
+          <div className="text-gray-600 text-lg font-medium">
+            {t(`common.No recommendations available`)}
+          </div>
+          <div className="text-gray-500 mt-2">
+            {t(`common.Check back later for personalized book suggestions`)}
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -71,8 +92,12 @@ const BookRecommendations = ({ bookId }) => {
           <FaStar className="text-white text-xl" />
         </div>
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">Recommended Books</h2>
-          <p className="text-gray-600 mt-1">Books you might love based on your interests</p>
+          <h2 className="text-3xl font-bold text-gray-800">
+            {t(`common.Recommended Books`)}
+          </h2>
+          <p className="text-gray-600 mt-1">
+            {t(`common.Books you might love based on your interests`)}
+          </p>
         </div>
       </motion.div>
 
@@ -88,7 +113,20 @@ const BookRecommendations = ({ bookId }) => {
             className="group"
           >
             <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-              <BookCard book={book} />
+              <BookCard
+                book={{
+                  _id: book._id,
+                  title: book.title,
+                  description: book.description,
+                  coverImage: book.coverImage,
+                  price: {
+                    newPrice: book.price?.newPrice || 0,
+                    oldPrice: book.price?.oldPrice || 0,
+                  },
+                  rating: Number(book.rating) || 0,
+                  totalRatings: Number(book.totalRatings) || 0,
+                }}
+              />
             </div>
           </motion.div>
         ))}
@@ -106,11 +144,11 @@ const BookRecommendations = ({ bookId }) => {
           className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-300 shadow-lg hover:shadow-xl"
         >
           <FaEye />
-          Explore More Books
+          {t(`common.Explore More Books`)}
         </Link>
       </motion.div>
     </motion.div>
-  )
-}
+  );
+};
 
-export default BookRecommendations
+export default BookRecommendations;

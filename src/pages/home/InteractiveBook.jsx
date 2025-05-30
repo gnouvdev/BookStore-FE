@@ -484,12 +484,11 @@ const InteractiveBookExplorer = () => {
           <div className="flex items-center justify-center gap-4 mb-6">
             <FaCompass className="text-5xl text-purple-400" />
             <h2 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-              Book Explorer
+              {t("interactiveBook.title")}
             </h2>
           </div>
           <p className="text-xl text-gray-300 mb-8">
-            Discover and purchase your next favorite book with our interactive
-            shopping experience
+            {t("interactiveBook.subtitle")}
           </p>
 
           {/* Shopping Cart Info */}
@@ -497,13 +496,14 @@ const InteractiveBookExplorer = () => {
             <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
               <FaShoppingCart className="text-purple-400" />
               <span className="text-white font-semibold">
-                {cart.reduce((sum, item) => sum + item.quantity, 0)} items
+                {cart.reduce((sum, item) => sum + item.quantity, 0)}{" "}
+                {t("interactiveBook.cart_items")}
               </span>
             </div>
             <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
               <FaHeart className="text-pink-400" />
               <span className="text-white font-semibold">
-                {wishlistItems.length} saved
+                {wishlistItems.length} {t("interactiveBook.saved_items")}
               </span>
             </div>
           </div>
@@ -520,7 +520,7 @@ const InteractiveBookExplorer = () => {
                     : "bg-white/10 text-gray-300 hover:bg-white/20"
                 }`}
               >
-                {mode.toUpperCase()} View
+                {t(`interactiveBook.view_mode.${mode}`)}
               </button>
             ))}
           </div>
@@ -531,7 +531,7 @@ const InteractiveBookExplorer = () => {
       <div className="relative z-10 px-6 mb-12">
         <div className="max-w-6xl mx-auto">
           <h3 className="text-2xl font-bold text-white mb-6 text-center">
-            What are you looking for?
+            {t("interactiveBook.what_are_you_looking_for")}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {shoppingMoods.map((mood) => {
@@ -559,22 +559,14 @@ const InteractiveBookExplorer = () => {
                     style={{ color: mood.color }}
                   />
                   <h4 className="text-white font-semibold mb-1">
-                    {mood.label}
+                    {t(`interactiveBook.moods.${mood.id}`)}
                   </h4>
-                  <p className="text-gray-400 text-sm">{mood.description}</p>
+                  <p className="text-gray-400 text-sm">
+                    {t(`interactiveBook.moods.${mood.id}_desc`)}
+                  </p>
                   <div className="text-xs text-gray-500 mt-1">
-                    {mood.count} books
+                    {mood.count} {t("interactiveBook.books_count")}
                   </div>
-
-                  {selectedMood === mood.id && (
-                    <motion.div
-                      className="absolute inset-0 rounded-2xl border-2 opacity-50"
-                      style={{ borderColor: mood.color }}
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 0.5 }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  )}
                 </motion.button>
               );
             })}
@@ -586,7 +578,7 @@ const InteractiveBookExplorer = () => {
       <div className="relative z-10 px-6 mb-12">
         <div className="max-w-6xl mx-auto">
           <h3 className="text-2xl font-bold text-white mb-6 text-center">
-            Shop by Category
+            {t("interactiveBook.shop_by_category")}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <motion.button
@@ -600,10 +592,10 @@ const InteractiveBookExplorer = () => {
             >
               <div className="text-center">
                 <h4 className="text-white font-semibold mb-1">
-                  All Categories
+                  {t("interactiveBook.all_categories")}
                 </h4>
                 <p className="text-gray-400 text-sm">
-                  {transformedBooks.length} books
+                  {transformedBooks.length} {t("interactiveBook.books_count")}
                 </p>
               </div>
             </motion.button>
@@ -624,7 +616,7 @@ const InteractiveBookExplorer = () => {
               >
                 <div className="text-center">
                   <h4 className="text-white font-semibold mb-1">
-                    {genre.label}
+                    {t(`interactiveBook.${genre.label}`)}
                   </h4>
                   <p className="text-gray-400 text-sm">{genre.books} books</p>
                   {genre.description && (
@@ -658,10 +650,10 @@ const InteractiveBookExplorer = () => {
                 <div className="text-center py-16">
                   <FaCompass className="text-8xl text-gray-400 mx-auto opacity-60 mb-6" />
                   <p className="text-white text-2xl font-bold mb-4">
-                    No books found
+                    {t("interactiveBook.no_books_found")}
                   </p>
                   <p className="text-gray-400 text-lg">
-                    Try adjusting your filters
+                    {t("interactiveBook.try_adjusting_filters")}
                   </p>
                 </div>
               ) : (
@@ -1098,29 +1090,25 @@ const InteractiveBookExplorer = () => {
                       <div className="text-white font-semibold">
                         {currentBook.pages}
                       </div>
-                      <div className="text-gray-400 text-sm">Pages</div>
+                      <div className="text-gray-400 text-sm">
+                        {t("interactiveBook.pages")}
+                      </div>
                     </div>
                     <div className="text-center p-3 bg-white/5 rounded-lg">
                       <div className="text-white font-semibold">
                         {currentBook.stock}
                       </div>
-                      <div className="text-gray-400 text-sm">In Stock</div>
+                      <div className="text-gray-400 text-sm">
+                        {t("interactiveBook.in_stock")}
+                      </div>
                     </div>
-                    {/* <div className="text-center p-3 bg-white/5 rounded-lg">
-                      <div className="text-white font-semibold">{currentBook.language}</div>
-                      <div className="text-gray-400 text-sm">Language</div>
-                    </div>
-                    <div className="text-center p-3 bg-white/5 rounded-lg">
-                      <div className="text-white font-semibold">{currentBook.difficulty}</div>
-                      <div className="text-gray-400 text-sm">Level</div>
-                    </div> */}
                   </div>
 
                   {/* Publisher */}
                   {currentBook.publish && (
                     <div className="mb-6">
                       <h4 className="text-white font-semibold mb-2">
-                        Publisher
+                        {t("interactiveBook.publisher")}
                       </h4>
                       <p className="text-gray-400 text-sm">
                         {currentBook.publish}
@@ -1131,7 +1119,9 @@ const InteractiveBookExplorer = () => {
                   {/* Tags */}
                   {currentBook.tags && currentBook.tags.length > 0 && (
                     <div className="mb-6">
-                      <h4 className="text-white font-semibold mb-3">Tags</h4>
+                      <h4 className="text-white font-semibold mb-3">
+                        {t("interactiveBook.tags")}
+                      </h4>
                       <div className="flex flex-wrap gap-2">
                         {currentBook.tags.map((tag, index) => (
                           <span
@@ -1157,16 +1147,16 @@ const InteractiveBookExplorer = () => {
                       }`}
                       title={
                         currentBook.stock === 0
-                          ? "Hết hàng"
-                          : "Thêm vào giỏ hàng"
+                          ? t("interactiveBook.out_of_stock")
+                          : t("interactiveBook.add_to_cart")
                       }
                     >
                       <FaShoppingCart className="inline mr-2" />
                       {isLoading
-                        ? t("loading")
+                        ? t("interactiveBook.loading")
                         : currentBook.stock === 0
-                        ? "Hết hàng"
-                        : t("books.addToCart")}
+                        ? t("interactiveBook.out_of_stock")
+                        : t("interactiveBook.add_to_cart")}
                     </button>
                     <div className="grid grid-cols-2 gap-3">
                       <button
@@ -1182,8 +1172,8 @@ const InteractiveBookExplorer = () => {
                           wishlistItems.some(
                             (item) => item._id === currentBook.id
                           )
-                            ? "Đã thêm vào wishlist"
-                            : "Thêm vào wishlist"
+                            ? t("interactiveBook.saved")
+                            : t("interactiveBook.save_for_later")
                         }
                       >
                         <FaHeart
@@ -1198,18 +1188,18 @@ const InteractiveBookExplorer = () => {
                         {wishlistItems.some(
                           (item) => item._id === currentBook.id
                         )
-                          ? "Đã lưu"
-                          : "Lưu lại"}
+                          ? t("interactiveBook.saved")
+                          : t("interactiveBook.save_for_later")}
                       </button>
                       <button
                         onClick={() =>
                           window.open(`/books/${currentBook.id}`, "_blank")
                         }
                         className="bg-white/10 text-white font-semibold py-2 rounded-lg hover:bg-white/20 transition-all duration-300"
-                        title="Xem chi tiết sản phẩm"
+                        title={t("interactiveBook.view_details")}
                       >
                         <FaEye className="inline mr-2" />
-                        Chi tiết
+                        {t("interactiveBook.view_details")}
                       </button>
                     </div>
                     <button
@@ -1219,10 +1209,16 @@ const InteractiveBookExplorer = () => {
                           ? "bg-gray-500 text-gray-300 cursor-not-allowed"
                           : "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg hover:shadow-green-500/25"
                       }`}
-                      title={currentBook.stock === 0 ? "Hết hàng" : "Mua ngay"}
+                      title={
+                        currentBook.stock === 0
+                          ? t("interactiveBook.out_of_stock")
+                          : t("interactiveBook.buy_now")
+                      }
                     >
                       <FaShoppingBag className="inline mr-2" />
-                      {currentBook.stock === 0 ? "Hết hàng" : "Mua ngay"}
+                      {currentBook.stock === 0
+                        ? t("interactiveBook.out_of_stock")
+                        : t("interactiveBook.buy_now")}
                     </button>
                   </div>
                 </motion.div>
@@ -1236,30 +1232,30 @@ const InteractiveBookExplorer = () => {
       <div className="stats-section relative z-10 px-6 mb-12">
         <div className="max-w-4xl mx-auto">
           <h3 className="text-2xl font-bold text-white mb-8 text-center">
-            Our Store Statistics
+            {t("interactiveBook.store_statistics")}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               {
-                label: "Books Available",
+                label: t("interactiveBook.books_available"),
                 value: statistics.totalBooks,
                 icon: FaShoppingBag,
                 color: "#6366f1",
               },
               {
-                label: "Categories",
+                label: t("interactiveBook.categories"),
                 value: categories.length,
                 icon: FaTags,
                 color: "#10b981",
               },
               {
-                label: "Happy Customers",
+                label: t("interactiveBook.happy_customers"),
                 value: statistics.totalCustomers,
                 icon: FaUsers,
                 color: "#f59e0b",
               },
               {
-                label: "Total Value",
+                label: t("interactiveBook.total_value"),
                 value: statistics.totalSales,
                 icon: FaTags,
                 color: "#ec4899",
@@ -1296,25 +1292,25 @@ const InteractiveBookExplorer = () => {
       <div className="relative z-10 px-6 pb-20">
         <div className="max-w-6xl mx-auto">
           <h3 className="text-2xl font-bold text-white mb-8 text-center">
-            Why Shop With Us?
+            {t("interactiveBook.why_shop_with_us")}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                title: "Fast Delivery",
-                description: "Free shipping on orders over 500k VND",
+                title: t("interactiveBook.fast_delivery"),
+                description: t("interactiveBook.free_shipping"),
                 icon: FaRocket,
                 color: "#f59e0b",
               },
               {
-                title: "Best Prices",
-                description: "Competitive prices with regular discounts",
+                title: t("interactiveBook.best_prices"),
+                description: t("interactiveBook.competitive_prices"),
                 icon: FaPercent,
                 color: "#10b981",
               },
               {
-                title: "Quality Guarantee",
-                description: "100% authentic books with return policy",
+                title: t("interactiveBook.quality_guarantee"),
+                description: t("interactiveBook.authentic_books"),
                 icon: FaTrophy,
                 color: "#ec4899",
               },

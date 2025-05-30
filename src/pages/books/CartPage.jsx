@@ -295,13 +295,13 @@ const EnhancedCartPage = () => {
             {t("cart.please_login")}
           </h2>
           <p className="text-gray-600 mb-6">
-            You need to login to view your cart
+            {t("cart.please_login")}
           </p>
           <Link
             to="/login"
             className="inline-block bg-blue-500 text-white px-8 py-3 rounded-xl hover:bg-blue-600 transition-colors duration-200 font-semibold"
           >
-            Login Now
+            {t("cart.login_now")}
           </Link>
         </motion.div>
       </div>
@@ -437,7 +437,7 @@ const EnhancedCartPage = () => {
               transition={{ delay: 0.2 }}
             >
               <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                Shopping Items
+                {t("cart.shopping_items")}
               </h2>
 
               <div className="space-y-6">
