@@ -145,34 +145,34 @@ const UpdateBook = () => {
       });
 
       await updateBook({ id, ...formDataToSend }).unwrap();
-      toast.success("Book updated successfully!");
+      toast.success("Sách đã được cập nhật thành công!");
       navigate("/dashboard/manage-books");
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Lỗi:", error);
       if (error?.status === 401 || error?.status === 403) {
         Swal.fire({
-          title: "Session Expired",
-          text: "Your session has expired. Please log in again.",
+          title: "Phiên đăng nhập đã hết hạn",
+          text: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
           icon: "error",
-          confirmButtonText: "Go to Login",
+          confirmButtonText: "Đi đến Đăng nhập",
         }).then(() => {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           navigate("/admin");
         });
       } else {
-        toast.error(error.data?.message || "Failed to update book!");
+        toast.error(error.data?.message || "Không thể cập nhật sách!");
       }
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Update Book</h1>
+      <h1 className="text-2xl font-bold mb-6">Cập nhật sách</h1>
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Title
+            Tên sách
           </label>
           <input
             type="text"
@@ -187,7 +187,7 @@ const UpdateBook = () => {
 
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Author
+            Tác giả
           </label>
           <select
             name="author"
@@ -197,7 +197,7 @@ const UpdateBook = () => {
             required
             disabled={isUpdating}
           >
-            <option value="">Select Author</option>
+            <option value="">Chọn tác giả</option>
             {authors?.map((author) => (
               <option key={author._id} value={author._id}>
                 {author.name}
@@ -208,7 +208,7 @@ const UpdateBook = () => {
 
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Category
+            Thể loại
           </label>
           <select
             name="category"
@@ -218,7 +218,7 @@ const UpdateBook = () => {
             required
             disabled={isUpdating}
           >
-            <option value="">Select Category</option>
+              <option value="">Chọn thể loại</option>
             {categories?.map((category) => (
               <option key={category._id} value={category._id}>
                 {category.name}
@@ -229,7 +229,7 @@ const UpdateBook = () => {
 
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Price
+            Giá
           </label>
           <input
             type="number"
@@ -246,7 +246,7 @@ const UpdateBook = () => {
 
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Stock
+            Tồn kho
           </label>
           <input
             type="number"
@@ -262,7 +262,7 @@ const UpdateBook = () => {
 
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Description
+            Mô tả
           </label>
           <textarea
             name="description"
@@ -277,7 +277,7 @@ const UpdateBook = () => {
 
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Image
+            Hình ảnh
           </label>
           <input
             type="file"
@@ -305,14 +305,14 @@ const UpdateBook = () => {
             className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
             disabled={isUpdating}
           >
-            Cancel
+            Hủy bỏ
           </button>
           <button
             type="submit"
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             disabled={isUpdating}
           >
-            {isUpdating ? "Updating..." : "Update Book"}
+            {isUpdating ? "Đang cập nhật..." : "Cập nhật sách"}
           </button>
         </div>
       </form>

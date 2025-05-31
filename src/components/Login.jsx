@@ -410,29 +410,92 @@ const EnhancedLogin = () => {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
+      // 1. Firebase authentication
       const result = await signInWithGoogle();
       const user = result.user;
-      const idToken = await user.getIdToken();
 
+      // 2. Get Firebase token
+      const idToken = await user.getIdToken(true);
+
+      // 3. Backend authentication
       const response = await axios.post(
-        "http://localhost:5000/api/auth/google",
-        { idToken }
+        "http://localhost:5000/api/auth/login",
+        {
+          idToken,
+          email: user.email,
+          uid: user.uid,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          validateStatus: function (status) {
+            return status < 500;
+          },
+        }
       );
-      const { token, role = "user" } = response.data;
 
-      localStorage.setItem("token", token);
+      if (response.status === 200 && response.data?.token) {
+        const { token, role = "user" } = response.data;
 
-      const profileData = await fetchUserProfile(token);
-      const cleanUser = createCleanUserObject(user, profileData, role);
+        // 4. Fetch user profile
+        const profileData = await fetchUserProfile(token);
+        const cleanUser = createCleanUserObject(user, profileData, role);
 
-      localStorage.setItem("user", JSON.stringify(cleanUser));
-      setCurrentUser(cleanUser);
+        // 5. Save to localStorage
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(cleanUser));
 
-      toast.success("Đăng nhập bằng Google thành công! 🎉");
-      setTimeout(() => navigate("/profile"), 1000);
+        // 6. Update context
+        setCurrentUser(cleanUser);
+
+        toast.success("Đăng nhập bằng Google thành công! 🎉");
+        setTimeout(() => navigate("/"), 1000);
+      } else if (response.status === 401) {
+        // User not found, try to register
+        const registerResponse = await axios.post(
+          "http://localhost:5000/api/users/register",
+          {
+            idToken,
+            email: user.email,
+            fullName: user.displayName || user.email.split("@")[0],
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+          }
+        );
+
+        if (registerResponse.status === 200 && registerResponse.data?.token) {
+          const { token, role = "user" } = registerResponse.data;
+
+          // Fetch user profile
+          const profileData = await fetchUserProfile(token);
+          const cleanUser = createCleanUserObject(user, profileData, role);
+
+          // Save to localStorage
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(cleanUser));
+
+          // Update context
+          setCurrentUser(cleanUser);
+
+          toast.success("Đăng nhập bằng Google thành công! 🎉");
+          setTimeout(() => navigate("/"), 1000);
+        } else {
+          throw new Error("Failed to register user");
+        }
+      } else {
+        throw new Error("Authentication failed");
+      }
     } catch (error) {
       console.error("Google sign-in error:", error);
-      toast.error("Đăng nhập bằng Google thất bại!");
+      toast.error("Đăng nhập bằng Google thất bại. Vui lòng thử lại sau.");
     } finally {
       setIsGoogleLoading(false);
     }

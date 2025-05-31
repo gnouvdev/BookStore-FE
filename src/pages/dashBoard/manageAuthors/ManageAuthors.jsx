@@ -191,9 +191,9 @@ const EnhancedManageAuthors = () => {
         await addAuthor(formData).unwrap();
         setShowAddModal(false);
         resetForm();
-        toast.success("Author added successfully");
+        toast.success("Thêm tác giả thành công");
       } catch (err) {
-        toast.error(err.data?.message || "Failed to add author");
+        toast.error(err.data?.message || "Thêm tác giả thất bại");
       }
     },
     [addAuthor, formData, resetForm]
@@ -208,9 +208,9 @@ const EnhancedManageAuthors = () => {
         setShowEditModal(false);
         setSelectedAuthor(null);
         resetForm();
-        toast.success("Author updated successfully");
+        toast.success("Cập nhật tác giả thành công");
       } catch (err) {
-        toast.error(err.data?.message || "Failed to update author");
+        toast.error(err.data?.message || "Cập nhật tác giả thất bại");
       }
     },
     [updateAuthor, selectedAuthor, formData, resetForm]
@@ -222,16 +222,16 @@ const EnhancedManageAuthors = () => {
       await deleteAuthor(selectedAuthor._id).unwrap();
       setShowDeleteModal(false);
       setSelectedAuthor(null);
-      toast.success("Author deleted successfully");
+      toast.success("Xóa tác giả thành công");
     } catch (err) {
-      toast.error(err.data?.message || "Failed to delete author");
+      toast.error(err.data?.message || "Xóa tác giả thất bại");
     }
   }, [deleteAuthor, selectedAuthor]);
 
   // Refresh handler
   const handleRefresh = useCallback(() => {
     // RTK Query will automatically refetch the data
-    toast.success("Authors refreshed successfully");
+    toast.success("Tác giả đã được cập nhật");
   }, []);
 
   // Format price to VNĐ
@@ -289,9 +289,9 @@ const EnhancedManageAuthors = () => {
       <div className="flex items-center justify-between px-6 py-4 border-t bg-white/50 backdrop-blur-sm">
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-            {Math.min(currentPage * itemsPerPage, filteredAuthors.length)} of{" "}
-            {filteredAuthors.length} results
+            Hiển thị từ {(currentPage - 1) * itemsPerPage + 1} đến{" "}
+            {Math.min(currentPage * itemsPerPage, filteredAuthors.length)} của{" "}
+            {filteredAuthors.length} kết quả
           </span>
           <Select
             value={itemsPerPage.toString()}
@@ -308,7 +308,7 @@ const EnhancedManageAuthors = () => {
               <SelectItem value="100">100</SelectItem>
             </SelectContent>
           </Select>
-          <span className="text-sm text-gray-600">per page</span>
+          <span className="text-sm text-gray-600">trang</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -367,10 +367,10 @@ const EnhancedManageAuthors = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Manage Authors
+                  Quản lý tác giả
                 </h1>
                 <p className="text-gray-600">
-                  Manage your author database and profiles
+                  Quản lý cơ sở dữ liệu và hồ sơ tác giả của bạn
                 </p>
               </div>
             </div>
@@ -385,7 +385,7 @@ const EnhancedManageAuthors = () => {
                 <RefreshCw
                   className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
                 />
-                Refresh
+                Cập nhật
               </Button>
               <Button
                 onClick={() => {
@@ -395,7 +395,7 @@ const EnhancedManageAuthors = () => {
                 className="gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700"
               >
                 <Plus className="h-4 w-4" />
-                Add Author
+                Thêm tác giả
               </Button>
             </div>
           </div>
@@ -405,7 +405,7 @@ const EnhancedManageAuthors = () => {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search authors by name, email, or country..."
+                placeholder="Tìm kiếm tác giả theo tên, email, hoặc quốc gia..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 bg-white/70 backdrop-blur-sm"
@@ -415,25 +415,25 @@ const EnhancedManageAuthors = () => {
             <div className="flex gap-3">
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder="Trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                  <SelectItem value="active">Hoạt động</SelectItem>
+                  <SelectItem value="inactive">Không hoạt động</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Sort by" />
+                  <SelectValue placeholder="Sắp xếp theo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="name">Name</SelectItem>
-                  <SelectItem value="booksCount">Books</SelectItem>
-                  <SelectItem value="totalSales">Sales</SelectItem>
-                  <SelectItem value="rating">Rating</SelectItem>
-                  <SelectItem value="joinDate">Join Date</SelectItem>
+                  <SelectItem value="name">Tên</SelectItem>
+                  <SelectItem value="booksCount">Sách</SelectItem>
+                  <SelectItem value="totalSales">Doanh thu</SelectItem>
+                  <SelectItem value="rating">Điểm đánh giá</SelectItem>
+                  <SelectItem value="joinDate">Ngày tham gia</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -466,7 +466,7 @@ const EnhancedManageAuthors = () => {
                   <User className="h-4 w-4 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Authors</p>
+                  <p className="text-sm text-gray-600">Tổng số tác giả</p>
                   <p className="font-semibold">{authors.length}</p>
                 </div>
               </div>
@@ -475,7 +475,7 @@ const EnhancedManageAuthors = () => {
                   <BookOpen className="h-4 w-4 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Books</p>
+                  <p className="text-sm text-gray-600">Tổng số sách</p>
                   <p className="font-semibold">
                     {authors.reduce(
                       (acc, author) => acc + (author.books?.length || 0),
@@ -489,7 +489,7 @@ const EnhancedManageAuthors = () => {
                   <TrendingUp className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Active Authors</p>
+                  <p className="text-sm text-gray-600">Tác giả hoạt động</p>
                   <p className="font-semibold">
                     {
                       authors.filter((author) => author.status === "active")
@@ -503,7 +503,7 @@ const EnhancedManageAuthors = () => {
                   <Award className="h-4 w-4 text-yellow-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Avg Rating</p>
+                  <p className="text-sm text-gray-600">Điểm trung bình</p>
                   <p className="font-semibold">
                     {authors.length > 0
                       ? (
@@ -528,13 +528,13 @@ const EnhancedManageAuthors = () => {
               <thead className="bg-gray-50/80 sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Author
+                    Tác giả
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Books
+                    Sách
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    Hành động
                   </th>
                 </tr>
               </thead>
@@ -582,7 +582,7 @@ const EnhancedManageAuthors = () => {
                           className="flex items-center gap-2"
                         >
                           <BookOpen className="h-4 w-4" />
-                          <span>{author.booksCount} books</span>
+                          <span>{author.booksCount} sách</span>
                         </Button>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -625,9 +625,9 @@ const EnhancedManageAuthors = () => {
           <Dialog open={showBooksModal} onOpenChange={setShowBooksModal}>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Books by {selectedAuthor?.name}</DialogTitle>
+                <DialogTitle>Sách của {selectedAuthor?.name}</DialogTitle>
                 <DialogDescription>
-                  List of books written by this author
+                  Danh sách sách được viết bởi tác giả này
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -637,7 +637,7 @@ const EnhancedManageAuthors = () => {
                   </div>
                 ) : authorBooks.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    No books found for this author
+                    Không tìm thấy sách cho tác giả này
                   </div>
                 ) : (
                   authorBooks.map((book) => (
@@ -675,7 +675,7 @@ const EnhancedManageAuthors = () => {
                   variant="outline"
                   onClick={() => setShowBooksModal(false)}
                 >
-                  Close
+                  Đóng
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -692,19 +692,19 @@ const EnhancedManageAuthors = () => {
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add New Author</DialogTitle>
+            <DialogTitle>Thêm tác giả mới</DialogTitle>
             <DialogDescription>
-              Create a new author profile for your bookstore.
+              Tạo hồ sơ tác giả mới cho cửa hàng sách của bạn.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Tên</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                placeholder="Enter author name"
+                placeholder="Nhập tên tác giả"
               />
             </div>
             <div>
@@ -714,7 +714,7 @@ const EnhancedManageAuthors = () => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
-                placeholder="Enter email address"
+                placeholder="Nhập email"
               />
             </div>
             <div>
@@ -723,7 +723,7 @@ const EnhancedManageAuthors = () => {
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
-                placeholder="Enter phone number"
+                placeholder="Nhập số điện thoại"
               />
             </div>
             <div>
@@ -732,7 +732,7 @@ const EnhancedManageAuthors = () => {
                 id="country"
                 value={formData.country}
                 onChange={(e) => handleInputChange("country", e.target.value)}
-                placeholder="Enter country"
+                placeholder="Nhập quốc gia"
               />
             </div>
             <div>
@@ -741,17 +741,17 @@ const EnhancedManageAuthors = () => {
                 id="bio"
                 value={formData.biography}
                 onChange={(e) => handleInputChange("biography", e.target.value)}
-                placeholder="Enter author biography"
+                placeholder="Nhập biểu ngữ của tác giả"
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddModal(false)}>
-              Cancel
+              Hủy bỏ
             </Button>
             <Button onClick={handleAddAuthor} disabled={isLoading}>
-              {isLoading ? "Adding..." : "Add Author"}
+              {isLoading ? "Đang thêm..." : "Thêm tác giả"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -763,17 +763,17 @@ const EnhancedManageAuthors = () => {
           <DialogHeader>
             <DialogTitle>Edit Author</DialogTitle>
             <DialogDescription>
-              Update the author's information.
+              Cập nhật thông tin của tác giả.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-name">Name</Label>
+              <Label htmlFor="edit-name">Tên</Label>
               <Input
                 id="edit-name"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                placeholder="Enter author name"
+                placeholder="Nhập tên tác giả"
               />
             </div>
             <div>
@@ -783,7 +783,7 @@ const EnhancedManageAuthors = () => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
-                placeholder="Enter email address"
+                placeholder="Nhập email"
               />
             </div>
             <div>
@@ -792,7 +792,7 @@ const EnhancedManageAuthors = () => {
                 id="edit-phone"
                 value={formData.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
-                placeholder="Enter phone number"
+                placeholder="Nhập số điện thoại"
               />
             </div>
             <div>
@@ -801,7 +801,7 @@ const EnhancedManageAuthors = () => {
                 id="edit-country"
                 value={formData.country}
                 onChange={(e) => handleInputChange("country", e.target.value)}
-                placeholder="Enter country"
+                placeholder="Nhập quốc gia"
               />
             </div>
             <div>
@@ -810,17 +810,17 @@ const EnhancedManageAuthors = () => {
                 id="edit-bio"
                 value={formData.biography}
                 onChange={(e) => handleInputChange("biography", e.target.value)}
-                placeholder="Enter author biography"
+                placeholder="Nhập biểu ngữ của tác giả"
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditModal(false)}>
-              Cancel
+              Hủy bỏ
             </Button>
             <Button onClick={handleEditAuthor} disabled={isLoading}>
-              {isLoading ? "Updating..." : "Update Author"}
+              {isLoading ? "Đang cập nhật..." : "Cập nhật tác giả"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -832,20 +832,20 @@ const EnhancedManageAuthors = () => {
           <DialogHeader>
             <DialogTitle>Delete Author</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedAuthor?.name}"? This
-              action cannot be undone.
+              Bạn có chắc chắn muốn xóa "{selectedAuthor?.name}"? Hành động
+              này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
-              Cancel
+              Hủy bỏ
             </Button>
             <Button
               variant="destructive"
               onClick={handleDeleteAuthor}
               disabled={isLoading}
             >
-              {isLoading ? "Deleting..." : "Delete"}
+                {isLoading ? "Đang xóa..." : "Xóa tác giả"}
             </Button>
           </DialogFooter>
         </DialogContent>

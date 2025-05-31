@@ -35,6 +35,7 @@ import {
   useUpdateUserMutation,
   useDeleteUserMutation,
 } from "@/redux/features/users/userApi";
+import * as XLSX from "xlsx";
 
 const EnhancedManageUsers = () => {
   const containerRef = useRef(null);
@@ -211,9 +212,11 @@ const EnhancedManageUsers = () => {
   const handleStatusUpdate = async (userId, newStatus) => {
     try {
       await updateUser({ id: userId, status: newStatus }).unwrap();
-      toast.success("User status updated successfully");
+      toast.success("Trạng thái người dùng đã được cập nhật thành công");
     } catch (err) {
-      toast.error(err.data?.message || "Failed to update user status");
+      toast.error(
+        err.data?.message || "Không thể cập nhật trạng thái người dùng"
+      );
     }
   };
 
@@ -221,9 +224,9 @@ const EnhancedManageUsers = () => {
   const handleRoleUpdate = async (userId, newRole) => {
     try {
       await updateUser({ id: userId, role: newRole }).unwrap();
-      toast.success("User role updated successfully");
+      toast.success("Vai trò người dùng đã được cập nhật thành công");
     } catch (err) {
-      toast.error(err.data?.message || "Failed to update user role");
+      toast.error(err.data?.message || "Không thể cập nhật vai trò người dùng");
     }
   };
 
@@ -232,9 +235,9 @@ const EnhancedManageUsers = () => {
     try {
       await deleteUser(userId).unwrap();
       setShowDeleteModal(false);
-      toast.success("User deleted successfully");
+      toast.success("Xóa người dùng thành công");
     } catch (err) {
-      toast.error(err.data?.message || "Failed to delete user");
+      toast.error(err.data?.message || "Không thể xóa người dùng");
     }
   };
 
@@ -251,16 +254,16 @@ const EnhancedManageUsers = () => {
         role: "customer",
         status: "active",
       });
-      toast.success("User added successfully");
+      toast.success("Thêm người dùng thành công");
     } catch (err) {
-      toast.error(err.data?.message || "Failed to add user");
+      toast.error(err.data?.message || "Không thể thêm người dùng");
     }
   };
 
   // Refresh handler
   const handleRefresh = () => {
     refetch();
-    toast.success("Users refreshed successfully");
+    toast.success("Cập nhật người dùng thành công");
   };
 
   // Get status styling
@@ -475,9 +478,9 @@ const EnhancedManageUsers = () => {
       <div className="flex items-center justify-between px-6 py-4 border-t bg-white/50 backdrop-blur-sm">
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-            {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of{" "}
-            {filteredUsers.length} results
+            Hiển thị từ {(currentPage - 1) * itemsPerPage + 1} đến{" "}
+            {Math.min(currentPage * itemsPerPage, filteredUsers.length)} của{" "}
+            {filteredUsers.length} kết quả
           </span>
           <Select
             value={itemsPerPage.toString()}
@@ -489,7 +492,7 @@ const EnhancedManageUsers = () => {
             <option value="20">20</option>
             <option value="50">50</option>
           </Select>
-          <span className="text-sm text-gray-600">per page</span>
+          <span className="text-sm text-gray-600">trang</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -527,6 +530,50 @@ const EnhancedManageUsers = () => {
     );
   };
 
+  // Export users function
+  const handleExportUsers = () => {
+    try {
+      // Prepare data for export
+      const exportData = filteredUsers.map((user) => ({
+        ID: user._id,
+        "Họ và tên": user.fullName,
+        Email: user.email,
+        "Số điện thoại": user.phone || "N/A",
+        "Vai trò": user.role,
+        "Trạng thái": user.status,
+        "Số đơn hàng": user.orders?.length || 0,
+        "Tổng tiền đã mua": formatPrice(user.totalSpent || 0),
+        "Ngày tham gia": new Date(user.createdAt).toLocaleDateString("vi-VN"),
+        "Lần đăng nhập cuối": user.lastLogin
+          ? new Date(user.lastLogin).toLocaleDateString("vi-VN")
+          : "N/A",
+        "Xác thực email": user.isEmailVerified
+          ? "Đã xác thực"
+          : "Chưa xác thực",
+        "Xác thực số điện thoại": user.isPhoneVerified
+          ? "Đã xác thực"
+          : "Chưa xác thực",
+      }));
+
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Người dùng");
+
+      // Generate Excel file
+      XLSX.writeFile(
+        wb,
+        `users-${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+      toast.success("Xuất dữ liệu người dùng thành công!");
+    } catch (error) {
+      console.error("Error exporting users:", error);
+      toast.error("Không thể xuất dữ liệu người dùng");
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -545,10 +592,10 @@ const EnhancedManageUsers = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Manage Users
+                  Quản lý tài khoản người dùng
                 </h1>
                 <p className="text-gray-600">
-                  Manage user accounts and permissions
+                  Quản lý tài khoản người dùng và quyền hạn
                 </p>
               </div>
             </div>
@@ -564,15 +611,19 @@ const EnhancedManageUsers = () => {
                 <RefreshCw
                   className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
                 />
-                Refresh
+                Làm mới
               </Button>
-              <Button variant="outline" className="gap-2">
+              <Button
+                onClick={handleExportUsers}
+                variant="outline"
+                className="gap-2"
+              >
                 <Download className="h-4 w-4" />
-                Export
+                Xuất Excel
               </Button>
               <Button onClick={() => setShowAddModal(true)} className="gap-2">
                 <UserPlus className="h-4 w-4" />
-                Add User
+                Thêm người dùng
               </Button>
             </div>
           </div>
@@ -582,7 +633,7 @@ const EnhancedManageUsers = () => {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search users by name, email, or ID..."
+                placeholder="Tìm kiếm người dùng theo tên, email hoặc ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 bg-white/70 backdrop-blur-sm"
@@ -595,9 +646,9 @@ const EnhancedManageUsers = () => {
                 onChange={setSelectedRole}
                 className="w-40 bg-white/70 backdrop-blur-sm"
               >
-                <option value="all">All Roles</option>
-                <option value="customer">Customer</option>
-                <option value="admin">Admin</option>
+                <option value="all">Tất cả vai trò</option>
+                <option value="customer">Khách hàng</option>
+                <option value="admin">Quản trị viên</option>
                 <option value="moderator">Moderator</option>
               </Select>
 
@@ -606,11 +657,11 @@ const EnhancedManageUsers = () => {
                 onChange={setSelectedStatus}
                 className="w-40 bg-white/70 backdrop-blur-sm"
               >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="banned">Banned</option>
-                <option value="pending">Pending</option>
+                <option value="all">Tất cả trạng thái</option>
+                <option value="active">Hoạt động</option>
+                <option value="inactive">Không hoạt động</option>
+                <option value="banned">Bị khóa</option>
+                <option value="pending">Chờ xác thực</option>
               </Select>
 
               <Select
@@ -618,11 +669,11 @@ const EnhancedManageUsers = () => {
                 onChange={setSortBy}
                 className="w-32 bg-white/70 backdrop-blur-sm"
               >
-                <option value="createdAt">Date</option>
-                <option value="name">Name</option>
-                <option value="totalSpent">Spent</option>
-                <option value="totalOrders">Orders</option>
-                <option value="lastLogin">Last Login</option>
+                <option value="createdAt">Ngày</option>
+                <option value="name">Tên</option>
+                <option value="totalSpent">Số tiền</option>
+                <option value="totalOrders">Đơn hàng</option>
+                <option value="lastLogin">Đăng nhập cuối</option>
               </Select>
 
               <Button
@@ -654,19 +705,19 @@ const EnhancedManageUsers = () => {
           {isLoading && (
             <div className="flex items-center justify-center p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <span className="ml-2">Loading users...</span>
+              <span className="ml-2">Đang tải dữ liệu...</span>
             </div>
           )}
 
           {/* Error State */}
           {error && !isLoading && (
             <div className="p-8 text-center">
-              <p className="text-red-500">Failed to load users</p>
+              <p className="text-red-500">Không thể tải dữ liệu</p>
               <button
                 onClick={handleRefresh}
                 className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
-                Retry
+                Thử lại
               </button>
             </div>
           )}
@@ -682,7 +733,9 @@ const EnhancedManageUsers = () => {
                       <Users className="h-4 w-4 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Total Users</p>
+                      <p className="text-sm text-gray-600">
+                        Tổng số người dùng
+                      </p>
                       <p className="font-semibold">{filteredUsers.length}</p>
                     </div>
                   </div>
@@ -691,7 +744,9 @@ const EnhancedManageUsers = () => {
                       <CheckCircle className="h-4 w-4 text-green-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Active Users</p>
+                      <p className="text-sm text-gray-600">
+                        Người dùng hoạt động
+                      </p>
                       <p className="font-semibold">
                         {
                           filteredUsers.filter((u) => u.status === "active")
@@ -705,7 +760,7 @@ const EnhancedManageUsers = () => {
                       <Crown className="h-4 w-4 text-purple-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Admins</p>
+                      <p className="text-sm text-gray-600">Quản trị viên</p>
                       <p className="font-semibold">
                         {filteredUsers.filter((u) => u.role === "admin").length}
                       </p>
@@ -716,7 +771,7 @@ const EnhancedManageUsers = () => {
                       <Clock className="h-4 w-4 text-yellow-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Pending</p>
+                      <p className="text-sm text-gray-600">Chờ xác thực</p>
                       <p className="font-semibold">
                         {
                           filteredUsers.filter((u) => u.status === "pending")
@@ -730,7 +785,7 @@ const EnhancedManageUsers = () => {
                       <Ban className="h-4 w-4 text-red-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Banned</p>
+                      <p className="text-sm text-gray-600">Bị khóa</p>
                       <p className="font-semibold">
                         {
                           filteredUsers.filter((u) => u.status === "banned")
@@ -748,25 +803,25 @@ const EnhancedManageUsers = () => {
                   <thead className="bg-gray-50/80">
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        User
+                        Người dùng
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Contact
+                        Liên hệ
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Role
+                        Vai trò
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
+                        Trạng thái
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Activity
+                        Hoạt động
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Joined
+                        Tham gia
                       </th>
                       <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+                        Hành động
                       </th>
                     </tr>
                   </thead>
@@ -841,18 +896,18 @@ const EnhancedManageUsers = () => {
                           <td className="px-6 py-4">
                             <div className="space-y-1">
                               <p className="text-sm text-gray-900">
-                                {user.orders?.length || 0} orders
+                                {user.orders?.length || 0} đơn hàng
                               </p>
                               <p className="text-sm text-gray-500">
-                                {formatPrice(user.totalSpent || 0)} spent
+                                {formatPrice(user.totalSpent || 0)} tiền đã mua
                               </p>
                               <p className="text-xs text-gray-400">
-                                Last:{" "}
+                                Lần cuối:{" "}
                                 {user.lastLogin
                                   ? new Date(
                                       user.lastLogin
                                     ).toLocaleDateString()
-                                  : "Never"}
+                                  : "Không bao giờ"}
                               </p>
                             </div>
                           </td>
@@ -907,7 +962,7 @@ const EnhancedManageUsers = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Personal Information */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Personal Information</h3>
+              <h3 className="font-semibold text-lg">Thông tin cá nhân</h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <User className="h-4 w-4 text-gray-400" />
@@ -950,14 +1005,14 @@ const EnhancedManageUsers = () => {
 
             {/* Account Information */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Account Information</h3>
+              <h3 className="font-semibold text-lg">Thông tin tài khoản</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">User ID:</span>
+                  <span className="text-gray-600">ID:</span>
                   <span className="font-medium">{selectedUser._id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Role:</span>
+                  <span className="text-gray-600">Vai trò:</span>
                   <span
                     className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleStyling(
                       selectedUser.role
@@ -968,7 +1023,7 @@ const EnhancedManageUsers = () => {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Status:</span>
+                  <span className="text-gray-600">Trạng thái:</span>
                   <span
                     className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyling(
                       selectedUser.status
@@ -979,25 +1034,25 @@ const EnhancedManageUsers = () => {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Orders:</span>
+                  <span className="text-gray-600">Tổng đơn hàng:</span>
                   <span className="font-medium">
                     {selectedUser.orders?.length}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Spent:</span>
+                  <span className="text-gray-600">Tổng tiền đã mua:</span>
                   <span className="font-bold">
                     {formatPrice(selectedUser.totalSpent)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Last Login:</span>
+                  <span className="text-gray-600">Lần cuối đăng nhập:</span>
                   <span>
                     {new Date(selectedUser.lastLogin).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Member Since:</span>
+                  <span className="text-gray-600">Tham gia:</span>
                   <span>
                     {new Date(selectedUser.createdAt).toLocaleDateString()}
                   </span>
@@ -1007,7 +1062,7 @@ const EnhancedManageUsers = () => {
 
             {/* Preferences */}
             <div className="lg:col-span-2 space-y-4">
-              <h3 className="font-semibold text-lg">Preferences</h3>
+              <h3 className="font-semibold text-lg">Sở thích</h3>
               <div className="grid grid-cols-3 gap-4">
                 {selectedUser.preferences ? (
                   <>
@@ -1019,7 +1074,7 @@ const EnhancedManageUsers = () => {
                             : "bg-gray-300"
                         }`}
                       ></div>
-                      <span className="text-sm">Newsletter</span>
+                      <span className="text-sm">Bản tin</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div
@@ -1029,7 +1084,7 @@ const EnhancedManageUsers = () => {
                             : "bg-gray-300"
                         }`}
                       ></div>
-                      <span className="text-sm">Notifications</span>
+                      <span className="text-sm">Thông báo</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div
@@ -1043,14 +1098,14 @@ const EnhancedManageUsers = () => {
                     </div>
                   </>
                 ) : (
-                  <p className="text-gray-500">No preferences set</p>
+                  <p className="text-gray-500">Không có sở thích</p>
                 )}
               </div>
             </div>
 
             {/* Quick Actions */}
             <div className="lg:col-span-2 space-y-4">
-              <h3 className="font-semibold text-lg">Quick Actions</h3>
+              <h3 className="font-semibold text-lg">Hành động nhanh</h3>
               <div className="flex gap-3">
                 <Button
                   variant="outline"
@@ -1062,8 +1117,8 @@ const EnhancedManageUsers = () => {
                   }
                   disabled={isLoading}
                 >
-                  {selectedUser.status === "active" ? "Deactivate" : "Activate"}{" "}
-                  User
+                  {selectedUser.status === "active" ? "Tạm dừng" : "Kích hoạt"}{" "}
+                  Người dùng
                 </Button>
                 <Button
                   variant="outline"
@@ -1076,15 +1131,15 @@ const EnhancedManageUsers = () => {
                   disabled={isLoading}
                 >
                   {selectedUser.role === "admin"
-                    ? "Remove Admin"
-                    : "Make Admin"}
+                    ? "Loại bỏ quản trị viên"
+                    : "Làm quản trị viên"}
                 </Button>
                 <Button
                   variant="destructive"
                   onClick={() => handleStatusUpdate(selectedUser._id, "banned")}
                   disabled={isLoading || selectedUser.status === "banned"}
                 >
-                  Ban User
+                  Ban người dùng
                 </Button>
               </div>
             </div>
@@ -1107,7 +1162,7 @@ const EnhancedManageUsers = () => {
             status: "active",
           });
         }}
-        title={showAddModal ? "Add New User" : "Edit User"}
+        title={showAddModal ? "Thêm người dùng mới" : "Chỉnh sửa người dùng"}
         size="md"
       >
         <form
@@ -1125,7 +1180,7 @@ const EnhancedManageUsers = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                First Name
+                Tên
               </label>
               <Input
                 value={formData.firstName}
@@ -1137,7 +1192,7 @@ const EnhancedManageUsers = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name
+                Họ
               </label>
               <Input
                 value={formData.lastName}
@@ -1165,7 +1220,7 @@ const EnhancedManageUsers = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone
+              Số điện thoại
             </label>
             <Input
               value={formData.phone}
@@ -1179,20 +1234,20 @@ const EnhancedManageUsers = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Role
+                Vai trò
               </label>
               <Select
                 value={formData.role}
                 onChange={(value) => setFormData({ ...formData, role: value })}
               >
-                <option value="customer">Customer</option>
+                <option value="customer">Khách hàng</option>
                 <option value="moderator">Moderator</option>
-                <option value="admin">Admin</option>
+                <option value="admin">Quản trị viên</option>
               </Select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
+                Trạng thái
               </label>
               <Select
                 value={formData.status}
@@ -1200,10 +1255,10 @@ const EnhancedManageUsers = () => {
                   setFormData({ ...formData, status: value })
                 }
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="pending">Pending</option>
-                <option value="banned">Banned</option>
+                <option value="active">Hoạt động</option>
+                <option value="inactive">Không hoạt động</option>
+                <option value="pending">Chờ xác thực</option>
+                <option value="banned">Bị khóa</option>
               </Select>
             </div>
           </div>
@@ -1225,14 +1280,14 @@ const EnhancedManageUsers = () => {
                 });
               }}
             >
-              Cancel
+              Hủy bỏ
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading
-                ? "Saving..."
+                ? "Đang lưu..."
                 : showAddModal
-                ? "Add User"
-                : "Update User"}
+                ? "Thêm người dùng"
+                : "Cập nhật người dùng"}
             </Button>
           </div>
         </form>
@@ -1242,29 +1297,29 @@ const EnhancedManageUsers = () => {
       <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        title="Delete User"
+        title="Xóa người dùng"
         size="sm"
       >
         {selectedUser && (
           <div className="space-y-4">
             <p className="text-gray-600">
-              Are you sure you want to delete user{" "}
-              <strong>{selectedUser.fullName}</strong>? This action cannot be
-              undone.
+              Bạn có chắc chắn muốn xóa người dùng{" "}
+              <strong>{selectedUser.fullName}</strong>? Hành động này không thể
+              hoàn tác.
             </p>
             <div className="flex gap-3 justify-end">
               <Button
                 variant="outline"
                 onClick={() => setShowDeleteModal(false)}
               >
-                Cancel
+                Hủy bỏ
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => handleDeleteUser(selectedUser._id)}
                 disabled={isLoading}
               >
-                {isLoading ? "Deleting..." : "Delete User"}
+                {isLoading ? "Đang xóa..." : "Xóa người dùng"}
               </Button>
             </div>
           </div>

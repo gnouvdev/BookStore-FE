@@ -199,7 +199,7 @@ const EnhancedCheckoutPage = () => {
 
   const handleApplyVoucher = async () => {
     if (!voucherCode.trim()) {
-      setVoucherError("Please enter a voucher code");
+      setVoucherError(t("cart.enter_voucher"));
       return;
     }
 
@@ -215,10 +215,10 @@ const EnhancedCheckoutPage = () => {
           discount: result.data.discount,
         });
         setVoucherError(null);
-        toast.success("Voucher applied successfully!");
+        toast.success(t("cart.voucher_applied"));
       }
     } catch (error) {
-      setVoucherError(error.data?.message || "Invalid voucher code");
+      setVoucherError(error.data?.message || t("cart.invalid_voucher"));
       setAppliedVoucher(null);
     }
   };
@@ -226,8 +226,8 @@ const EnhancedCheckoutPage = () => {
   const onSubmit = async (data) => {
     if (!cartItems.length) {
       Swal.fire({
-        title: "Error",
-        text: "Your cart is empty!",
+        title: t("cart.error"),
+        text: t("cart.your_cart_is_empty"),
         icon: "error",
         customClass: {
           popup: "rounded-2xl",
@@ -239,8 +239,8 @@ const EnhancedCheckoutPage = () => {
 
     if (!selectedPayment) {
       Swal.fire({
-        title: "Error",
-        text: "Please select a payment method!",
+        title: t("cart.error"),
+        text: t("cart.please_select_a_payment_method"),
         icon: "error",
         customClass: {
           popup: "rounded-2xl",
@@ -251,14 +251,14 @@ const EnhancedCheckoutPage = () => {
     }
 
     if (isLoadingUser) {
-      toast.error("Please wait while we load your profile data");
+      toast.error(t("cart.please_wait_while_we_load_your_profile_data"));
       return;
     }
 
     if (!userProfileData?.user?._id) {
       Swal.fire({
-        title: "Error",
-        text: "User data not loaded. Please try again.",
+        title: t("cart.error"),
+        text: t("cart.user_data_not_loaded_please_try_again"),
         icon: "error",
         customClass: {
           popup: "rounded-2xl",
@@ -330,7 +330,7 @@ const EnhancedCheckoutPage = () => {
       }
 
       Swal.fire({
-        title: "Error",
+        title: t("cart.error"),
         text: errorMessage,
         icon: "error",
         customClass: {
@@ -543,7 +543,7 @@ const EnhancedCheckoutPage = () => {
                     </label>
                     <input
                       {...register("name", {
-                        required: "Full Name is required",
+                        required: t("cart.full_name_is_required"),
                       })}
                       type="text"
                       className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
@@ -561,7 +561,7 @@ const EnhancedCheckoutPage = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-red-500 text-sm mt-1"
                       >
-                        {errors.name.message}
+                        {t("cart." + errors.name.message)}
                       </motion.p>
                     )}
                   </div>
@@ -591,7 +591,7 @@ const EnhancedCheckoutPage = () => {
                         required: "Phone is required",
                         pattern: {
                           value: /^\+?\d{10,15}$/,
-                          message: t("cart.invalid_phone_number"),
+                          message: t("invalid_phone_number"),
                         },
                         validate: (value) => {
                           if (!/^[0-9+]+$/.test(value)) {
@@ -616,7 +616,7 @@ const EnhancedCheckoutPage = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-red-500 text-sm mt-1"
                       >
-                        {errors.phone.message}
+                        {t("cart." + errors.phone.message)}
                       </motion.p>
                     )}
                   </div>
@@ -647,7 +647,7 @@ const EnhancedCheckoutPage = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-red-500 text-sm mt-1"
                       >
-                        {errors.street.message}
+                        {t(errors.street.message)}
                       </motion.p>
                     )}
                   </div>
@@ -676,7 +676,7 @@ const EnhancedCheckoutPage = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-red-500 text-sm mt-1"
                       >
-                        {errors.city.message}
+                        {t("cart." + errors.city.message)}
                       </motion.p>
                     )}
                   </div>
@@ -706,7 +706,7 @@ const EnhancedCheckoutPage = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-red-500 text-sm mt-1"
                       >
-                        {errors.country.message}
+                        {t("cart." + errors.country.message)}
                       </motion.p>
                     )}
                   </div>
@@ -734,7 +734,7 @@ const EnhancedCheckoutPage = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-red-500 text-sm mt-1"
                       >
-                        {errors.zip.message}
+                        {t("cart." + errors.zip.message)}
                       </motion.p>
                     )}
                   </div>
@@ -959,13 +959,13 @@ const EnhancedCheckoutPage = () => {
                   />
                   <button
                     onClick={handleApplyVoucher}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors text-sm"
                   >
                     {t("cart.apply")}
                   </button>
                 </div>
                 {voucherError && (
-                  <p className="text-red-500 text-sm">{voucherError}</p>
+                  <p className="text-red-500 text-sm">{t("cart." + voucherError)}</p>
                 )}
                 {appliedVoucher && (
                   <div className="flex justify-between text-green-600">

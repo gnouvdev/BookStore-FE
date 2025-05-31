@@ -46,10 +46,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import CustomDialog from "@/components/ui/custom-dialog";
+import pdfMake from "pdfmake/build/pdfmake";
+import * as pdfFonts from "pdfmake/build/vfs_fonts";
+import * as XLSX from "xlsx";
+
+// Initialize pdfMake with fonts
+pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
 
 // Mock data for demonstration
 
-const EnhancedManageOrders = () => {
+const ManageOrders = () => {
   const navigate = useNavigate();
   const containerRef = useRef(null);
   const headerRef = useRef(null);
@@ -208,10 +214,14 @@ const EnhancedManageOrders = () => {
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
       await updateOrderStatus({ id: orderId, status: newStatus }).unwrap();
-      toast.success(`Order status updated to ${newStatus} successfully`);
+      toast.success(
+        `Trạng thái đơn hàng đã được cập nhật thành ${newStatus} thành công`
+      );
       setShowStatusModal(false);
     } catch (err) {
-      toast.error(err.data?.message || "Failed to update order status");
+      toast.error(
+        err.data?.message || "Không thể cập nhật trạng thái đơn hàng"
+      );
     }
   };
 
@@ -220,16 +230,16 @@ const EnhancedManageOrders = () => {
     try {
       await deleteOrder(orderId).unwrap();
       setShowDeleteModal(false);
-      toast.success("Order deleted successfully");
+      toast.success("Đơn hàng đã được xóa thành công");
     } catch (err) {
-      toast.error(err.data?.message || "Failed to delete order");
+      toast.error(err.data?.message || "Không thể xóa đơn hàng");
     }
   };
 
   // Refresh handler
   const handleRefresh = () => {
     // RTK Query will automatically refetch the data
-    toast.success("Orders refreshed successfully");
+    toast.success("Đơn hàng đã được cập nhật thành công");
   };
 
   // Format price to VNĐ
@@ -419,9 +429,9 @@ const EnhancedManageOrders = () => {
       <div className="flex items-center justify-between px-6 py-4 border-t bg-white/50 backdrop-blur-sm">
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-            {Math.min(currentPage * itemsPerPage, filteredOrders.length)} of{" "}
-            {filteredOrders.length} results
+            Hiển thị từ {(currentPage - 1) * itemsPerPage + 1} đến{" "}
+            {Math.min(currentPage * itemsPerPage, filteredOrders.length)} của{" "}
+            {filteredOrders.length} kết quả
           </span>
           <Select
             value={itemsPerPage.toString()}
@@ -433,7 +443,7 @@ const EnhancedManageOrders = () => {
             <option value="20">20</option>
             <option value="50">50</option>
           </Select>
-          <span className="text-sm text-gray-600">per page</span>
+          <span className="text-sm text-gray-600">trang</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -471,6 +481,243 @@ const EnhancedManageOrders = () => {
     );
   };
 
+  // Export invoice function
+  const handleExportInvoice = (order) => {
+    try {
+      const docDefinition = {
+        content: [
+          { text: "HÓA ĐƠN BÁN HÀNG", style: "header", alignment: "center" },
+          { text: "\n" },
+          {
+            columns: [
+              {
+                width: "50%",
+                text: [{ text: "Mã đơn hàng: ", bold: true }, order._id],
+              },
+              {
+                width: "50%",
+                text: [
+                  { text: "Ngày đặt: ", bold: true },
+                  new Date(order.createdAt).toLocaleDateString("vi-VN"),
+                ],
+              },
+            ],
+          },
+          { text: "\n" },
+          {
+            columns: [
+              {
+                width: "50%",
+                text: [{ text: "Trạng thái: ", bold: true }, order.status],
+              },
+            ],
+          },
+          { text: "\n" },
+          { text: "Thông tin khách hàng:", style: "subheader" },
+          {
+            columns: [
+              {
+                width: "50%",
+                text: [{ text: "Tên: ", bold: true }, order.name],
+              },
+              {
+                width: "50%",
+                text: [{ text: "Email: ", bold: true }, order.email],
+              },
+            ],
+          },
+          {
+            columns: [
+              {
+                width: "50%",
+                text: [{ text: "SĐT: ", bold: true }, order.phone],
+              },
+              {
+                width: "50%",
+                text: [
+                  { text: "Địa chỉ: ", bold: true },
+                  `${order.address.street}, ${order.address.city}, ${order.address.state}`,
+                ],
+              },
+            ],
+          },
+          { text: "\n" },
+          { text: "Chi tiết sản phẩm:", style: "subheader" },
+          {
+            table: {
+              headerRows: 1,
+              widths: ["*", "auto", "auto", "auto"],
+              body: [
+                ["Sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"],
+                ...order.productIds.map((item) => [
+                  item.productId.title,
+                  item.quantity,
+                  formatPrice(
+                    item.productId.price?.newPrice ||
+                      item.productId.price?.oldPrice ||
+                      item.productId.price ||
+                      0
+                  ),
+                  formatPrice(
+                    (item.productId.price?.newPrice ||
+                      item.productId.price?.oldPrice ||
+                      item.productId.price ||
+                      0) * item.quantity
+                  ),
+                ]),
+              ],
+            },
+          },
+          { text: "\n" },
+          {
+            columns: [
+              {
+                width: "50%",
+                text: "",
+              },
+              {
+                width: "50%",
+                text: [
+                  { text: "Tạm tính: ", bold: true },
+                  formatPrice(
+                    order.productIds.reduce(
+                      (total, item) =>
+                        total +
+                        (item.productId.price?.newPrice ||
+                          item.productId.price?.oldPrice ||
+                          item.productId.price ||
+                          0) *
+                          item.quantity,
+                      0
+                    )
+                  ),
+                ],
+              },
+            ],
+          },
+          {
+            columns: [
+              {
+                width: "50%",
+                text: "",
+              },
+              {
+                width: "50%",
+                text: [{ text: "Phí vận chuyển: ", bold: true }, "Miễn phí"],
+              },
+            ],
+          },
+          {
+            columns: [
+              {
+                width: "50%",
+                text: "",
+              },
+              {
+                width: "50%",
+                text: [
+                  { text: "Tổng cộng: ", bold: true },
+                  formatPrice(order.totalPrice),
+                ],
+              },
+            ],
+          },
+          { text: "\n" },
+          { text: "Thông tin thanh toán:", style: "subheader" },
+          {
+            columns: [
+              {
+                width: "50%",
+                text: [
+                  { text: "Phương thức: ", bold: true },
+                  order.paymentMethod?.name,
+                ],
+              },
+              {
+                width: "50%",
+                text: order.paymentMethod?.last4
+                  ? [
+                      { text: "Số thẻ: ", bold: true },
+                      `****${order.paymentMethod.last4}`,
+                    ]
+                  : "",
+              },
+            ],
+          },
+          { text: "\n" },
+          {
+            text: "Cảm ơn quý khách đã mua hàng!",
+            style: "footer",
+            alignment: "center",
+          },
+        ],
+        styles: {
+          header: {
+            fontSize: 22,
+            bold: true,
+            margin: [0, 0, 0, 10],
+          },
+          subheader: {
+            fontSize: 14,
+            bold: true,
+            margin: [0, 10, 0, 5],
+          },
+          footer: {
+            fontSize: 12,
+            italics: true,
+            margin: [0, 10, 0, 0],
+          },
+        },
+        defaultStyle: {
+          fontSize: 12,
+        },
+      };
+
+      pdfMake.createPdf(docDefinition).download(`invoice-${order._id}.pdf`);
+      toast.success("Xuất hóa đơn thành công!");
+    } catch (error) {
+      console.error("Error exporting invoice:", error);
+      toast.error("Không thể xuất hóa đơn");
+    }
+  };
+
+  // Export orders function
+  const handleExportOrders = () => {
+    try {
+      // Prepare data for export
+      const exportData = filteredOrders.map((order) => ({
+        "Mã đơn hàng": order._id,
+        "Ngày đặt": new Date(order.createdAt).toLocaleDateString("vi-VN"),
+        "Khách hàng": order.name,
+        Email: order.email,
+        "Số điện thoại": order.phone,
+        "Địa chỉ": `${order.address.street}, ${order.address.city}, ${order.address.state}`,
+        "Số sản phẩm": order.productIds.length,
+        "Tổng tiền": formatPrice(order.totalPrice),
+        "Phương thức thanh toán": order.paymentMethod?.name,
+        "Trạng thái": order.status,
+        "Mã vận chuyển": order.trackingNumber || "N/A",
+      }));
+
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Đơn hàng");
+
+      // Generate Excel file
+      XLSX.writeFile(
+        wb,
+        `orders-${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+      toast.success("Xuất dữ liệu đơn hàng thành công!");
+    } catch (error) {
+      console.error("Error exporting orders:", error);
+      toast.error("Không thể xuất dữ liệu đơn hàng");
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -489,14 +736,15 @@ const EnhancedManageOrders = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Manage Orders
+                  Quản lý đơn hàng
                 </h1>
                 <p className="text-gray-600">
-                  Track and manage customer orders
+                  Theo dõi và quản lý đơn hàng khách hàng
                 </p>
               </div>
             </div>
 
+            {/* Filters and Search */}
             <div className="flex items-center gap-3">
               <Button
                 onClick={handleRefresh}
@@ -507,11 +755,15 @@ const EnhancedManageOrders = () => {
                 <RefreshCw
                   className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
                 />
-                Refresh
+                Cập nhật
               </Button>
-              <Button variant="outline" className="gap-2">
+              <Button
+                onClick={handleExportOrders}
+                variant="outline"
+                className="gap-2"
+              >
                 <Download className="h-4 w-4" />
-                Export
+                Xuất Excel
               </Button>
             </div>
           </div>
@@ -521,7 +773,7 @@ const EnhancedManageOrders = () => {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search orders by ID, customer name, email, or tracking number..."
+                placeholder="Tìm kiếm đơn hàng theo ID, tên khách hàng, email, hoặc số tracking..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 bg-white/70 backdrop-blur-sm"
@@ -534,13 +786,13 @@ const EnhancedManageOrders = () => {
                 onChange={setSelectedStatus}
                 className="w-40 bg-white/70 backdrop-blur-sm"
               >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="shipped">Shipped</option>
-                <option value="delivered">Delivered</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="all">Trạng thái</option>
+                <option value="pending">Chờ xác nhận</option>
+                <option value="processing">Đang xử lý</option>
+                <option value="shipped">Đang giao hàng</option>
+                <option value="delivered">Đã giao hàng</option>
+                <option value="completed">Đã hoàn tất</option>
+                <option value="cancelled">Đã hủy</option>
               </Select>
 
               <Select
@@ -548,7 +800,7 @@ const EnhancedManageOrders = () => {
                 onChange={setSelectedPayment}
                 className="w-40 bg-white/70 backdrop-blur-sm"
               >
-                <option value="all">All Payments</option>
+                <option value="all">Phương thức thanh toán</option>
                 {paymentMethods.map((method) => (
                   <option key={method} value={method}>
                     {method}
@@ -561,10 +813,10 @@ const EnhancedManageOrders = () => {
                 onChange={setSortBy}
                 className="w-32 bg-white/70 backdrop-blur-sm"
               >
-                <option value="createdAt">Date</option>
-                <option value="totalPrice">Amount</option>
-                <option value="name">Customer</option>
-                <option value="status">Status</option>
+                <option value="createdAt">Ngày</option>
+                <option value="totalPrice">Số tiền</option>
+                <option value="name">Khách hàng</option>
+                <option value="status">Trạng thái</option>
               </Select>
 
               <Button
@@ -600,7 +852,7 @@ const EnhancedManageOrders = () => {
                   <ShoppingBag className="h-4 w-4 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Orders</p>
+                  <p className="text-sm text-gray-600">Tổng đơn hàng</p>
                   <p className="font-semibold">{filteredOrders.length}</p>
                 </div>
               </div>
@@ -609,7 +861,7 @@ const EnhancedManageOrders = () => {
                   <DollarSign className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Revenue</p>
+                  <p className="text-sm text-gray-600">Tổng doanh thu</p>
                   <p className="font-semibold">
                     {formatPrice(
                       filteredOrders.reduce((acc, o) => acc + o.totalPrice, 0)
@@ -622,7 +874,7 @@ const EnhancedManageOrders = () => {
                   <Clock className="h-4 w-4 text-yellow-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Pending</p>
+                  <p className="text-sm text-gray-600">Chờ xác nhận</p>
                   <p className="font-semibold">
                     {
                       filteredOrders.filter((o) => o.status === "pending")
@@ -636,7 +888,7 @@ const EnhancedManageOrders = () => {
                   <CheckCircle className="h-4 w-4 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Completed</p>
+                  <p className="text-sm text-gray-600">Đã hoàn tất</p>
                   <p className="font-semibold">
                     {
                       filteredOrders.filter((o) => o.status === "completed")
@@ -650,7 +902,7 @@ const EnhancedManageOrders = () => {
                   <XCircle className="h-4 w-4 text-red-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Cancelled</p>
+                  <p className="text-sm text-gray-600">Đã hủy</p>
                   <p className="font-semibold">
                     {
                       filteredOrders.filter((o) => o.status === "cancelled")
@@ -668,25 +920,25 @@ const EnhancedManageOrders = () => {
               <thead className="bg-gray-50/80">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Order
+                    Đơn hàng
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
+                    Khách hàng
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
+                    Số tiền
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Payment
+                    Phương thức thanh toán
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    Trạng thái
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
+                    Ngày
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    Hành động
                   </th>
                 </tr>
               </thead>
@@ -707,7 +959,7 @@ const EnhancedManageOrders = () => {
                             {order._id}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {order.productIds.length} items
+                            {order.productIds.length} sản phẩm
                           </p>
                           <p className="text-xs text-gray-400">
                             {order.trackingNumber}
@@ -828,7 +1080,7 @@ const EnhancedManageOrders = () => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white">
-                Chi tiết đơn hàng
+                Chi tiet don hang
               </h2>
               <div className="flex items-center gap-2 text-orange-700 mb-6">
                 <span>Mã đơn hàng:</span>
@@ -1132,15 +1384,52 @@ const EnhancedManageOrders = () => {
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Tạm tính:</span>
                           <span>
-                            {formatPrice(selectedOrder.totalPrice * 0.9)}
+                            {formatPrice(
+                              selectedOrder.productIds.reduce(
+                                (total, item) =>
+                                  total +
+                                  (item.productId.price?.newPrice ||
+                                    item.productId.price?.oldPrice ||
+                                    item.productId.price ||
+                                    0) *
+                                    item.quantity,
+                                0
+                              )
+                            )}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Thuế (10%):</span>
-                          <span>
-                            {formatPrice(selectedOrder.totalPrice * 0.1)}
-                          </span>
-                        </div>
+                        {(() => {
+                          const originalTotal = selectedOrder.productIds.reduce(
+                            (total, item) =>
+                              total +
+                              (item.productId.price?.newPrice ||
+                                item.productId.price?.oldPrice ||
+                                item.productId.price ||
+                                0) *
+                                item.quantity,
+                            0
+                          );
+                          const discount =
+                            originalTotal - selectedOrder.totalPrice;
+                          if (discount > 0) {
+                            const discountPercentage = Math.round(
+                              (discount / originalTotal) * 100
+                            );
+                            return (
+                              <>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">
+                                    Giảm giá:
+                                  </span>
+                                  <span className="text-green-600">
+                                    -{formatPrice(discount)}
+                                  </span>
+                                </div>
+                              </>
+                            );
+                          }
+                          return null;
+                        })()}
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Phí vận chuyển:</span>
                           <span className="text-green-600">Miễn phí</span>
@@ -1185,7 +1474,12 @@ const EnhancedManageOrders = () => {
                           <Edit className="w-4 h-4" />
                           Cập nhật trạng thái
                         </Button>
-                        <Button variant="outline" size="sm" className="gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => handleExportInvoice(selectedOrder)}
+                        >
                           <Download className="w-4 h-4" />
                           Xuất hóa đơn
                         </Button>
@@ -1231,9 +1525,9 @@ const EnhancedManageOrders = () => {
       <Dialog open={showStatusModal} onOpenChange={setShowStatusModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Update Order Status</DialogTitle>
+            <DialogTitle>Cập nhật trạng thái đơn hàng</DialogTitle>
             <DialogDescription>
-              Update status for order {selectedOrder?._id}
+              Cập nhật trạng thái cho đơn hàng {selectedOrder?._id}
             </DialogDescription>
           </DialogHeader>
           {selectedOrder && (
@@ -1267,7 +1561,7 @@ const EnhancedManageOrders = () => {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowStatusModal(false)}>
-              Cancel
+              Hủy
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1277,22 +1571,22 @@ const EnhancedManageOrders = () => {
       <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Order</DialogTitle>
+            <DialogTitle>Xóa đơn hàng</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete order {selectedOrder?._id}? This
-              action cannot be undone.
+              Bạn có chắc chắn muốn xóa đơn hàng {selectedOrder?._id}? Hành động
+              này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
-              Cancel
+              Hủy
             </Button>
             <Button
               variant="destructive"
               onClick={() => handleDeleteOrder(selectedOrder?._id)}
               disabled={isLoading}
             >
-              {isLoading ? "Deleting..." : "Delete Order"}
+              {isLoading ? "Đang xóa..." : "Xóa đơn hàng"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1301,4 +1595,4 @@ const EnhancedManageOrders = () => {
   );
 };
 
-export default EnhancedManageOrders;
+export default ManageOrders;

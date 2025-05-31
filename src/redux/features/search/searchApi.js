@@ -22,10 +22,8 @@ export const searchApi = createApi({
       keepUnusedDataFor: 60,
     }),
     searchBooks: builder.query({
-      query: ({ query, type }) => ({
-        url: `/books/search?query=${encodeURIComponent(query)}&type=${
-          type || ""
-        }`,
+      query: ({ query, type = "all" }) => ({
+        url: `/books/search?query=${encodeURIComponent(query)}&type=${type}`,
         method: "GET",
       }),
       keepUnusedDataFor: 60,

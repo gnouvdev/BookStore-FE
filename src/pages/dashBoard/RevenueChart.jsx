@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 "use client"
 
 import { useState, useMemo } from "react"
@@ -20,7 +21,7 @@ import { TrendingUp, TrendingDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
-const ImprovedRevenueChart = ({ data }) => {
+const RevenueChart = ({ data }) => {
   const [chartType, setChartType] = useState("line")
   const [timeRange, setTimeRange] = useState("6months")
 
@@ -94,8 +95,8 @@ const ImprovedRevenueChart = ({ data }) => {
           <TrendingUp className="w-8 h-8" />
         </div>
         <div className="text-center">
-          <p className="font-medium">No data available</p>
-          <p className="text-sm">Revenue data will appear here once available</p>
+          <p className="font-medium">Không có dữ liệu</p>
+          <p className="text-sm">Dữ liệu doanh thu sẽ xuất hiện ở đây khi có dữ liệu</p>
         </div>
       </div>
     )
@@ -211,8 +212,8 @@ const ImprovedRevenueChart = ({ data }) => {
       {/* Header with Controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Revenue Analytics</h3>
-          <p className="text-sm text-gray-500">Track your business performance over time</p>
+          <h3 className="text-lg font-semibold text-gray-900">Phân tích doanh thu</h3>
+          <p className="text-sm text-gray-500">Theo dõi hiệu suất kinh doanh theo thời gian</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -266,7 +267,7 @@ const ImprovedRevenueChart = ({ data }) => {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-600 font-medium">Total Revenue</p>
+                <p className="text-sm text-blue-600 font-medium">Tổng doanh thu</p>
                 <p className="text-2xl font-bold text-blue-900">{formatCurrency(stats.totalRevenue)}</p>
               </div>
               <div className="flex items-center gap-1">
@@ -291,7 +292,7 @@ const ImprovedRevenueChart = ({ data }) => {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-600 font-medium">Total Orders</p>
+                <p className="text-sm text-green-600 font-medium">Tổng đơn hàng</p>
                 <p className="text-2xl font-bold text-green-900">{stats.totalOrders.toLocaleString()}</p>
               </div>
               <div className="flex items-center gap-1">
@@ -316,7 +317,7 @@ const ImprovedRevenueChart = ({ data }) => {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-purple-600 font-medium">Avg Order Value</p>
+                  <p className="text-sm text-purple-600 font-medium">Giá trung bình đơn hàng</p>
                 <p className="text-2xl font-bold text-purple-900">
                   {formatCurrency(stats.totalRevenue / stats.totalOrders)}
                 </p>
@@ -354,4 +355,4 @@ const ImprovedRevenueChart = ({ data }) => {
   )
 }
 
-export default ImprovedRevenueChart
+export default RevenueChart

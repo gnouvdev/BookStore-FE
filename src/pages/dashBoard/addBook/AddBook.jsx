@@ -160,10 +160,10 @@ const EnhancedAddBook = () => {
         >
           <div className="text-6xl mb-4">😞</div>
           <h2 className="text-2xl font-bold text-red-600 mb-2">
-            Error Loading Categories
+            Lỗi tải danh mục
           </h2>
           <p className="text-gray-600">
-            {categoriesError.data?.message || "Failed to load categories"}
+            {categoriesError.data?.message || "Lỗi tải danh mục"}
           </p>
         </motion.div>
       </div>
@@ -423,26 +423,26 @@ const EnhancedAddBook = () => {
   const steps = [
     {
       number: 1,
-      title: "Basic Info",
-      description: "Title, Author & Description",
+      title: "Thông tin cơ bản",
+      description: "Tiêu đề, tác giả & mô tả",
       icon: FaBook,
     },
     {
       number: 2,
-      title: "Details",
-      description: "Category, Image & Tags",
+      title: "Chi tiết",
+      description: "Danh mục, Hình ảnh & Tags",
       icon: FaImage,
     },
     {
       number: 3,
-      title: "Pricing",
-      description: "Price & Quantity",
+      title: "Giá cả",
+      description: "Giá & Số lượng",
       icon: FaDollarSign,
     },
     {
       number: 4,
-      title: "Review",
-      description: "Final Review",
+      title: "Đánh giá",
+      description: "Đánh giá cuốn sách",
       icon: FaCheck,
     },
   ];
@@ -520,10 +520,10 @@ const EnhancedAddBook = () => {
             </motion.div>
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Add New Book
+                Thêm sách mới
               </h1>
               <p className="text-gray-600 mt-1">
-                Create a new book entry for your store
+                Tạo một bản ghi sách mới cho cửa hàng của bạn
               </p>
             </div>
           </div>
@@ -596,10 +596,10 @@ const EnhancedAddBook = () => {
                 >
                   <div className="text-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                      Basic Information
+                      Thông tin cơ bản
                     </h2>
                     <p className="text-gray-600">
-                      Enter the basic details of your book
+                      Nhập thông tin cơ bản của cuốn sách
                     </p>
                   </div>
 
@@ -612,7 +612,7 @@ const EnhancedAddBook = () => {
                     <input
                       {...register("title", { required: "Title is required" })}
                       type="text"
-                      placeholder="Enter book title"
+                      placeholder="Nhập tên cuốn sách"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                     />
                     {errors.title && (
@@ -650,7 +650,7 @@ const EnhancedAddBook = () => {
                         required: "Description is required",
                       })}
                       rows={4}
-                      placeholder="Enter book description"
+                      placeholder="Nhập mô tả cuốn sách"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200 resize-none"
                     />
                     {errors.description && (
@@ -668,7 +668,7 @@ const EnhancedAddBook = () => {
                     <input
                       {...register("publish")}
                       type="text"
-                      placeholder="Enter publisher name"
+                      placeholder="Nhập tên nhà xuất bản"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                     />
                   </div>
@@ -689,7 +689,7 @@ const EnhancedAddBook = () => {
                       Book Details
                     </h2>
                     <p className="text-gray-600">
-                      Add category, image, and additional details
+                      Thêm danh mục, hình ảnh và thông tin bổ sung
                     </p>
                   </div>
 
@@ -705,7 +705,7 @@ const EnhancedAddBook = () => {
                       })}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                     >
-                      <option value="">Select a category</option>
+                      <option value="">Chọn danh mục</option>
                       {categories.length > 0 ? (
                         categories.map((category) => (
                           <option key={category.value} value={category.value}>
@@ -713,7 +713,7 @@ const EnhancedAddBook = () => {
                           </option>
                         ))
                       ) : (
-                        <option disabled>Loading categories...</option>
+                        <option disabled>Đang tải danh mục...</option>
                       )}
                     </select>
                     {errors.category && (
@@ -727,7 +727,7 @@ const EnhancedAddBook = () => {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <FaImage className="inline mr-2" />
-                      Cover Image (Optional)
+                      Hình ảnh bìa (Tùy chọn)
                     </label>
                     <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition-colors duration-200">
                       {imagePreview ? (
@@ -755,17 +755,17 @@ const EnhancedAddBook = () => {
                             }}
                             className="text-red-500 hover:text-red-700 text-sm"
                           >
-                            Remove Image
+                            Xóa ảnh
                           </button>
                         </div>
                       ) : (
                         <div>
                           <FaCloudUploadAlt className="text-4xl text-gray-400 mx-auto mb-4" />
                           <p className="text-gray-600 mb-2">
-                            Click to upload or drag and drop
+                            Nhấp để tải lên hoặc kéo và thả
                           </p>
                           <p className="text-sm text-gray-500">
-                            PNG, JPG up to 5MB (Optional)
+                            PNG, JPG tối đa 5MB (Tùy chọn)
                           </p>
                         </div>
                       )}
@@ -783,17 +783,17 @@ const EnhancedAddBook = () => {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <FaTag className="inline mr-2" />
-                      Tags (Optional)
+                      Tags (Tùy chọn)
                     </label>
                     <input
                       type="text"
                       value={tags}
                       onChange={handleTagsChange}
-                      placeholder="Enter tags (comma-separated)"
+                      placeholder="Nhập thẻ (phân cách bằng dấu phẩy)"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                     />
                     <p className="text-sm text-gray-500 mt-1">
-                      Separate tags with commas (e.g., fiction, romance,
+                      Phân cách thẻ bằng dấu phẩy (ví dụ: fiction, romance,
                       bestseller)
                     </p>
                   </div>
@@ -802,7 +802,7 @@ const EnhancedAddBook = () => {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <FaLanguage className="inline mr-2" />
-                      Language (Optional)
+                      Ngôn ngữ (Tùy chọn)
                     </label>
                     <select
                       value={language}
@@ -830,7 +830,7 @@ const EnhancedAddBook = () => {
                       Pricing & Inventory
                     </h2>
                     <p className="text-gray-600">
-                      Set the price and quantity for your book
+                      Đặt giá và số lượng cho cuốn sách
                     </p>
                   </div>
 
@@ -839,7 +839,7 @@ const EnhancedAddBook = () => {
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         <RiPriceTag3Line className="inline mr-2" />
-                        Original Price
+                        Giá gốc
                       </label>
                       <input
                         {...register("oldPrice")}
@@ -854,7 +854,7 @@ const EnhancedAddBook = () => {
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         <FaDollarSign className="inline mr-2" />
-                        Sale Price *
+                        Giá bán *
                       </label>
                       <input
                         {...register("newPrice", {
@@ -877,7 +877,7 @@ const EnhancedAddBook = () => {
                   {/* Quantity */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Quantity in Stock *
+                      Số lượng trong kho *
                     </label>
                     <input
                       {...register("quantity", {
@@ -885,7 +885,7 @@ const EnhancedAddBook = () => {
                         min: 1,
                       })}
                       type="number"
-                      placeholder="Enter quantity"
+                      placeholder="Nhập số lượng"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                     />
                     {errors.quantity && (
@@ -904,7 +904,7 @@ const EnhancedAddBook = () => {
                     />
                     <label className="ml-3 text-sm font-semibold text-gray-700">
                       <FaChartLine className="inline mr-2" />
-                      Mark as Trending Book
+                      Đánh dấu là cuốn sách trending
                     </label>
                   </div>
                 </motion.div>
@@ -924,7 +924,7 @@ const EnhancedAddBook = () => {
                       Review & Submit
                     </h2>
                     <p className="text-gray-600">
-                      Please review all information before submitting
+                      Vui lòng kiểm tra tất cả thông tin trước khi gửi
                     </p>
                   </div>
 
@@ -932,30 +932,30 @@ const EnhancedAddBook = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <h3 className="font-semibold text-gray-800 mb-3">
-                          Book Information
+                          Thông tin cuốn sách
                         </h3>
                         <div className="space-y-2 text-sm">
                           <p>
-                            <span className="font-medium">Title:</span>{" "}
-                            {watchedFields.title || "Not specified"}
+                            <span className="font-medium">Tên cuốn sách:</span>{" "}
+                            {watchedFields.title || "Không xác định"}
                           </p>
                           <p>
-                            <span className="font-medium">Author:</span>{" "}
-                            {selectedAuthor?.label || "Not specified"}
+                            <span className="font-medium">Tác giả:</span>{" "}
+                            {selectedAuthor?.label || "Không xác định"}
                           </p>
                           <p>
-                            <span className="font-medium">Category:</span>{" "}
+                            <span className="font-medium">Danh mục:</span>{" "}
                             {categories.find(
                               (c) => c.value === watchedFields.category
-                            )?.label || "Not specified"}
+                            )?.label || "Không xác định"}
                           </p>
                           <p>
-                            <span className="font-medium">Language:</span>{" "}
+                            <span className="font-medium">Ngôn ngữ:</span>{" "}
                             {language}
                           </p>
                           <p>
-                            <span className="font-medium">Publisher:</span>{" "}
-                            {watchedFields.publish || "Not specified"}
+                            <span className="font-medium">Nhà xuất bản:</span>{" "}
+                            {watchedFields.publish || "Không xác định"}
                           </p>
                         </div>
                       </div>
@@ -966,20 +966,20 @@ const EnhancedAddBook = () => {
                         </h3>
                         <div className="space-y-2 text-sm">
                           <p>
-                            <span className="font-medium">Original Price:</span>{" "}
+                            <span className="font-medium">Giá gốc:</span>{" "}
                             ${watchedFields.oldPrice || "0.00"}
                           </p>
                           <p>
-                            <span className="font-medium">Sale Price:</span> $
+                            <span className="font-medium">Giá bán:</span> $
                             {watchedFields.newPrice || "0.00"}
                           </p>
                           <p>
-                            <span className="font-medium">Quantity:</span>{" "}
+                            <span className="font-medium">Số lượng:</span>{" "}
                             {watchedFields.quantity || "0"}
                           </p>
                           <p>
                             <span className="font-medium">Trending:</span>{" "}
-                            {watchedFields.trending ? "Yes" : "No"}
+                            {watchedFields.trending ? "Có" : "Không"}
                           </p>
                         </div>
                       </div>
@@ -988,7 +988,7 @@ const EnhancedAddBook = () => {
                     {coverImage && (
                       <div className="text-center">
                         <h3 className="font-semibold text-gray-800 mb-3">
-                          Cover Image
+                          Hình ảnh bìa
                         </h3>
                         <img
                           src={coverImage || "/placeholder.svg"}
@@ -1001,7 +1001,7 @@ const EnhancedAddBook = () => {
                     {tags && (
                       <div>
                         <h3 className="font-semibold text-gray-800 mb-3">
-                          Tags
+                          Thẻ
                         </h3>
                         <div className="flex flex-wrap gap-2">
                           {tags.split(",").map((tag, index) => (
@@ -1034,7 +1034,7 @@ const EnhancedAddBook = () => {
                 whileHover={currentStep > 1 ? { scale: 1.05 } : {}}
                 whileTap={currentStep > 1 ? { scale: 0.95 } : {}}
               >
-                Previous
+                Trang trước
               </motion.button>
 
               <div className="flex items-center gap-4">
@@ -1046,7 +1046,7 @@ const EnhancedAddBook = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    Next
+                    Trang tiếp
                   </motion.button>
                 ) : (
                   <motion.button
@@ -1059,12 +1059,12 @@ const EnhancedAddBook = () => {
                     {isLoading ? (
                       <>
                         <FaSpinner className="animate-spin" />
-                        Adding Book...
+                        Đang thêm cuốn sách...
                       </>
                     ) : (
                       <>
                         <FaCheck />
-                        Add Book
+                        Thêm cuốn sách
                       </>
                     )}
                   </motion.button>

@@ -27,18 +27,18 @@ import ManageAuthors from "./../pages/dashBoard/manageAuthors/ManageAuthors";
 import ManageUsers from "./../pages/dashBoard/manageUsers/ManageUsers";
 import Profile from "./../pages/user/profile";
 import ManageOrders from "./../pages/dashBoard/manageOrders/ManageOrders";
-import Recommended from "../pages/home/Recommended";
-import BookRecommendations from "./../components/BookRecommendations";
 import WishlistPage from "../pages/wishlist/WishlistPage";
 import VNPayCallback from "./../pages/vnpaycallback/VNPayCallback";
 import ForgotPassword from "./../components/ForgotPassword";
 import HomePage from "./../pages/home/HomePage";
 import AboutUs from "./../pages/home/AboutUs";
 import Notifications from "./../pages/notifications/Notifications";
-import OrderDetails from "./../pages/orders/OrderDetails";
+
 import Chat from "../pages/dashBoard/chat/Chat";
 import ManageVoucher from './../pages/dashBoard/manageVoucher/ManageVoucher';
 import ContactPage from './../pages/home/Contact';
+import OrderDetails from './../pages/orders/OrderDetails';
+import TermPolicy from './../pages/home/TermPolicy';
 
 const router = createBrowserRouter([
   {
@@ -91,7 +91,11 @@ const router = createBrowserRouter([
       },
       {
         path: "/orders/:id",
-        element: <OrderDetails />,
+        element: (
+          <PrivateRoute>
+            <OrderDetails />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/wishlist",
@@ -148,6 +152,10 @@ const router = createBrowserRouter([
       {
         path: "/contact",
         element: <ContactPage />,
+      },
+      {
+        path: "/term-policy",
+        element: <TermPolicy />,
       },
       {
         path: "/profile",

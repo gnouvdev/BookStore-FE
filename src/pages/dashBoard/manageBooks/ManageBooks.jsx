@@ -85,7 +85,7 @@ const EnhancedManageBooks = () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          toast.error("Please login to continue");
+          toast.error("Vui lòng đăng nhập để tiếp tục");
           navigate("/admin");
           return;
         }
@@ -101,8 +101,8 @@ const EnhancedManageBooks = () => {
           setFilteredBooks(response.data);
         }
       } catch (error) {
-        console.error("Error fetching books:", error);
-        toast.error(error.response?.data?.message || "Failed to load books");
+        console.error("Lỗi khi lấy sách:", error);
+        toast.error(error.response?.data?.message || "Không thể tải sách");
       } finally {
         setIsLoading(false);
       }
@@ -231,10 +231,10 @@ const EnhancedManageBooks = () => {
       setBooks(books.filter((book) => book._id !== bookId));
       setShowDeleteDialog(false);
       setSelectedBook(null);
-      toast.success("Book deleted successfully");
+      toast.success("Xóa sách thành công");
     } catch (error) {
-      console.error("Error deleting book:", error);
-      toast.error(error.response?.data?.message || "Failed to delete book");
+      console.error("Lỗi khi xóa sách:", error);
+      toast.error(error.response?.data?.message || "Không thể xóa sách");
     } finally {
       setIsLoading(false);
     }
@@ -254,11 +254,11 @@ const EnhancedManageBooks = () => {
       if (response.data) {
         setBooks(response.data);
         setFilteredBooks(response.data);
-        toast.success("Books refreshed successfully");
+        toast.success("Sách đã được cập nhật thành công");
       }
     } catch (error) {
-      console.error("Error refreshing books:", error);
-      toast.error(error.response?.data?.message || "Failed to refresh books");
+      console.error("Lỗi khi cập nhật sách:", error);
+        toast.error(error.response?.data?.message || "Không thể cập nhật sách");
     } finally {
       setIsLoading(false);
     }
@@ -303,9 +303,9 @@ const EnhancedManageBooks = () => {
       <div className="flex items-center justify-between px-6 py-4 border-t bg-white/50 backdrop-blur-sm">
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-            {Math.min(currentPage * itemsPerPage, filteredBooks.length)} of{" "}
-            {filteredBooks.length} results
+            Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{" "}
+            {Math.min(currentPage * itemsPerPage, filteredBooks.length)} của{" "}
+            {filteredBooks.length} kết quả
           </span>
           <Select
             value={itemsPerPage.toString()}
@@ -321,7 +321,7 @@ const EnhancedManageBooks = () => {
               <SelectItem value="50">50</SelectItem>
             </SelectContent>
           </Select>
-          <span className="text-sm text-gray-600">per page</span>
+            <span className="text-sm text-gray-600">trang</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -388,10 +388,10 @@ const EnhancedManageBooks = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Manage Books
+                  Quản lý sách
                 </h1>
                 <p className="text-gray-600">
-                  Manage your book inventory and catalog
+                  Quản lý kho sách và catelog
                 </p>
               </div>
             </div>
@@ -406,14 +406,14 @@ const EnhancedManageBooks = () => {
                 <RefreshCw
                   className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
                 />
-                Refresh
+                Cập nhật
               </Button>
               <Button
                 className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
                 onClick={() => navigate("/dashboard/add-new-book")}
               >
                 <Plus className="h-4 w-4" />
-                Add Book
+                Thêm sách
               </Button>
             </div>
           </div>
@@ -423,7 +423,7 @@ const EnhancedManageBooks = () => {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search books by title or author..."
+                placeholder="Tìm kiếm sách theo tiêu đề hoặc tác giả..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 bg-white/70 backdrop-blur-sm"
@@ -436,10 +436,10 @@ const EnhancedManageBooks = () => {
                 onValueChange={setSelectedCategory}
               >
                 <SelectTrigger className="w-40 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Category" />
+                  <SelectValue placeholder="Thể loại" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="all">Tất cả thể loại</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -450,26 +450,26 @@ const EnhancedManageBooks = () => {
 
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Status" />
+                    <SelectValue placeholder="Trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                  <SelectItem value="active">Hoạt động</SelectItem>
+                  <SelectItem value="inactive">Không hoạt động</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Sort by" />
+                  <SelectValue placeholder="Sắp xếp theo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="title">Title</SelectItem>
-                  <SelectItem value="author">Author</SelectItem>
-                  <SelectItem value="category">Category</SelectItem>
-                  <SelectItem value="price">Price</SelectItem>
-                  <SelectItem value="quantity">Stock</SelectItem>
-                  <SelectItem value="publish">Publisher</SelectItem>
+                  <SelectItem value="title">Tiêu đề</SelectItem>
+                  <SelectItem value="author">Tác giả</SelectItem>
+                  <SelectItem value="category">Thể loại</SelectItem>
+                  <SelectItem value="price">Giá</SelectItem>
+                  <SelectItem value="quantity">Số lượng</SelectItem>
+                  <SelectItem value="publish">Nhà xuất bản</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -521,7 +521,7 @@ const EnhancedManageBooks = () => {
                   <BookOpen className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Books</p>
+                  <p className="text-sm text-gray-600">Tổng số sách</p>
                   <p className="font-semibold">{filteredBooks.length}</p>
                 </div>
               </div>
@@ -530,7 +530,7 @@ const EnhancedManageBooks = () => {
                   <TrendingUp className="h-4 w-4 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Trending</p>
+                  <p className="text-sm text-gray-600">Bán chạy</p>
                   <p className="font-semibold">
                     {filteredBooks.filter((b) => b.trending).length}
                   </p>
@@ -541,7 +541,7 @@ const EnhancedManageBooks = () => {
                   <Package className="h-4 w-4 text-yellow-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Low Stock</p>
+                  <p className="text-sm text-gray-600">Sắp hết hàng</p>
                   <p className="font-semibold">
                     {filteredBooks.filter((b) => b.quantity < 10).length}
                   </p>
@@ -552,10 +552,9 @@ const EnhancedManageBooks = () => {
                   <DollarSign className="h-4 w-4 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Avg Price</p>
+                  <p className="text-sm text-gray-600">Giá trung bình</p>
                   <p className="font-semibold">
-                    $
-                    {Math.round(
+                    {formatPrice(
                       filteredBooks.reduce(
                         (acc, b) => acc + b.price.newPrice,
                         0
@@ -574,25 +573,25 @@ const EnhancedManageBooks = () => {
                 <thead className="bg-gray-50/80">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Book
+                      Sách
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Author
+                      Tác giả
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
+                      Thể loại
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Price
+                      Giá
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Stock
+                      Số lượng
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                      Trạng thái
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      Hành động
                     </th>
                   </tr>
                 </thead>
@@ -695,7 +694,7 @@ const EnhancedManageBooks = () => {
                                 }}
                               >
                                 <Eye className="h-4 w-4 mr-2" />
-                                View Details
+                                Xem chi tiết
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() =>
@@ -703,7 +702,7 @@ const EnhancedManageBooks = () => {
                                 }
                               >
                                 <Edit3 className="h-4 w-4 mr-2" />
-                                Edit
+                                Sửa
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-red-600"
@@ -713,7 +712,7 @@ const EnhancedManageBooks = () => {
                                 }}
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
+                                Xóa
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -793,7 +792,7 @@ const EnhancedManageBooks = () => {
                                 }}
                               >
                                 <Eye className="h-4 w-4 mr-2" />
-                                View Details
+                                Xem chi tiết
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() =>
@@ -801,7 +800,7 @@ const EnhancedManageBooks = () => {
                                 }
                               >
                                 <Edit3 className="h-4 w-4 mr-2" />
-                                Edit
+                                Sửa
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-red-600"
@@ -811,7 +810,7 @@ const EnhancedManageBooks = () => {
                                 }}
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
+                                  Xóa
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -833,10 +832,9 @@ const EnhancedManageBooks = () => {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Book</DialogTitle>
+            <DialogTitle>Xóa sách</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedBook?.title}"? This
-              action cannot be undone.
+              Bạn có chắc chắn muốn xóa "{selectedBook?.title}"? Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-6">
@@ -844,14 +842,14 @@ const EnhancedManageBooks = () => {
               variant="outline"
               onClick={() => setShowDeleteDialog(false)}
             >
-              Cancel
+              Hủy bỏ
             </Button>
             <Button
               variant="destructive"
               onClick={() => handleDelete(selectedBook?._id)}
               disabled={isLoading}
             >
-              {isLoading ? "Deleting..." : "Delete"}
+              {isLoading ? "Đang xóa..." : "Xóa"}
             </Button>
           </div>
         </DialogContent>
@@ -861,7 +859,7 @@ const EnhancedManageBooks = () => {
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Book Details</DialogTitle>
+            <DialogTitle>Chi tiết sách</DialogTitle>
           </DialogHeader>
           {selectedBook && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -881,36 +879,36 @@ const EnhancedManageBooks = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-500">Category:</span>
+                    <span className="text-gray-500">Thể loại:</span>
                     <p className="font-medium">{selectedBook.category.name}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Price:</span>
+                    <span className="text-gray-500">Giá:</span>
                     <p className="font-medium">
                       {formatPrice(selectedBook.price.newPrice)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Stock:</span>
+                    <span className="text-gray-500">Số lượng:</span>
                     <p className="font-medium">{selectedBook.quantity}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Status:</span>
+                    <span className="text-gray-500">Trạng thái:</span>
                     <p className="font-medium">{selectedBook.status}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Language:</span>
+                    <span className="text-gray-500">Ngôn ngữ:</span>
                     <p className="font-medium">{selectedBook.language}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Publisher:</span>
+                    <span className="text-gray-500">Nhà xuất bản:</span>
                     <p className="font-medium">{selectedBook.publish.name}</p>
                   </div>
                 </div>
                 {selectedBook.trending && (
                   <Badge className="gap-1">
                     <Star className="h-3 w-3" />
-                    Trending
+                    Bán chạy
                   </Badge>
                 )}
               </div>

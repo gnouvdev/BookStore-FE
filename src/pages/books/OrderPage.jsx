@@ -443,7 +443,7 @@ const EnhancedOrderPage = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {t("order.start_shopping")}
+                {t("orders.start_shopping")}
               </motion.button>
             </motion.div>
           ) : (

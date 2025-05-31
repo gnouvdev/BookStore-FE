@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
 /* eslint-disable no-unused-vars */
-import { useEffect, useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { useTranslation } from "react-i18next"
-import { format } from "date-fns"
-import { vi } from "date-fns/locale"
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 import {
   ArrowLeft,
   Package,
@@ -21,13 +21,14 @@ import {
   Calendar,
   Hash,
   ShoppingBag,
-} from "lucide-react"
-import { motion } from "framer-motion"
-import toast from "react-hot-toast"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
+} from "lucide-react";
+import { motion } from "framer-motion";
+import toast from "react-hot-toast";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { ScrollArea } from "../../components/ui/scroll-area";
+import { Separator } from "../../components/ui/separator";
+import { t } from "i18next";
 
 const getStatusConfig = (status) => {
   switch (status) {
@@ -35,54 +36,54 @@ const getStatusConfig = (status) => {
       return {
         color: "bg-yellow-100 text-yellow-800 border-yellow-200",
         icon: <Clock className="w-4 h-4" />,
-        label: "Chờ xử lý",
+        label: t("orders.pending"),
         bgGradient: "from-yellow-50 to-yellow-100",
-      }
+      };
     case "processing":
       return {
         color: "bg-blue-100 text-blue-800 border-blue-200",
         icon: <Package className="w-4 h-4" />,
-        label: "Đang xử lý",
+        label: t("orders.processing"),
         bgGradient: "from-blue-50 to-blue-100",
-      }
+      };
     case "shipped":
       return {
         color: "bg-purple-100 text-purple-800 border-purple-200",
         icon: <Truck className="w-4 h-4" />,
-        label: "Đang giao hàng",
+        label: t("orders.shipped"),
         bgGradient: "from-purple-50 to-purple-100",
-      }
+      };
     case "delivered":
       return {
         color: "bg-green-100 text-green-800 border-green-200",
         icon: <CheckCircle className="w-4 h-4" />,
-        label: "Đã giao hàng",
+        label: t("orders.delivered"),
         bgGradient: "from-green-50 to-green-100",
-      }
+      };
     case "cancelled":
       return {
         color: "bg-red-100 text-red-800 border-red-200",
         icon: <XCircle className="w-4 h-4" />,
-        label: "Đã hủy",
+        label: t("orders.cancelled"),
         bgGradient: "from-red-50 to-red-100",
-      }
+      };
     default:
       return {
         color: "bg-gray-100 text-gray-800 border-gray-200",
         icon: <Package className="w-4 h-4" />,
-        label: "Không xác định",
+        label: t("orders.unknown"),
         bgGradient: "from-gray-50 to-gray-100",
-      }
+      };
   }
-}
+};
 
 const OrderDetails = () => {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const { t } = useTranslation()
-  const [order, setOrder] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -91,22 +92,23 @@ const OrderDetails = () => {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-        })
-        const data = await response.json()
+        });
+        const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch order details")
+          throw new Error(data.message || "Failed to fetch order details");
         }
-        setOrder(data.data)
+        console.log("Order data:", data.data);
+        setOrder(data.data);
       } catch (err) {
-        setError(err.message)
-        toast.error("Không thể tải thông tin đơn hàng")
+        setError(err.message);
+        toast.error("Không thể tải thông tin đơn hàng");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchOrderDetails()
-  }, [id])
+    fetchOrderDetails();
+  }, [id]);
 
   if (loading) {
     return (
@@ -131,7 +133,7 @@ const OrderDetails = () => {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -146,23 +148,43 @@ const OrderDetails = () => {
             <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
               <XCircle className="w-10 h-10 text-red-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("orders.error_loading")}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {t("orders.error_loading")}
+            </h2>
             <p className="text-gray-500 mb-6">{error}</p>
-            <Button onClick={() => navigate(-1)} className="bg-gradient-to-r from-blue-500 to-blue-600">
+            <Button
+              onClick={() => navigate(-1)}
+              className="bg-gradient-to-r from-blue-500 to-blue-600"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t("common.go_back")}
             </Button>
           </motion.div>
         </div>
       </div>
-    )
+    );
   }
 
   if (!order) {
-    return null
+    return null;
   }
 
-  const statusConfig = getStatusConfig(order.status)
+  const statusConfig = getStatusConfig(order.status);
+
+  // Calculate total price from products
+  const calculateTotalPrice = () => {
+    return order.productIds.reduce((total, item) => {
+      const product = item.productId || {};
+      let price = 0;
+      if (product.price) {
+        price = product.price.newPrice || product.price.oldPrice || 0;
+      }
+      const quantity = item.quantity || 1;
+      return total + price * quantity;
+    }, 0);
+  };
+
+  const originalTotalPrice = calculateTotalPrice();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -186,7 +208,9 @@ const OrderDetails = () => {
                   {t("common.go_back")}
                 </Button>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">{t("orders.order_details")}</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {t("orders.order_details")}
+                  </h1>
                   <p className="text-gray-500 flex items-center mt-1">
                     <Hash className="w-4 h-4 mr-1" />
                     {order._id}
@@ -194,7 +218,9 @@ const OrderDetails = () => {
                 </div>
               </div>
 
-              <Badge className={`px-4 py-2 rounded-full border-2 ${statusConfig.color}`}>
+              <Badge
+                className={`px-4 py-2 rounded-full border-2 ${statusConfig.color}`}
+              >
                 <span className="flex items-center space-x-2">
                   {statusConfig.icon}
                   <span className="font-medium">{statusConfig.label}</span>
@@ -217,13 +243,14 @@ const OrderDetails = () => {
                 <ScrollArea className="max-h-96">
                   <div className="p-6 space-y-4">
                     {order.productIds.map((item) => {
-                      const product = item.productId || {}
-                      let price = 0
+                      const product = item.productId || {};
+                      let price = 0;
                       if (product.price) {
-                        price = product.price.newPrice || product.price.oldPrice || 0
+                        price =
+                          product.price.newPrice || product.price.oldPrice || 0;
                       }
-                      const quantity = item.quantity || 1
-                      const total = price * quantity
+                      const quantity = item.quantity || 1;
+                      const total = price * quantity;
 
                       return (
                         <motion.div
@@ -238,8 +265,8 @@ const OrderDetails = () => {
                               alt={product.title || "Product"}
                               className="w-16 h-16 object-cover rounded-lg shadow-sm"
                               onError={(e) => {
-                                e.target.onerror = null
-                                e.target.src = "/placeholder.svg"
+                                e.target.onerror = null;
+                                e.target.src = "/placeholder.svg";
                               }}
                             />
                             <Badge className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center">
@@ -247,26 +274,34 @@ const OrderDetails = () => {
                             </Badge>
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 mb-1">{product.title || "Unknown Product"}</h4>
+                            <h4 className="font-medium text-gray-900 mb-1">
+                              {product.title || t("orders.unknown_product")}
+                            </h4>
                             <div className="flex items-center space-x-2">
                               <span className="text-sm font-medium text-blue-600">
                                 {price.toLocaleString("vi-VN")}đ
                               </span>
-                              {product.price?.oldPrice && product.price.oldPrice > price && (
-                                <span className="text-sm text-gray-400 line-through">
-                                  {product.price.oldPrice.toLocaleString("vi-VN")}đ
-                                </span>
-                              )}
+                              {product.price?.oldPrice &&
+                                product.price.oldPrice > price && (
+                                  <span className="text-sm text-gray-400 line-through">
+                                    {product.price.oldPrice.toLocaleString(
+                                      "vi-VN"
+                                    )}
+                                    đ
+                                  </span>
+                                )}
                             </div>
                             <p className="text-sm text-gray-500">
                               {t("orders.quantity")}: {quantity}
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-gray-900">{total.toLocaleString("vi-VN")}đ</p>
+                            <p className="font-semibold text-gray-900">
+                              {total.toLocaleString("vi-VN")}đ
+                            </p>
                           </div>
                         </motion.div>
-                      )
+                      );
                     })}
                   </div>
                 </ScrollArea>
@@ -288,8 +323,12 @@ const OrderDetails = () => {
                           <User className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{order.name}</p>
-                          <p className="text-sm text-gray-500">{t("orders.customer_name")}</p>
+                          <p className="font-medium text-gray-900">
+                            {order.name}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {t("orders.customer_name")}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-start space-x-3">
@@ -297,8 +336,12 @@ const OrderDetails = () => {
                           <Phone className="w-5 h-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{order.phone}</p>
-                          <p className="text-sm text-gray-500">{t("orders.phone_number")}</p>
+                          <p className="font-medium text-gray-900">
+                            {order.phone}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {t("orders.phone_number")}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -308,8 +351,12 @@ const OrderDetails = () => {
                           <Mail className="w-5 h-5 text-purple-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{order.email}</p>
-                          <p className="text-sm text-gray-500">{t("orders.email")}</p>
+                          <p className="font-medium text-gray-900">
+                            {order.email}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {t("orders.email")}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-start space-x-3">
@@ -320,19 +367,28 @@ const OrderDetails = () => {
                           <div className="font-medium text-gray-900">
                             {typeof order.address === "object" ? (
                               <>
-                                {order.address.street && <div>{order.address.street}</div>}
+                                {order.address.street && (
+                                  <div>{order.address.street}</div>
+                                )}
                                 <div>
-                                  {order.address.city && `${order.address.city}, `}
-                                  {order.address.state && `${order.address.state} `}
-                                  {order.address.zipcode && order.address.zipcode}
+                                  {order.address.city &&
+                                    `${order.address.city}, `}
+                                  {order.address.state &&
+                                    `${order.address.state} `}
+                                  {order.address.zipcode &&
+                                    order.address.zipcode}
                                 </div>
-                                {order.address.country && <div>{order.address.country}</div>}
+                                {order.address.country && (
+                                  <div>{order.address.country}</div>
+                                )}
                               </>
                             ) : (
                               order.address
                             )}
                           </div>
-                          <p className="text-sm text-gray-500">{t("orders.shipping_address")}</p>
+                          <p className="text-sm text-gray-500">
+                            {t("orders.shipping_address")}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -346,21 +402,53 @@ const OrderDetails = () => {
               {/* Order Summary */}
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
                 <div className="p-6 border-b border-gray-200/50">
-                  <h2 className="text-lg font-semibold text-gray-900">{t("orders.summary")}</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {t("orders.summary")}
+                  </h2>
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">{t("orders.subtotal")}</span>
-                    <span className="font-medium">{order.totalPrice.toLocaleString("vi-VN")}đ</span>
+                    <span className="text-gray-600">
+                      {t("orders.subtotal")}
+                    </span>
+                    <span className="font-medium">
+                      {originalTotalPrice.toLocaleString("vi-VN")}đ
+                    </span>
                   </div>
+                  {order.paymentDetails?.paymentAmount < originalTotalPrice && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">
+                        {t("orders.discount")}
+                      </span>
+                      <span className="font-medium text-green-600">
+                        -
+                        {(
+                          originalTotalPrice -
+                          order.paymentDetails.paymentAmount
+                        ).toLocaleString("vi-VN")}
+                        đ
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Phí vận chuyển</span>
-                    <span className="font-medium text-green-600">Miễn phí</span>
+                    <span className="text-gray-600">
+                      {t("orders.shipping_fee")}
+                    </span>
+                    <span className="font-medium text-green-700">
+                      {t("orders.free")}
+                    </span>
                   </div>
                   <Separator />
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-semibold">{t("orders.total")}</span>
-                    <span className="text-lg font-bold text-blue-600">{order.totalPrice.toLocaleString("vi-VN")}đ</span>
+                    <span className="text-lg font-semibold">
+                      {t("orders.total")}
+                    </span>
+                    <span className="text-lg font-bold text-blue-600">
+                      {order.paymentDetails?.paymentAmount.toLocaleString(
+                        "vi-VN"
+                      )}
+                      đ
+                    </span>
                   </div>
                 </div>
               </div>
@@ -368,7 +456,9 @@ const OrderDetails = () => {
               {/* Payment & Shipping */}
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
                 <div className="p-6 border-b border-gray-200/50">
-                  <h2 className="text-lg font-semibold text-gray-900">Thanh toán & Giao hàng</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {t("orders.payment_shipping")}
+                  </h2>
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="flex items-center space-x-3">
@@ -376,8 +466,12 @@ const OrderDetails = () => {
                       <CreditCard className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{order.paymentMethod.name}</p>
-                      <p className="text-sm text-gray-500">Phương thức thanh toán</p>
+                      <p className="font-medium text-gray-900">
+                        {order.paymentMethod.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {t("orders.payment_method")}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -386,9 +480,13 @@ const OrderDetails = () => {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">
-                        {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}
+                        {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm", {
+                          locale: vi,
+                        })}
                       </p>
-                      <p className="text-sm text-gray-500">Ngày đặt hàng</p>
+                      <p className="text-sm text-gray-500">
+                        {t("orders.order_date")}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -396,19 +494,25 @@ const OrderDetails = () => {
 
               {/* Order Status */}
               <div
-                className={`bg-gradient-to-r ${statusConfig.bgGradient} rounded-2xl shadow-xl border-2 ${statusConfig.color.split(" ")[2]} overflow-hidden`}
+                className={`bg-gradient-to-r ${
+                  statusConfig.bgGradient
+                } rounded-2xl shadow-xl border-2 ${
+                  statusConfig.color.split(" ")[2]
+                } overflow-hidden`}
               >
                 <div className="p-6 text-center">
                   <div className="w-16 h-16 mx-auto mb-4 bg-white rounded-full flex items-center justify-center shadow-lg">
                     {statusConfig.icon}
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">{statusConfig.label}</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    {statusConfig.label}
+                  </h3>
                   <p className="text-sm opacity-80">
                     {order.status === "delivered"
-                      ? "Đơn hàng đã được giao thành công"
+                      ? t("orders.delivered_successfully")
                       : order.status === "shipped"
-                        ? "Đơn hàng đang trên đường giao đến bạn"
-                        : "Đơn hàng đang được xử lý"}
+                      ? t("orders.shipped_on_the_way")
+                      : t("orders.processing")}
                   </p>
                 </div>
               </div>
@@ -417,7 +521,7 @@ const OrderDetails = () => {
         </motion.div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default OrderDetails
+export default OrderDetails;

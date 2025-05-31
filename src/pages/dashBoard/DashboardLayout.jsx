@@ -23,6 +23,7 @@ import {
   Package,
   UserCheck,
   Bookmark,
+  Ticket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,43 +47,43 @@ const ImprovedDashboardLayout = () => {
 
   const menuItems = [
     {
-      title: "Dashboard",
+      title: "Tổng quan",
       icon: LayoutDashboard,
       path: "/dashboard",
       badge: null,
     },
     {
-      title: "Add Book",
+      title: "Thêm sách",
       icon: Plus,
       path: "/dashboard/add-new-book",
       badge: null,
     },
     {
-      title: "Manage Books",
+      title: "Quản lý sách",
       icon: BookOpen,
       path: "/dashboard/manage-books",
       badge: null,
     },
     {
-      title: "Categories",
+      title: "Quản lý thể loại",
       icon: Bookmark,
       path: "/dashboard/manage-categories",
       badge: null,
     },
     {
-      title: "Authors",
+      title: "Quản lý tác giả",
       icon: UserCheck,
       path: "/dashboard/manage-authors",
       badge: null,
     },
     {
-      title: "Users",
+      title: "Quản lý người dùng",
       icon: Users,
       path: "/dashboard/manage-users",
       badge: null,
     },
     {
-      title: "Orders",
+      title: "Quản lý đơn hàng",
       icon: ShoppingCart,
       path: "/dashboard/manage-orders",
       badge: "12",
@@ -92,6 +93,12 @@ const ImprovedDashboardLayout = () => {
       icon: MessageCircle,
       path: "/dashboard/chat",
       badge: "5",
+    },
+    {
+      title: "Mã giảm giá",
+      icon: Ticket,
+      path: "/dashboard/manage-voucher",
+      badge: null,
     },
   ];
 
@@ -225,7 +232,7 @@ const ImprovedDashboardLayout = () => {
                   className="w-full mt-3 justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50 bg-white border border-gray-200 shadow-sm"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
-                  Logout
+                  Đăng xuất
                 </Button>
               </div>
             </motion.aside>

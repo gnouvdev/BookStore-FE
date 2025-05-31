@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BookOpen,
   DollarSign,
@@ -35,20 +35,36 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import axios from "axios";
-import baseUrl from "../../utils/baseURL";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import CustomDialog from "@/components/ui/custom-dialog";
+import baseUrl from "../../utils/baseURL";
 
 const ImprovedDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showAllTopBooks, setShowAllTopBooks] = useState(false);
   const [reportData, setReportData] = useState({
-    sales: [],
-    orders: [],
-    users: [],
-    inventory: [],
+    sales: { overview: null, monthlyData: [] },
+    orders: {
+      overview: null,
+      orders: [],
+      stats: {
+        pending: 0,
+        processing: 0,
+        shipped: 0,
+        delivered: 0,
+        completed: 0,
+        cancelled: 0,
+      },
+    },
+    users: { overview: null, users: [] },
+    inventory: {
+      overview: null,
+      books: [],
+      stats: { totalBooks: 0, outOfStock: 0, lowStock: 0, inStock: 0 },
+    },
   });
   const [data, setData] = useState({
     totalBooks: 0,
@@ -62,6 +78,7 @@ const ImprovedDashboard = () => {
     monthlySales: [],
     recentOrders: [],
     topSellingBooks: [],
+    categoryStats: [],
   });
   const [reportType, setReportType] = useState("sales");
   const [dateRange] = useState("30days");
@@ -84,30 +101,37 @@ const ImprovedDashboard = () => {
         axios.get(`${baseUrl}/admin/dashboard/overview`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`${baseUrl}/admin/dashboard/sales`, {
+        axios.get(`${baseUrl}/admin/dashboard/monthly-sales`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get(`${baseUrl}/admin/dashboard/recent-orders`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`${baseUrl}/admin/dashboard/top-books`, {
+        axios.get(`${baseUrl}/admin/dashboard/top-selling-books`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
 
-      // Update dashboard data
+      // Update dashboard data with proper data structure
       setData({
-        totalBooks: overviewRes.data.totalBooks,
-        totalSales: overviewRes.data.totalSales,
-        trendingBooks: overviewRes.data.trendingBooks,
-        totalOrders: overviewRes.data.totalOrders,
-        totalUsers: overviewRes.data.totalUsers,
-        pendingOrders: overviewRes.data.pendingOrders,
-        completedOrders: overviewRes.data.completedOrders,
-        averageOrderValue: overviewRes.data.averageOrderValue,
-        monthlySales: salesRes.data,
-        recentOrders: ordersRes.data,
-        topSellingBooks: booksRes.data,
+        totalBooks: overviewRes.data?.totalBooks || 0,
+        totalSales: overviewRes.data?.totalSales || 0,
+        trendingBooks: overviewRes.data?.trendingBooks || 0,
+        totalOrders: overviewRes.data?.totalOrders || 0,
+        totalUsers: overviewRes.data?.totalUsers || 0,
+        pendingOrders: overviewRes.data?.pendingOrders || 0,
+        completedOrders: overviewRes.data?.completedOrders || 0,
+        averageOrderValue: overviewRes.data?.averageOrderValue || 0,
+        monthlySales: Array.isArray(salesRes.data) ? salesRes.data : [],
+        recentOrders: Array.isArray(ordersRes.data?.orders)
+          ? ordersRes.data.orders
+          : [],
+        topSellingBooks: Array.isArray(booksRes.data?.books)
+          ? booksRes.data.books
+          : [],
+        categoryStats: Array.isArray(booksRes.data?.categoryStats)
+          ? booksRes.data.categoryStats
+          : [],
       });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -128,12 +152,6 @@ const ImprovedDashboard = () => {
   }, []);
 
   // Fetch report data when modal opens
-  useEffect(() => {
-    if (showReportModal) {
-      fetchReportData();
-    }
-  }, [showReportModal, reportType]);
-
   const fetchReportData = async () => {
     try {
       setReportLoading(true);
@@ -157,7 +175,7 @@ const ImprovedDashboard = () => {
             axios.get(`${baseUrl}/admin/dashboard/overview${dateParams}`, {
               headers: { Authorization: `Bearer ${token}` },
             }),
-            axios.get(`${baseUrl}/admin/dashboard/sales${dateParams}`, {
+            axios.get(`${baseUrl}/admin/dashboard/monthly-sales${dateParams}`, {
               headers: { Authorization: `Bearer ${token}` },
             }),
           ]);
@@ -165,7 +183,7 @@ const ImprovedDashboard = () => {
             ...prev,
             sales: {
               overview: overviewRes.data,
-              monthlyData: salesRes.data,
+              monthlyData: Array.isArray(salesRes.data) ? salesRes.data : [],
             },
           }));
           break;
@@ -183,7 +201,49 @@ const ImprovedDashboard = () => {
             ...prev,
             orders: {
               overview: overviewRes.data,
-              orders: ordersRes.data,
+              orders: Array.isArray(ordersRes.data?.orders)
+                ? ordersRes.data.orders
+                : [],
+              stats: ordersRes.data?.stats || {
+                pending: 0,
+                processing: 0,
+                shipped: 0,
+                delivered: 0,
+                completed: 0,
+                cancelled: 0,
+              },
+            },
+          }));
+          break;
+        }
+        case "users": {
+          const [overviewRes, usersRes] = await Promise.all([
+            axios.get(`${baseUrl}/admin/dashboard/overview${dateParams}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+            axios.get(`${baseUrl}/admin/dashboard/users${dateParams}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+          ]);
+          setReportData((prev) => ({
+            ...prev,
+            users: {
+              overview: overviewRes.data,
+              users: Array.isArray(usersRes.data?.users)
+                ? usersRes.data.users
+                : [],
+              stats: {
+                user: usersRes.data?.stats?.user || 0,
+                admin: usersRes.data?.stats?.admin || 0,
+                active:
+                  usersRes.data?.users?.filter(
+                    (user) => user.status === "active"
+                  ).length || 0,
+                inactive:
+                  usersRes.data?.users?.filter(
+                    (user) => user.status === "inactive"
+                  ).length || 0,
+              },
             },
           }));
           break;
@@ -193,15 +253,26 @@ const ImprovedDashboard = () => {
             axios.get(`${baseUrl}/admin/dashboard/overview${dateParams}`, {
               headers: { Authorization: `Bearer ${token}` },
             }),
-            axios.get(`${baseUrl}/admin/dashboard/top-books${dateParams}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
+            axios.get(
+              `${baseUrl}/admin/dashboard/top-selling-books${dateParams}`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            ),
           ]);
           setReportData((prev) => ({
             ...prev,
             inventory: {
               overview: overviewRes.data,
-              books: booksRes.data,
+              books: Array.isArray(booksRes.data?.books)
+                ? booksRes.data.books
+                : [],
+              stats: booksRes.data?.stats || {
+                totalBooks: 0,
+                outOfStock: 0,
+                lowStock: 0,
+                inStock: 0,
+              },
             },
           }));
           break;
@@ -220,6 +291,12 @@ const ImprovedDashboard = () => {
       setReportLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (showReportModal) {
+      fetchReportData();
+    }
+  }, [showReportModal, reportType]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -323,6 +400,16 @@ const ImprovedDashboard = () => {
     return new Date();
   };
 
+  // Add this function to handle view all books
+  const handleViewAllBooks = () => {
+    setShowAllTopBooks(!showAllTopBooks);
+  };
+
+  const handleViewReport = (type) => {
+    setReportType(type);
+    setShowReportModal(true);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -350,17 +437,15 @@ const ImprovedDashboard = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Dashboard Overview
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">Trang tổng quan</h1>
           <p className="text-gray-500 mt-1">
-            Welcome back! Here's what's happening with your store.
+            Chào mừng trở lại! Đây là những gì đang xảy ra với cửa hàng của bạn.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" className="gap-2">
             <Calendar className="w-4 h-4" />
-            Last 30 days
+            30 ngày gần đây
           </Button>
           <CustomDialog
             open={showReportModal}
@@ -368,7 +453,7 @@ const ImprovedDashboard = () => {
             trigger={
               <Button className="gap-2">
                 <Eye className="w-4 h-4" />
-                View Reports
+                Xem báo cáo
               </Button>
             }
             title={
@@ -376,58 +461,58 @@ const ImprovedDashboard = () => {
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
-                Advanced Analytics & Reports
+                Báo cáo và phân tích chi tiết
               </div>
             }
-            description="Comprehensive insights and detailed reports for your business"
+            description="Thông tin chi tiết và báo cáo đầy đủ cho doanh nghiệp của bạn"
           >
             <div className="flex flex-col lg:flex-row gap-6 mt-6 flex-1 overflow-hidden">
               {/* Left Sidebar - Report Types */}
               <div className="lg:w-80 space-y-3 overflow-y-auto">
                 <h3 className="font-semibold text-gray-900 mb-4">
-                  Report Categories
+                  Danh mục báo cáo
                 </h3>
 
                 {[
                   {
                     key: "sales",
-                    title: "Sales Analytics",
-                    description: "Revenue trends and performance",
+                    title: "Phân tích doanh thu",
+                    description: "Xu hướng doanh thu và hiệu suất",
                     icon: DollarSign,
                     color: "blue",
-                    stats: reportData.sales?.overview
+                    stats: reportData.sales?.overview?.totalSales
                       ? formatCurrency(reportData.sales.overview.totalSales)
                       : formatCurrency(0),
                   },
                   {
                     key: "orders",
-                    title: "Order Management",
-                    description: "Order statistics and tracking",
+                    title: "Quản lý đơn hàng",
+                    description: "Thống kê và theo dõi đơn hàng",
                     icon: ShoppingCart,
                     color: "green",
-                    stats: reportData.orders?.overview
-                      ? `${reportData.orders.overview.totalOrders} orders`
-                      : "0 orders",
+                    stats: reportData.orders?.overview?.totalOrders
+                      ? `${reportData.orders.overview.totalOrders} đơn hàng`
+                      : "0 đơn hàng",
                   },
                   {
                     key: "users",
-                    title: "Customer Insights",
-                    description: "User behavior and demographics",
+                    title: "Thông tin khách hàng",
+                    description: "Hành vi và đặc điểm của khách hàng",
                     icon: Users,
                     color: "purple",
-                    stats: reportData.users?.overview
-                      ? `${reportData.users.overview.totalUsers} users`
-                      : "0 users",
+                    stats: reportData.users?.overview?.totalUsers
+                      ? `${reportData.users.overview.totalUsers} người dùng`
+                      : "0 người dùng",
                   },
                   {
                     key: "inventory",
-                    title: "Inventory Report",
-                    description: "Stock levels and book performance",
+                    title: "Báo cáo kho",
+                    description: "Mức tồn kho và hiệu suất sách",
                     icon: BookOpen,
                     color: "orange",
-                    stats: reportData.inventory?.overview
-                      ? `${reportData.inventory.overview.totalBooks} books`
-                      : "0 books",
+                    stats: reportData.inventory?.overview?.totalBooks
+                      ? `${reportData.inventory.overview.totalBooks} sách`
+                      : "0 sách",
                   },
                 ].map((report) => (
                   <div
@@ -437,7 +522,7 @@ const ImprovedDashboard = () => {
                         ? `border-${report.color}-500 bg-${report.color}-50 shadow-lg`
                         : "border-gray-200 hover:border-gray-300 hover:shadow-md"
                     }`}
-                    onClick={() => setReportType(report.key)}
+                    onClick={() => handleViewReport(report.key)}
                   >
                     <div className="flex items-start gap-3">
                       <div className={`p-2 bg-${report.color}-100 rounded-lg`}>
@@ -477,35 +562,31 @@ const ImprovedDashboard = () => {
                         <div>
                           <h3 className="text-xl font-bold text-gray-900">
                             {reportType === "sales" &&
-                              "Sales Analytics Dashboard"}
+                              "Báo cáo phân tích doanh thu"}
                             {reportType === "orders" &&
-                              "Order Management Report"}
+                              "Báo cáo quản lý đơn hàng"}
                             {reportType === "users" &&
-                              "Customer Insights Report"}
+                              "Báo cáo thông tin khách hàng"}
                             {reportType === "inventory" &&
-                              "Inventory Analysis Report"}
+                              "Báo cáo phân tích kho"}
                           </h3>
                           <p className="text-gray-500 mt-1">
                             {dateRange === "all"
-                              ? "All time data"
+                              ? "Tất cả dữ liệu"
                               : dateRange === "30days"
-                              ? "Last 30 days"
+                              ? "30 ngày qua"
                               : dateRange === "7days"
-                              ? "Last 7 days"
-                              : "Today's data"}
+                              ? "7 ngày qua"
+                              : "Dữ liệu hôm nay"}
                           </p>
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm" className="gap-2">
-                            <FileText className="w-4 h-4" />
-                            PDF
-                          </Button>
                           <Button
                             onClick={() => exportReport(reportType)}
                             className="gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                           >
                             <Download className="w-4 h-4" />
-                            Export Excel
+                            Xuất Excel
                           </Button>
                         </div>
                       </div>
@@ -524,7 +605,7 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        Total Revenue
+                                        Tổng doanh thu
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
                                         {formatCurrency(
@@ -541,7 +622,7 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        Avg Order Value
+                                        Giá trung bình đơn hàng
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
                                         {formatCurrency(data.averageOrderValue)}
@@ -556,7 +637,7 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        Total Orders
+                                        Tổng đơn hàng
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
                                         {data.totalOrders.toLocaleString()}
@@ -577,7 +658,7 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        Pending Orders
+                                        Đơn hàng chờ xử lý
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
                                         {
@@ -595,7 +676,7 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        Completed
+                                        Đã hoàn thành
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
                                         {data.completedOrders}
@@ -610,7 +691,7 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        Processing
+                                        Đang xử lý
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
                                         {data.totalOrders -
@@ -633,7 +714,7 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        Total Users
+                                        Tổng số khách hàng
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
                                         {data.totalUsers.toLocaleString()}
@@ -648,7 +729,7 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        Active Users
+                                        Khách hàng hoạt động
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
                                         {Math.floor(
@@ -665,7 +746,7 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        New Users
+                                        Khách hàng mới
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
                                         {Math.floor(
@@ -688,10 +769,11 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        Total Books
+                                        Tổng số sách
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
-                                        {reportData.inventory.overview.totalBooks.toLocaleString()}
+                                        {reportData.inventory.stats
+                                          ?.totalBooks || 0}
                                       </p>
                                     </div>
                                   </div>
@@ -703,10 +785,11 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        Low Stock
+                                        Sách hết hàng
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
-                                        {Math.floor(data.totalBooks * 0.1)}
+                                        {reportData.inventory.stats
+                                          ?.outOfStock || 0}
                                       </p>
                                     </div>
                                   </div>
@@ -718,10 +801,11 @@ const ImprovedDashboard = () => {
                                     </div>
                                     <div>
                                       <p className="text-sm text-gray-500">
-                                        Best Sellers
+                                        Bán chạy nhất
                                       </p>
                                       <p className="text-xl font-bold text-gray-900">
-                                        {data.topSellingBooks.length}
+                                        {reportData.inventory.books?.length ||
+                                          0}
                                       </p>
                                     </div>
                                   </div>
@@ -733,7 +817,7 @@ const ImprovedDashboard = () => {
                         {/* Chart Visualization */}
                         <div className="bg-white rounded-lg p-6 border border-gray-200">
                           <h4 className="font-semibold text-gray-900 mb-4">
-                            Trend Analysis
+                            Phân tích xu hướng
                           </h4>
                           <div className="h-[400px] min-h-[400px] max-h-[400px]">
                             {reportType === "sales" &&
@@ -745,41 +829,365 @@ const ImprovedDashboard = () => {
                                 </div>
                               )}
                             {reportType === "orders" && (
-                              <div className="h-full flex items-center justify-center">
-                                <div className="text-center">
-                                  <TrendingUp className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                                  <p className="text-gray-500">
-                                    Order trends visualization
-                                  </p>
-                                  <p className="text-sm text-gray-400 mt-2">
-                                    Order volume and status distribution
-                                  </p>
+                              <div className="h-full">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                    <h4 className="font-semibold text-gray-900 mb-4">
+                                      Phân bổ trạng thái đơn hàng
+                                    </h4>
+                                    <div className="space-y-3">
+                                      {[
+                                        {
+                                          status: "pending",
+                                          label: "Chờ xác nhận",
+                                          color: "yellow",
+                                        },
+                                        {
+                                          status: "processing",
+                                          label: "Đang xử lý",
+                                          color: "blue",
+                                        },
+                                        {
+                                          status: "shipped",
+                                          label: "Đang giao hàng",
+                                          color: "purple",
+                                        },
+                                        {
+                                          status: "delivered",
+                                          label: "Đã giao hàng",
+                                          color: "green",
+                                        },
+                                        {
+                                          status: "completed",
+                                          label: "Đã hoàn tất",
+                                          color: "emerald",
+                                        },
+                                        {
+                                          status: "cancelled",
+                                          label: "Đã hủy",
+                                          color: "red",
+                                        },
+                                      ].map(({ status, label, color }) => {
+                                        const count =
+                                          reportData.orders?.stats?.[status] ||
+                                          0;
+                                        const totalOrders = Object.values(
+                                          reportData.orders?.stats || {}
+                                        ).reduce((a, b) => a + b, 0);
+                                        const percentage =
+                                          totalOrders > 0
+                                            ? (
+                                                (count / totalOrders) *
+                                                100
+                                              ).toFixed(1)
+                                            : 0;
+                                        return (
+                                          <div
+                                            key={status}
+                                            className="flex items-center justify-between"
+                                          >
+                                            <div className="flex items-center gap-2">
+                                              <div
+                                                className={`w-3 h-3 rounded-full bg-${color}-500`}
+                                              ></div>
+                                              <span className="text-sm text-gray-600">
+                                                {label}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-sm font-medium">
+                                                {count}
+                                              </span>
+                                              <span className="text-sm text-gray-500">
+                                                ({percentage}%)
+                                              </span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                    <h4 className="font-semibold text-gray-900 mb-4">
+                                      Phương thức thanh toán
+                                    </h4>
+                                    <div className="space-y-3">
+                                      {[
+                                        {
+                                          method: "COD",
+                                          label: "Thanh toán khi nhận hàng",
+                                          color: "blue",
+                                        },
+                                        {
+                                          method: "VNPay",
+                                          label: "Chuyển khoản VNPay",
+                                          color: "green",
+                                        },
+                                      ].map(({ method, label, color }) => {
+                                        const count =
+                                          reportData.orders?.orders?.filter(
+                                            (order) =>
+                                              order.paymentMethod?.name ===
+                                              method
+                                          ).length || 0;
+                                        const totalOrders =
+                                          reportData.orders?.orders?.length ||
+                                          0;
+                                        const percentage =
+                                          totalOrders > 0
+                                            ? (
+                                                (count / totalOrders) *
+                                                100
+                                              ).toFixed(1)
+                                            : 0;
+                                        return (
+                                          <div
+                                            key={method}
+                                            className="flex items-center justify-between"
+                                          >
+                                            <div className="flex items-center gap-2">
+                                              <div
+                                                className={`w-3 h-3 rounded-full bg-${color}-500`}
+                                              ></div>
+                                              <span className="text-sm text-gray-600">
+                                                {label}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-sm font-medium">
+                                                {count}
+                                              </span>
+                                              <span className="text-sm text-gray-500">
+                                                ({percentage}%)
+                                              </span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             )}
                             {reportType === "users" && (
-                              <div className="h-full flex items-center justify-center">
-                                <div className="text-center">
-                                  <PieChart className="w-16 h-16 text-purple-500 mx-auto mb-4" />
-                                  <p className="text-gray-500">
-                                    User analytics dashboard
-                                  </p>
-                                  <p className="text-sm text-gray-400 mt-2">
-                                    User engagement and growth metrics
-                                  </p>
+                              <div className="h-full">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                    <h4 className="font-semibold text-gray-900 mb-4">
+                                      Phân bổ vai trò người dùng
+                                    </h4>
+                                    <div className="space-y-3">
+                                      {[
+                                        {
+                                          role: "user",
+                                          label: "Khách hàng",
+                                          color: "blue",
+                                          count:
+                                            reportData.users?.stats?.user || 0,
+                                        },
+                                        {
+                                          role: "admin",
+                                          label: "Quản trị viên",
+                                          color: "purple",
+                                          count:
+                                            reportData.users?.stats?.admin || 0,
+                                        },
+                                      ].map(({ role, label, color, count }) => {
+                                        const totalUsers =
+                                          (reportData.users?.stats?.user || 0) +
+                                          (reportData.users?.stats?.admin || 0);
+                                        const percentage =
+                                          totalUsers > 0
+                                            ? (
+                                                (count / totalUsers) *
+                                                100
+                                              ).toFixed(1)
+                                            : 0;
+                                        return (
+                                          <div
+                                            key={role}
+                                            className="flex items-center justify-between"
+                                          >
+                                            <div className="flex items-center gap-2">
+                                              <div
+                                                className={`w-3 h-3 rounded-full bg-${color}-500`}
+                                              ></div>
+                                              <span className="text-sm text-gray-600">
+                                                {label}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-sm font-medium">
+                                                {count}
+                                              </span>
+                                              <span className="text-sm text-gray-500">
+                                                ({percentage}%)
+                                              </span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                    <h4 className="font-semibold text-gray-900 mb-4">
+                                      Trạng thái tài khoản
+                                    </h4>
+                                    <div className="space-y-3">
+                                      {[
+                                        {
+                                          status: "active",
+                                          label: "Đang hoạt động",
+                                          color: "green",
+                                          count:
+                                            reportData.users?.users?.length ||
+                                            0,
+                                        },
+                                      ].map(
+                                        ({ status, label, color, count }) => {
+                                          return (
+                                            <div
+                                              key={status}
+                                              className="flex items-center justify-between"
+                                            >
+                                              <div className="flex items-center gap-2">
+                                                <div
+                                                  className={`w-3 h-3 rounded-full bg-${color}-500`}
+                                                ></div>
+                                                <span className="text-sm text-gray-600">
+                                                  {label}
+                                                </span>
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-sm font-medium">
+                                                  {count}
+                                                </span>
+                                                <span className="text-sm text-gray-500">
+                                                  (100%)
+                                                </span>
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             )}
                             {reportType === "inventory" && (
-                              <div className="h-full flex items-center justify-center">
-                                <div className="text-center">
-                                  <Package className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-                                  <p className="text-gray-500">
-                                    Inventory analysis charts
-                                  </p>
-                                  <p className="text-sm text-gray-400 mt-2">
-                                    Stock levels and performance metrics
-                                  </p>
+                              <div className="h-full">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                    <h4 className="font-semibold text-gray-900 mb-4">
+                                      Tình trạng tồn kho
+                                    </h4>
+                                    <div className="space-y-3">
+                                      {[
+                                        {
+                                          status: "in_stock",
+                                          label: "Còn hàng",
+                                          color: "green",
+                                          getCount: (stats) =>
+                                            stats?.inStock || 0,
+                                        },
+                                        {
+                                          status: "low_stock",
+                                          label: "Sắp hết hàng",
+                                          color: "yellow",
+                                          getCount: (stats) =>
+                                            stats?.lowStock || 0,
+                                        },
+                                        {
+                                          status: "out_of_stock",
+                                          label: "Hết hàng",
+                                          color: "red",
+                                          getCount: (stats) =>
+                                            stats?.outOfStock || 0,
+                                        },
+                                      ].map(
+                                        ({
+                                          status,
+                                          label,
+                                          color,
+                                          getCount,
+                                        }) => {
+                                          const count = getCount(
+                                            reportData.inventory?.stats
+                                          );
+                                          const totalBooks =
+                                            reportData.inventory?.stats
+                                              ?.totalBooks || 0;
+                                          const percentage =
+                                            totalBooks > 0
+                                              ? (
+                                                  (count / totalBooks) *
+                                                  100
+                                                ).toFixed(1)
+                                              : 0;
+
+                                          return (
+                                            <div
+                                              key={status}
+                                              className="flex items-center justify-between"
+                                            >
+                                              <div className="flex items-center gap-2">
+                                                <div
+                                                  className={`w-3 h-3 rounded-full bg-${color}-500`}
+                                                ></div>
+                                                <span className="text-sm text-gray-600">
+                                                  {label}
+                                                </span>
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-sm font-medium">
+                                                  {count}
+                                                </span>
+                                                <span className="text-sm text-gray-500">
+                                                  ({percentage}%)
+                                                </span>
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                    <h4 className="font-semibold text-gray-900 mb-4">
+                                      Danh mục sách
+                                    </h4>
+                                    <div className="space-y-3">
+                                      {data.categoryStats.map((category) => {
+                                        const percentage =
+                                          data.totalBooks > 0
+                                            ? (
+                                                (category.count /
+                                                  data.totalBooks) *
+                                                100
+                                              ).toFixed(1)
+                                            : 0;
+                                        return (
+                                          <div
+                                            key={category._id}
+                                            className="flex items-center justify-between"
+                                          >
+                                            <span className="text-sm text-gray-600">
+                                              {category.name}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-sm font-medium">
+                                                {category.count}
+                                              </span>
+                                              <span className="text-sm text-gray-500">
+                                                ({percentage}%)
+                                              </span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             )}
@@ -790,7 +1198,7 @@ const ImprovedDashboard = () => {
                         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                           <div className="p-4 border-b border-gray-200 bg-gray-50">
                             <h4 className="font-semibold text-gray-900">
-                              Detailed Breakdown
+                              Phân tích chi tiết
                             </h4>
                           </div>
                           <div className="overflow-x-auto">
@@ -800,64 +1208,64 @@ const ImprovedDashboard = () => {
                                   {reportType === "sales" && (
                                     <>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Period
+                                        Khoảng thời gian
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Revenue
+                                        Doanh thu
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Orders
+                                        Đơn hàng
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Avg Order
+                                        Đơn hàng trung bình
                                       </th>
                                     </>
                                   )}
                                   {reportType === "orders" && (
                                     <>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Order ID
+                                        Mã đơn hàng
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Customer
+                                        Khách hàng
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Status
+                                        Trạng thái
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Total
+                                        Tổng
                                       </th>
                                     </>
                                   )}
                                   {reportType === "users" && (
                                     <>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        User
+                                        Khách hàng
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Orders
+                                        Đơn hàng
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Total Spent
+                                        Tổng chi tiêu
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Last Order
+                                        Đơn hàng cuối cùng
                                       </th>
                                     </>
                                   )}
                                   {reportType === "inventory" && (
                                     <>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Book
+                                        Sách
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Stock
+                                        Tồn kho
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Sold
+                                        Đã bán
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Revenue
+                                        Doanh thu
                                       </th>
                                     </>
                                   )}
@@ -958,7 +1366,7 @@ const ImprovedDashboard = () => {
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Books</p>
+              <p className="text-sm font-medium text-gray-500">Tổng số sách</p>
               <p className="text-3xl font-bold text-gray-900 mt-1">
                 {data.totalBooks.toLocaleString()}
               </p>
@@ -968,7 +1376,7 @@ const ImprovedDashboard = () => {
                   {data.trendingBooks > 0 ? "+" : ""}
                   {data.trendingBooks}%
                 </span>
-                <span className="text-gray-500 ml-1">vs last month</span>
+                <span className="text-gray-500 ml-1">so với tháng trước</span>
               </div>
             </div>
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -980,7 +1388,9 @@ const ImprovedDashboard = () => {
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Revenue</p>
+              <p className="text-sm font-medium text-gray-500">
+                Tổng doanh thu
+              </p>
               <p className="text-3xl font-bold text-gray-900 mt-1">
                 {formatCurrency(data.totalSales)}
               </p>
@@ -1000,7 +1410,7 @@ const ImprovedDashboard = () => {
                     : 0}
                   %
                 </span>
-                <span className="text-gray-500 ml-1">vs last month</span>
+                <span className="text-gray-500 ml-1">so với tháng trước</span>
               </div>
             </div>
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -1012,7 +1422,7 @@ const ImprovedDashboard = () => {
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Orders</p>
+              <p className="text-sm font-medium text-gray-500">Tổng đơn hàng</p>
               <p className="text-3xl font-bold text-gray-900 mt-1">
                 {data.totalOrders.toLocaleString()}
               </p>
@@ -1051,7 +1461,7 @@ const ImprovedDashboard = () => {
                     : 0}
                   %
                 </span>
-                <span className="text-gray-500 ml-1">vs last month</span>
+                <span className="text-gray-500 ml-1">so với tháng trước</span>
               </div>
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -1063,7 +1473,9 @@ const ImprovedDashboard = () => {
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Users</p>
+              <p className="text-sm font-medium text-gray-500">
+                Tổng số khách hàng
+              </p>
               <p className="text-3xl font-bold text-gray-900 mt-1">
                 {data.totalUsers.toLocaleString()}
               </p>
@@ -1101,108 +1513,124 @@ const ImprovedDashboard = () => {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">
-                Recent Orders
+                Đơn hàng gần đây
               </h3>
-              <Badge variant="secondary">{data.recentOrders.length}</Badge>
+              <Badge variant="secondary">
+                {data.recentOrders?.length || 0}
+              </Badge>
             </div>
           </div>
           <ScrollArea className="h-[400px]">
             <div className="p-6 space-y-4">
-              {data.recentOrders.map((order) => (
-                <div
-                  key={order._id}
-                  className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage
-                      src={order.user.photoURL || "/placeholder.svg"}
-                      alt={order.user.fullName}
-                    />
-                    <AvatarFallback>
-                      {order.user.fullName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {order.user.fullName}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {format(new Date(order.createdAt), "MMM dd, HH:mm")}
-                    </p>
-                    <Badge
-                      className={`text-xs mt-1 ${getStatusColor(order.status)}`}
-                      variant="secondary"
-                    >
-                      {getStatusIcon(order.status)}
-                      <span className="ml-1 capitalize">{order.status}</span>
-                    </Badge>
+              {data.recentOrders?.map((order) => {
+                const userName = order.user?.fullName || "Khách hàng";
+                const userInitial = userName.charAt(0);
+                const userAvatar = order.user?.photoURL;
+
+                return (
+                  <div
+                    key={order._id}
+                    className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage
+                        src={userAvatar || "/placeholder.svg"}
+                        alt={userName}
+                      />
+                      <AvatarFallback>{userInitial}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {userName}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {order.createdAt
+                          ? format(new Date(order.createdAt), "MMM dd, HH:mm")
+                          : "N/A"}
+                      </p>
+                      <Badge
+                        className={`text-xs mt-1 ${getStatusColor(
+                          order.status
+                        )}`}
+                        variant="secondary"
+                      >
+                        {getStatusIcon(order.status)}
+                        <span className="ml-1 capitalize">
+                          {order.status || "pending"}
+                        </span>
+                      </Badge>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900">
+                        {formatCurrency(order.totalPrice || 0)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {order.productIds?.length || 0} items
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatCurrency(order.totalPrice)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {order.productIds.length} items
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
         </div>
       </div>
 
       {/* Top Selling Books */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mt-6">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">
-              Top Selling Books
+              Sách bán chạy
             </h3>
-            <Button variant="outline" size="sm">
-              View All
+            <Button variant="outline" size="sm" onClick={handleViewAllBooks}>
+              {showAllTopBooks ? "Thu gọn" : "Xem tất cả"}
             </Button>
           </div>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {data.topSellingBooks.slice(0, 4).map((book, index) => (
-              <div
-                key={book._id}
-                className="flex items-center space-x-4 p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
-              >
-                <div className="relative">
-                  <img
-                    src={book.coverImage || "/placeholder.svg"}
-                    alt={book.title}
-                    className="w-12 h-16 object-cover rounded"
-                  />
-                  <Badge className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center p-0">
-                    {index + 1}
-                  </Badge>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {book.title}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {book.author}
-                  </p>
-                  <div className="flex items-center mt-2 space-x-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {book.totalSold} sold
+            {data.topSellingBooks
+              ?.slice()
+              .sort((a, b) => b.totalSold - a.totalSold)
+              .slice(0, showAllTopBooks ? undefined : 4)
+              .map((book, index) => (
+                <div
+                  key={book._id}
+                  className="flex items-center space-x-4 p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
+                >
+                  <div className="relative">
+                    <img
+                      src={book.coverImage || "/placeholder.svg"}
+                      alt={book.title}
+                      className="w-12 h-16 object-cover rounded"
+                    />
+                    <Badge className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center p-0">
+                      {index + 1}
                     </Badge>
-                    <div className="flex items-center">
-                      <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                      <span className="text-xs text-gray-500 ml-1">4.8</span>
-                    </div>
                   </div>
-                  <p className="text-sm font-medium text-gray-900 mt-1">
-                    {formatCurrency(book.totalRevenue)}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {book.title}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {book.author}
+                    </p>
+                    <div className="flex items-center mt-2 space-x-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {book.totalSold} sold
+                      </Badge>
+                      <div className="flex items-center">
+                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                        <span className="text-xs text-gray-500 ml-1">4.8</span>
+                      </div>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {formatCurrency(book.totalRevenue)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       </div>

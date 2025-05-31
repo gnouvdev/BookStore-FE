@@ -70,6 +70,10 @@ const categories = [
   },
 ];
 
+const removeDiacritics = (str) => {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
 const EnhancedNavbar = () => {
   const [query, setQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -79,6 +83,8 @@ const EnhancedNavbar = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [suggestedText, setSuggestedText] = useState("");
+  const [showSuggestion, setShowSuggestion] = useState(false);
 
   const navigate = useNavigate();
   const cartItems = useSelector((state) => state.cart.cartItems);
@@ -91,6 +97,7 @@ const EnhancedNavbar = () => {
   const dropdownRef = useRef(null);
   const logoRef = useRef(null);
   const navRef = useRef(null);
+  const inputRef = useRef(null);
 
   const [deleteSearchHistory] = useDeleteSearchHistoryMutation();
   const [addSearchHistory] = useAddSearchHistoryMutation();
@@ -183,10 +190,26 @@ const EnhancedNavbar = () => {
     }
   }, 300);
 
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
+  const handleSmartSearch = (value) => {
     setInputValue(value);
     debouncedSearch(value);
+
+    if (suggestions?.data?.length > 0) {
+      const normalizedInput = removeDiacritics(value.toLowerCase());
+      const match = suggestions.data.find((suggestion) =>
+        removeDiacritics(suggestion.title.toLowerCase()).startsWith(
+          normalizedInput
+        )
+      );
+
+      if (match) {
+        setSuggestedText(match.title);
+        setShowSuggestion(true);
+      } else {
+        setSuggestedText("");
+        setShowSuggestion(false);
+      }
+    }
   };
 
   const handleSearch = async () => {
@@ -224,11 +247,15 @@ const EnhancedNavbar = () => {
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       handleSearch();
-    }
-    if (e.key === "Escape") {
+    } else if (e.key === "Escape") {
       setShowSuggestions(false);
       setShowHistory(false);
       setIsSearchFocused(false);
+    } else if (e.key === "Tab" && showSuggestion) {
+      e.preventDefault();
+      setInputValue(suggestedText);
+      setQuery(suggestedText);
+      setShowSuggestion(false);
     }
   };
 
@@ -270,6 +297,17 @@ const EnhancedNavbar = () => {
     setIsSearchFocused(true);
     if (currentUser && inputValue.length === 0) {
       setShowHistory(true);
+    }
+  };
+
+  const handleReset = () => {
+    setInputValue("");
+    setQuery("");
+    setShowSuggestions(false);
+    setShowSuggestion(false);
+    setSuggestedText("");
+    if (inputRef.current) {
+      inputRef.current.focus();
     }
   };
 
@@ -346,15 +384,23 @@ const EnhancedNavbar = () => {
                   <IoSearchOutline className="w-5 h-5 text-gray-500" />
                 </motion.button>
 
-                <input
-                  type="text"
-                  placeholder={t("search.search_placeholder")}
-                  value={inputValue}
-                  onChange={handleSearchChange}
-                  onKeyDown={handleKeyDown}
-                  onFocus={handleInputFocus}
-                  className="w-full py-3 pl-12 pr-16 bg-transparent rounded-2xl focus:outline-none placeholder-gray-400"
-                />
+                <div className="relative w-full">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder={t("search.search_placeholder")}
+                    value={inputValue}
+                    onChange={(e) => handleSmartSearch(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={handleInputFocus}
+                    className="w-full py-3 pl-12 pr-16 bg-transparent rounded-2xl focus:outline-none placeholder-gray-400"
+                  />
+                  {showSuggestion && (
+                    <div className="absolute top-0 left-0 w-full py-3 pl-12 pr-16 text-gray-400 pointer-events-none">
+                      {suggestedText}
+                    </div>
+                  )}
+                </div>
 
                 <AnimatePresence>
                   {inputValue && (
@@ -362,11 +408,7 @@ const EnhancedNavbar = () => {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
-                      onClick={() => {
-                        setInputValue("");
-                        setQuery("");
-                        setShowSuggestions(false);
-                      }}
+                      onClick={handleReset}
                       className="absolute right-12 p-1 rounded-full hover:bg-gray-200 transition-colors duration-200"
                     >
                       <IoClose className="w-4 h-4 text-gray-400" />

@@ -208,7 +208,7 @@ const EnhancedUpdateBook = () => {
   }, 300);
 
   const handleAuthError = () => {
-    toast.error("Session expired. Please log in again.");
+    toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/admin");
@@ -230,13 +230,13 @@ const EnhancedUpdateBook = () => {
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select a valid image file");
+      toast.error("Vui lòng chọn một tệp ảnh hợp lệ");
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image size should be less than 5MB");
+      toast.error("Kích thước ảnh phải nhỏ hơn 5MB");
       return;
     }
 
@@ -269,7 +269,7 @@ const EnhancedUpdateBook = () => {
         setCoverImage(url);
         setValue("coverImage", url);
         setHasChanges(true);
-        toast.success("Image uploaded successfully!", {
+        toast.success("Ảnh đã được tải lên thành công!", {
           icon: "🎉",
           style: {
             borderRadius: "12px",
@@ -278,11 +278,11 @@ const EnhancedUpdateBook = () => {
           },
         });
       } else {
-        toast.error("Failed to upload image.");
+        toast.error("Không thể tải lên ảnh.");
       }
     } catch (error) {
       console.error("Image upload failed:", error);
-      toast.error("An error occurred while uploading the image.");
+      toast.error("Đã xảy ra lỗi khi tải lên ảnh.");
     } finally {
       setIsUploading(false);
       setTimeout(() => setUploadProgress(0), 1000);
@@ -291,13 +291,13 @@ const EnhancedUpdateBook = () => {
 
   const onSubmit = async (data) => {
     if (!isAuthenticated) {
-      toast.error("Please login to continue");
+      toast.error("Vui lòng đăng nhập để tiếp tục");
       navigate("/admin");
       return;
     }
 
     if (!bookData || !bookData._id) {
-      toast.error("Book data is missing. Cannot update.");
+      toast.error("Dữ liệu cuốn sách bị thiếu. Không thể cập nhật.");
       return;
     }
 
@@ -331,12 +331,12 @@ const EnhancedUpdateBook = () => {
 
       // Success animation
       Swal.fire({
-        title: "🎉 Book Updated Successfully!",
-        text: "Your book details have been updated successfully!",
+        title: "🎉 Cuốn sách đã được cập nhật thành công!",
+        text: "Chi tiết cuốn sách của bạn đã được cập nhật thành công!",
         icon: "success",
-        confirmButtonText: "Continue Editing",
+        confirmButtonText: "Tiếp tục chỉnh sửa",
         showCancelButton: true,
-        cancelButtonText: "Back to Books",
+        cancelButtonText: "Trở lại cuốn sách",
         background: "#fff",
         customClass: {
           popup: "rounded-2xl",
@@ -356,7 +356,7 @@ const EnhancedUpdateBook = () => {
         handleAuthError();
       } else {
         const errorMessage =
-          error.data?.message || "Failed to update book. Please try again.";
+          error.data?.message || "Không thể cập nhật cuốn sách. Vui lòng thử lại.";
         toast.error(errorMessage, {
           style: {
             borderRadius: "12px",
@@ -415,7 +415,7 @@ const EnhancedUpdateBook = () => {
             className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"
           />
           <p className="text-xl font-semibold text-gray-700">
-            Loading book data...
+            Đang tải dữ liệu cuốn sách...
           </p>
         </motion.div>
       </div>
@@ -432,9 +432,9 @@ const EnhancedUpdateBook = () => {
         >
           <div className="text-6xl mb-4">😞</div>
           <h2 className="text-2xl font-bold text-red-600 mb-2">
-            Error Loading Book
+              Lỗi tải dữ liệu cuốn sách
           </h2>
-          <p className="text-gray-600">Failed to load book data</p>
+          <p className="text-gray-600">Không thể tải dữ liệu cuốn sách</p>
         </motion.div>
       </div>
     );
@@ -495,10 +495,10 @@ const EnhancedUpdateBook = () => {
             </motion.div>
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Update Book
+                Cập nhật sách
               </h1>
               <p className="text-gray-600 mt-1">
-                Edit book details and information
+                Chỉnh sửa chi tiết và thông tin sách
               </p>
             </div>
           </div>
@@ -511,7 +511,7 @@ const EnhancedUpdateBook = () => {
             >
               <p className="text-yellow-800 text-sm">
                 <FaEdit className="inline mr-2" />
-                You have unsaved changes
+                Bạn có thay đổi chưa lưu
               </p>
             </motion.div>
           )}
@@ -531,19 +531,19 @@ const EnhancedUpdateBook = () => {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-xl font-bold text-gray-800 mb-4">
-                    Basic Information
+                    Thông tin cơ bản
                   </h2>
 
                   {/* Title */}
                   <div className="mb-6">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <FaBook className="inline mr-2" />
-                      Book Title *
+                      Tên sách *
                     </label>
                     <input
-                      {...register("title", { required: "Title is required" })}
+                      {...register("title", { required: "Tên sách là bắt buộc" })}
                       type="text"
-                      placeholder="Enter book title"
+                      placeholder="Nhập tên sách"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                       onChange={() => setHasChanges(true)}
                     />
@@ -579,7 +579,7 @@ const EnhancedUpdateBook = () => {
                             }
                           : null
                       }
-                      placeholder="Search or select an author"
+                      placeholder="Tìm kiếm hoặc chọn tác giả"
                       styles={customSelectStyles}
                     />
                   </div>
@@ -587,14 +587,14 @@ const EnhancedUpdateBook = () => {
                   {/* Description */}
                   <div className="mb-6">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Description *
+                      Mô tả *
                     </label>
                     <textarea
                       {...register("description", {
                         required: "Description is required",
                       })}
                       rows={4}
-                      placeholder="Enter book description"
+                      placeholder="Nhập mô tả sách"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200 resize-none"
                       onChange={() => setHasChanges(true)}
                     />
@@ -608,12 +608,12 @@ const EnhancedUpdateBook = () => {
                   {/* Publisher */}
                   <div className="mb-6">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Publisher
+                      Nhà xuất bản
                     </label>
                     <input
                       {...register("publish")}
                       type="text"
-                      placeholder="Enter publisher name"
+                      placeholder="Nhập tên nhà xuất bản"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                       onChange={() => setHasChanges(true)}
                     />
@@ -625,14 +625,14 @@ const EnhancedUpdateBook = () => {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-xl font-bold text-gray-800 mb-4">
-                    Details & Pricing
+                    Chi tiết và giá
                   </h2>
 
                   {/* Category */}
                   <div className="mb-6">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <FaTag className="inline mr-2" />
-                      Category *
+                      Thể loại *
                     </label>
                     <select
                       {...register("category", {
@@ -641,7 +641,7 @@ const EnhancedUpdateBook = () => {
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                       onChange={() => setHasChanges(true)}
                     >
-                      <option value="">Choose A Category</option>
+                      <option value="">Chọn một thể loại</option>
                       {categories && categories.length > 0 ? (
                         categories.map((category) => (
                           <option key={category.value} value={category.value}>
@@ -649,7 +649,7 @@ const EnhancedUpdateBook = () => {
                           </option>
                         ))
                       ) : (
-                        <option disabled>Loading categories...</option>
+                        <option disabled>Đang tải thể loại...</option>
                       )}
                     </select>
                     {errors.category && (
@@ -663,14 +663,14 @@ const EnhancedUpdateBook = () => {
                   <div className="mb-6">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <FaImage className="inline mr-2" />
-                      Cover Image
+                      Hình ảnh bìa
                     </label>
                     <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition-colors duration-200">
                       {imagePreview ? (
                         <div className="space-y-4">
                           <img
                             src={imagePreview || "/placeholder.svg"}
-                            alt="Cover Preview"
+                            alt="Ảnh bìa"
                             className="max-w-32 h-40 object-cover rounded-lg mx-auto shadow-lg"
                           />
                           {isUploading && (
@@ -692,17 +692,17 @@ const EnhancedUpdateBook = () => {
                             }}
                             className="text-red-500 hover:text-red-700 text-sm"
                           >
-                            Remove Image
+                            Xóa ảnh
                           </button>
                         </div>
                       ) : (
                         <div>
                           <FaCloudUploadAlt className="text-4xl text-gray-400 mx-auto mb-4" />
                           <p className="text-gray-600 mb-2">
-                            Click to upload or drag and drop
+                            Nhấp để tải lên hoặc kéo và thả
                           </p>
                           <p className="text-sm text-gray-500">
-                            PNG, JPG up to 5MB
+                            PNG, JPG lên đến 5MB
                           </p>
                         </div>
                       )}
@@ -726,11 +726,11 @@ const EnhancedUpdateBook = () => {
                       type="text"
                       value={tags}
                       onChange={handleTagsChange}
-                      placeholder="Enter tags (comma-separated)"
+                      placeholder="Nhập tags (phân cách bằng dấu phẩy)"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                     />
                     <p className="text-sm text-gray-500 mt-1">
-                      Separate tags with commas (e.g., fiction, romance,
+                      Tách tags bằng dấu phẩy (ví dụ: fiction, romance,
                       bestseller)
                     </p>
                   </div>
@@ -739,15 +739,15 @@ const EnhancedUpdateBook = () => {
                   <div className="mb-6">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <FaLanguage className="inline mr-2" />
-                      Language
+                      Ngôn ngữ
                     </label>
                     <select
                       value={language}
                       onChange={handleLanguageChange}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                     >
-                      <option value="Tiếng Anh">English</option>
-                      <option value="Tiếng Việt">Vietnamese</option>
+                      <option value="Tiếng Anh">Tiếng Anh</option>
+                      <option value="Tiếng Việt">Tiếng Việt</option>
                     </select>
                   </div>
                 </div>
@@ -757,7 +757,7 @@ const EnhancedUpdateBook = () => {
             {/* Pricing Section */}
             <div className="mt-8 pt-8 border-t border-gray-200">
               <h2 className="text-xl font-bold text-gray-800 mb-6">
-                Pricing & Inventory
+                Giá và tồn kho
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -765,7 +765,7 @@ const EnhancedUpdateBook = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     <RiPriceTag3Line className="inline mr-2" />
-                    Original Price
+                    Giá gốc
                   </label>
                   <input
                     {...register("oldPrice")}
@@ -781,11 +781,11 @@ const EnhancedUpdateBook = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     <FaDollarSign className="inline mr-2" />
-                    Sale Price *
+                    Giá bán
                   </label>
                   <input
                     {...register("newPrice", {
-                      required: "Sale price is required",
+                      required: "Giá bán là bắt buộc",
                       min: 0,
                     })}
                     type="number"
@@ -804,7 +804,7 @@ const EnhancedUpdateBook = () => {
                 {/* Quantity */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Quantity in Stock *
+                    Số lượng trong kho
                   </label>
                   <input
                     {...register("quantity", {
@@ -812,7 +812,7 @@ const EnhancedUpdateBook = () => {
                       min: 1,
                     })}
                     type="number"
-                    placeholder="Enter quantity"
+                    placeholder="Nhập số lượng"
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
                     onChange={() => setHasChanges(true)}
                   />
@@ -839,7 +839,7 @@ const EnhancedUpdateBook = () => {
                     className="ml-3 text-sm font-semibold text-gray-700"
                   >
                     <FaChartLine className="inline mr-2" />
-                    Mark as Trending Book
+                    Đánh dấu là sách trending
                   </label>
                 </div>
               </div>
@@ -855,7 +855,7 @@ const EnhancedUpdateBook = () => {
                 whileTap={{ scale: 0.95 }}
               >
                 <FaTimes />
-                Cancel
+                Hủy bỏ
               </motion.button>
 
               <motion.button
@@ -868,12 +868,12 @@ const EnhancedUpdateBook = () => {
                 {isUpdating ? (
                   <>
                     <FaSpinner className="animate-spin" />
-                    Updating...
+                    Đang cập nhật...
                   </>
                 ) : (
                   <>
                     <FaSave />
-                    Update Book
+                    Cập nhật sách
                   </>
                 )}
               </motion.button>

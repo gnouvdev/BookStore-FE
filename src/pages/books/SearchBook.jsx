@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useSearchBooksQuery } from "../../redux/features/search/searchApi";
 import BookCard from "./BookCart";
@@ -17,7 +17,15 @@ const SearchBooks = () => {
     data: books = [],
     isLoading,
     error,
-  } = useSearchBooksQuery({ query: query || "" }, { skip: !query });
+  } = useSearchBooksQuery(
+    { query: query || "", type: "all" },
+    { skip: !query }
+  );
+
+  // Scroll to top when search results change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [query, books]);
 
   // Pagination logic
   const totalPages = Math.ceil(books.length / itemsPerPage);
@@ -34,6 +42,7 @@ const SearchBooks = () => {
   const handleItemsPerPageChange = (value) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Pagination component
@@ -127,34 +136,36 @@ const SearchBooks = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h2 className="text-xl font-semibold mb-4">
-        Kết quả tìm kiếm cho: "{query || "Không có từ khóa"}"
-      </h2>
-      {isLoading ? (
-        <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
-      ) : error ? (
-        <div className="text-center py-8">
-          <p className="text-red-500">
-            {error.data?.message ||
-              "Không thể tải kết quả tìm kiếm. Vui lòng thử lại sau."}
-          </p>
-        </div>
-      ) : books && books.length > 0 ? (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 px-8">
-            {currentBooks.map((book) => (
-              <BookCard key={book._id} book={book} />
-            ))}
+      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <h2 className="text-2xl font-semibold mb-2">
+          Kết quả tìm kiếm cho: "{query || "Không có từ khóa"}"
+        </h2>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
           </div>
-          <Pagination />
-        </>
-      ) : (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Không tìm thấy sách nào.</p>
-        </div>
-      )}
+        ) : error ? (
+          <div className="text-center py-8">
+            <p className="text-red-500">
+              {error.data?.message ||
+                "Không thể tải kết quả tìm kiếm. Vui lòng thử lại sau."}
+            </p>
+          </div>
+        ) : books && books.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {currentBooks.map((book) => (
+                <BookCard key={book._id} book={book} />
+              ))}
+            </div>
+            <Pagination />
+          </>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Không tìm thấy sách nào.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

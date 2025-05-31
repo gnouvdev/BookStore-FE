@@ -147,7 +147,7 @@ const EnhancedManageCategories = () => {
               counts[category._id] = booksResponse.data.length;
             } catch (error) {
               console.error(
-                `Error fetching books for category ${category._id}:`,
+                `Lỗi khi lấy sách cho thể loại ${category._id}:`,
                 error
               );
               counts[category._id] = 0;
@@ -156,9 +156,9 @@ const EnhancedManageCategories = () => {
           setCategoryBookCounts(counts);
         }
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Lỗi khi lấy thể loại:", error);
         toast.error(
-          error.response?.data?.message || "Failed to load categories"
+          error.response?.data?.message || "Không thể tải thể loại"
         );
       } finally {
         setIsLoading(false);
@@ -348,22 +348,22 @@ const EnhancedManageCategories = () => {
         setShowEditDialog(false);
         setSelectedCategory(null);
         resetForm();
-        toast.success("Category updated successfully");
+        toast.success("Thể loại đã được cập nhật thành công");
       }
     } catch (error) {
-      console.error("Error updating category:", error);
+      console.error("Lỗi khi cập nhật thể loại:", error);
       if (error.response?.status === 404) {
-        toast.error("Category not found. Please refresh the page.");
+          toast.error("Thể loại không tồn tại. Vui lòng cập nhật lại.");
       } else if (
         error.response?.status === 401 ||
         error.response?.status === 403
       ) {
-        toast.error("Session expired. Please login again.");
+        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
         localStorage.removeItem("token");
         navigate("/admin");
       } else {
         toast.error(
-          error.response?.data?.message || "Failed to update category"
+          error.response?.data?.message || "Không thể cập nhật thể loại"
         );
       }
     } finally {
@@ -387,10 +387,10 @@ const EnhancedManageCategories = () => {
       );
       setShowDeleteDialog(false);
       setSelectedCategory(null);
-      toast.success("Category deleted successfully");
+      toast.success("Thể loại đã được xóa thành công");
     } catch (error) {
-      console.error("Error deleting category:", error);
-      toast.error(error.response?.data?.message || "Failed to delete category");
+      console.error("Lỗi khi xóa thể loại:", error);
+      toast.error(error.response?.data?.message || "Không thể xóa thể loại");
     } finally {
       setIsLoading(false);
     }
@@ -410,12 +410,12 @@ const EnhancedManageCategories = () => {
       if (response.data) {
         setCategories(response.data);
         setFilteredCategories(response.data);
-        toast.success("Categories refreshed successfully");
+        toast.success("Cập nhật thể loại thành công");
       }
     } catch (error) {
       console.error("Error refreshing categories:", error);
       toast.error(
-        error.response?.data?.message || "Failed to refresh categories"
+        error.response?.data?.message || "Không thể cập nhật thể loại"
       );
     } finally {
       setIsLoading(false);
@@ -545,10 +545,10 @@ const EnhancedManageCategories = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Manage Categories
+                  Quản lý thể loại
                 </h1>
                 <p className="text-gray-600">
-                  Organize your book categories and genres
+                  Sắp xếp thể loại sách và thể loại
                 </p>
               </div>
             </div>
@@ -563,7 +563,7 @@ const EnhancedManageCategories = () => {
                 <RefreshCw
                   className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
                 />
-                Refresh
+                Cập nhật
               </Button>
               <Button
                 onClick={() => {
@@ -573,7 +573,7 @@ const EnhancedManageCategories = () => {
                 className="gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
               >
                 <Plus className="h-4 w-4" />
-                Add Category
+                Thêm thể loại
               </Button>
             </div>
           </div>
@@ -583,7 +583,7 @@ const EnhancedManageCategories = () => {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search categories by name or description..."
+                placeholder="Tìm kiếm thể loại theo tên hoặc mô tả..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 bg-white/70 backdrop-blur-sm"
@@ -593,23 +593,23 @@ const EnhancedManageCategories = () => {
             <div className="flex gap-3">
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder="Trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                  <SelectItem value="active">Hoạt động</SelectItem>
+                  <SelectItem value="inactive">Không hoạt động</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Sort by" />
+                  <SelectValue placeholder="Sắp xếp theo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="name">Name</SelectItem>
-                  <SelectItem value="booksCount">Books</SelectItem>
-                  <SelectItem value="createdAt">Created</SelectItem>
+                  <SelectItem value="name">Tên</SelectItem>
+                  <SelectItem value="booksCount">Số sách</SelectItem>
+                  <SelectItem value="createdAt">Ngày tạo</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -642,7 +642,7 @@ const EnhancedManageCategories = () => {
                   <Tag className="h-4 w-4 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Categories</p>
+                  <p className="text-sm text-gray-600">Tổng số thể loại</p>
                   <p className="font-semibold">{filteredCategories.length}</p>
                 </div>
               </div>
@@ -651,7 +651,7 @@ const EnhancedManageCategories = () => {
                   <BookOpen className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Books</p>
+                  <p className="text-sm text-gray-600">Tổng số sách</p>
                   <p className="font-semibold">
                     {Object.values(categoryBookCounts).reduce(
                       (acc, count) => acc + count,
@@ -665,7 +665,7 @@ const EnhancedManageCategories = () => {
                   <Hash className="h-4 w-4 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Active</p>
+                  <p className="text-sm text-gray-600">Hoạt động</p>
                   <p className="font-semibold">
                     {
                       filteredCategories.filter((c) => c.status === "active")
@@ -683,19 +683,19 @@ const EnhancedManageCategories = () => {
               <thead className="bg-gray-50/80">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
+                    Thể loại
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Description
+                    Mô tả
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Books
+                    Số sách
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    Trạng thái
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                      Hành động
                   </th>
                 </tr>
               </thead>
@@ -726,7 +726,7 @@ const EnhancedManageCategories = () => {
                               {category.trending && (
                                 <Badge variant="secondary" className="text-xs">
                                   <TrendingUp className="h-3 w-3 mr-1" />
-                                  Trending
+                                  Xu hướng
                                 </Badge>
                               )}
                             </div>
@@ -752,7 +752,7 @@ const EnhancedManageCategories = () => {
                         >
                           <BookOpen className="h-4 w-4" />
                           <span>
-                            {categoryBookCounts[category._id] || 0} books
+                            {categoryBookCounts[category._id] || 0} sách
                           </span>
                         </Button>
                       </td>
@@ -782,13 +782,13 @@ const EnhancedManageCategories = () => {
                               }}
                             >
                               <Eye className="h-4 w-4 mr-2" />
-                              View Details
+                              Xem chi tiết
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => openEditDialog(category)}
                             >
                               <Edit3 className="h-4 w-4 mr-2" />
-                              Edit
+                              Sửa
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600"
@@ -798,7 +798,7 @@ const EnhancedManageCategories = () => {
                               }}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
+                                Xóa
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -819,40 +819,40 @@ const EnhancedManageCategories = () => {
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add New Category</DialogTitle>
+            <DialogTitle>Thêm thể loại mới</DialogTitle>
             <DialogDescription>
-              Create a new category for organizing your books.
+              Tạo một thể loại mới để sắp xếp sách của bạn.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Tên</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                placeholder="Enter category name"
+                placeholder="Nhập tên thể loại"
               />
             </div>
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Mô tả</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                placeholder="Enter category description"
+                placeholder="Nhập mô tả thể loại"
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-              Cancel
+              Hủy bỏ
             </Button>
             <Button onClick={handleAdd} disabled={isLoading}>
-              {isLoading ? "Adding..." : "Add Category"}
+              {isLoading ? "Đang thêm..." : "Thêm thể loại"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -862,40 +862,40 @@ const EnhancedManageCategories = () => {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
+            <DialogTitle>Sửa thể loại</DialogTitle>
             <DialogDescription>
-              Update the category information.
+              Cập nhật thông tin thể loại.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-name">Name</Label>
+              <Label htmlFor="edit-name">Tên</Label>
               <Input
                 id="edit-name"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                placeholder="Enter category name"
+                placeholder="Nhập tên thể loại"
               />
             </div>
             <div>
-              <Label htmlFor="edit-description">Description</Label>
+              <Label htmlFor="edit-description">Mô tả</Label>
               <Textarea
                 id="edit-description"
                 value={formData.description}
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                placeholder="Enter category description"
+                placeholder="Nhập mô tả thể loại"
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Cancel
+              Hủy bỏ
             </Button>
             <Button onClick={handleEdit} disabled={isLoading}>
-              {isLoading ? "Updating..." : "Update Category"}
+              {isLoading ? "Đang cập nhật..." : "Cập nhật thể loại"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -905,11 +905,11 @@ const EnhancedManageCategories = () => {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Category</DialogTitle>
+            <DialogTitle>Xóa thể loại</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedCategory?.name}"? This
-              action cannot be undone and will affect all books in this
-              category.
+              Bạn có chắc chắn muốn xóa "{selectedCategory?.name}"?
+              Hành động này không thể hoàn tác và sẽ ảnh hưởng đến tất cả sách
+              trong thể loại này.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -917,14 +917,14 @@ const EnhancedManageCategories = () => {
               variant="outline"
               onClick={() => setShowDeleteDialog(false)}
             >
-              Cancel
+              Hủy bỏ
             </Button>
             <Button
               variant="destructive"
               onClick={() => handleDelete(selectedCategory?._id)}
               disabled={isLoading}
             >
-              {isLoading ? "Deleting..." : "Delete"}
+              {isLoading ? "Đang xóa..." : "Xóa"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -934,7 +934,7 @@ const EnhancedManageCategories = () => {
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Category Details</DialogTitle>
+            <DialogTitle>Chi tiết thể loại</DialogTitle>
           </DialogHeader>
           {selectedCategory && (
             <div className="space-y-6">
@@ -964,25 +964,25 @@ const EnhancedManageCategories = () => {
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-500">Books Count:</span>
+                  <span className="text-gray-500">Số sách:</span>
                   <p className="font-medium">{selectedCategory.booksCount}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Created:</span>
+                  <span className="text-gray-500">Ngày tạo:</span>
                   <p className="font-medium">
                     {new Date(selectedCategory.createdAt).toLocaleDateString()}
                   </p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Trending:</span>
+                  <span className="text-gray-500">Xu hướng:</span>
                   <p className="font-medium">
-                    {selectedCategory.trending ? "Yes" : "No"}
+                    {selectedCategory.trending ? "Có" : "Không"}
                   </p>
                 </div>
               </div>
 
               <div>
-                <span className="text-gray-500">Description:</span>
+                <span className="text-gray-500">Mô tả:</span>
                 <p className="text-sm mt-1">{selectedCategory.description}</p>
               </div>
             </div>
@@ -994,9 +994,9 @@ const EnhancedManageCategories = () => {
       <Dialog open={showBooksModal} onOpenChange={setShowBooksModal}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Books in {selectedCategory?.name}</DialogTitle>
+              <DialogTitle>Sách trong {selectedCategory?.name}</DialogTitle>
             <DialogDescription>
-              List of books in this category
+                Danh sách sách trong thể loại này
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -1006,7 +1006,7 @@ const EnhancedManageCategories = () => {
               </div>
             ) : categoryBooks.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                No books found in this category
+                Không tìm thấy sách trong thể loại này
               </div>
             ) : (
               categoryBooks.map((book) => (
@@ -1026,10 +1026,10 @@ const EnhancedManageCategories = () => {
                     </p>
                     <div className="mt-2 flex items-center gap-4">
                       <span className="text-sm text-gray-500">
-                        Price: {formatPrice(book.price.newPrice)}
+                        Giá: {formatPrice(book.price.newPrice)}
                       </span>
                       <span className="text-sm text-gray-500">
-                        Stock: {book.quantity}
+                        Số lượng: {book.quantity}
                       </span>
                     </div>
                   </div>
@@ -1039,7 +1039,7 @@ const EnhancedManageCategories = () => {
           </div>
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setShowBooksModal(false)}>
-              Close
+              Đóng
             </Button>
           </DialogFooter>
         </DialogContent>

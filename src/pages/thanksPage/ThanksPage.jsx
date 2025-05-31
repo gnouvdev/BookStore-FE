@@ -15,10 +15,10 @@ const ImprovedThanksPage = () => {
 
   // Simulate order processing steps
   const steps = [
-    { icon: CheckCircle, label: "Order Confirmed", completed: true },
-    { icon: Package, label: "Processing", completed: false },
-    { icon: Truck, label: "Shipping", completed: false },
-    { icon: Home, label: "Delivered", completed: false },
+    { icon: CheckCircle, label: t("thank.Order Confirmed"), completed: true },
+    { icon: Package, label: t("thank.Processing"), completed: false },
+    { icon: Truck, label: t("thank.Shipping"), completed: false },
+    { icon: Home, label: t("thank.Delivered"), completed: false },
   ]
 
   useEffect(() => {
@@ -57,7 +57,7 @@ const ImprovedThanksPage = () => {
               transition={{ delay: 0.5 }}
               className="text-4xl font-bold mb-4"
             >
-              Thank You for Your Order!
+              {t("thank.Thank You for Your Order!")}
             </motion.h1>
 
             <motion.p
@@ -75,7 +75,9 @@ const ImprovedThanksPage = () => {
               transition={{ delay: 0.9 }}
               className="mt-6"
             >
-              <Badge className="bg-white/20 text-white border-white/30 px-4 py-2 text-lg">Order #{orderNumber}</Badge>
+              <Badge className="bg-white/20 text-white border-white/30 px-4 py-2 text-lg">
+                {t("thank.Order")} {orderNumber}
+              </Badge>
             </motion.div>
           </div>
 
@@ -88,7 +90,9 @@ const ImprovedThanksPage = () => {
               transition={{ delay: 1.1 }}
               className="mb-8"
             >
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">Order Status</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">
+                {t("thank.Order Status")}
+              </h3>
               <div className="flex justify-between items-center">
                 {steps.map((step, index) => (
                   <div key={index} className="flex flex-col items-center flex-1">
@@ -154,13 +158,13 @@ const ImprovedThanksPage = () => {
                 <p className="text-gray-600 text-sm">
                   {t("thank.Contact our support team if you have any questions about your order.")}
                 </p>
-                <div className="flex items-center space-x-4 mt-3">
-                  <div className="flex items-center space-x-1 text-sm text-purple-600">
-                    <Mail className="w-4 h-4" />
+                <div className="flex flex-col gap-2 mt-3">
+                  <div className="flex items-center text-sm text-purple-600">
+                    <Mail className="w-4 h-4 mr-2" />
                     <span>quocvuong132003@gmail.com</span>
                   </div>
-                  <div className="flex items-center space-x-1 text-sm text-purple-600">
-                    <Phone className="w-4 h-4" />
+                  <div className="flex items-center text-sm text-purple-600">
+                    <Phone className="w-4 h-4 mr-2" />
                     <span>0909090909</span>
                   </div>
                 </div>
@@ -180,14 +184,14 @@ const ImprovedThanksPage = () => {
               >
                 <Link to="/">
                   <Home className="w-5 h-5 mr-2" />
-                  Return to Home
+                  {t("thank.Return to Home")}
                 </Link>
               </Button>
 
               <Button asChild variant="outline" className="flex-1 h-12 border-gray-200 hover:bg-gray-50 rounded-xl">
                 <Link to="/orders">
                   <Package className="w-5 h-5 mr-2" />
-                  View Orders
+                  {t("thank.View Orders")}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
@@ -203,10 +207,11 @@ const ImprovedThanksPage = () => {
           className="mt-8 text-center"
         >
           <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-6">
-            <h4 className="font-semibold text-gray-900 mb-2">What's Next?</h4>
+            <h4 className="font-semibold text-gray-900 mb-2">
+              {t("thank.What's Next?")}
+            </h4>
             <p className="text-gray-600 text-sm">
-              You'll receive an email confirmation with your order details and tracking information once your order
-              ships.
+              {t("thank.You'll receive an email confirmation with your order details and tracking information once your order ships.")}
             </p>
           </div>
         </motion.div>
