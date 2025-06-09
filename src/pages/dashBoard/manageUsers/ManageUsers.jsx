@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { gsap } from "gsap";
 import { toast } from "react-hot-toast";
@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  Edit,
   Trash2,
   UserPlus,
   Users,
@@ -930,6 +929,17 @@ const EnhancedManageUsers = () => {
                                 size="icon"
                                 onClick={() => {
                                   setSelectedUser(user);
+                                  setShowDetailsModal(true);
+                                }}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setSelectedUser(user);
                                   setShowDeleteModal(true);
                                 }}
                               >
@@ -951,81 +961,36 @@ const EnhancedManageUsers = () => {
         </div>
       </div>
 
-      {/* User Details Modal */}
+      {/* Enhanced User Details Modal */}
       <Modal
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
-        title={`User Details - ${selectedUser?.fullName}`}
+        title={`Chi tiết người dùng - ${selectedUser?.fullName}`}
         size="lg"
       >
         {selectedUser && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Personal Information */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Thông tin cá nhân</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <User className="h-4 w-4 text-gray-400" />
-                  <span className="font-medium">{selectedUser.fullName}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-gray-400" />
-                  <span>{selectedUser.email}</span>
-                  {selectedUser.isEmailVerified && (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-gray-400" />
-                  <span>{selectedUser.phone}</span>
-                  {selectedUser.isPhoneVerified && (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  )}
-                </div>
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-4 w-4 text-gray-400 mt-1" />
-                  <div>
-                    {selectedUser.address ? (
-                      <>
-                        <p>{selectedUser.address.street || "N/A"}</p>
-                        <p>
-                          {selectedUser.address.city || "N/A"},{" "}
-                          {selectedUser.address.state || "N/A"}{" "}
-                          {selectedUser.address.zipcode || "N/A"}
-                        </p>
-                        <p>{selectedUser.address.country || "N/A"}</p>
-                      </>
-                    ) : (
-                      <p>No address information available</p>
-                    )}
-                  </div>
-                </div>
+          <div className="space-y-4">
+            {/* User Header */}
+            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold">
+                {selectedUser.fullName?.charAt(0) || "?"}
               </div>
-            </div>
-
-            {/* Account Information */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Thông tin tài khoản</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">ID:</span>
-                  <span className="font-medium">{selectedUser._id}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Vai trò:</span>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-gray-900">
+                  {selectedUser.fullName}
+                </h2>
+                <p className="text-sm text-gray-600">{selectedUser.email}</p>
+                <div className="flex items-center gap-2 mt-1">
                   <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleStyling(
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getRoleStyling(
                       selectedUser.role
                     )}`}
                   >
                     {getRoleIcon(selectedUser.role)}
                     {selectedUser.role}
                   </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Trạng thái:</span>
                   <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyling(
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusStyling(
                       selectedUser.status
                     )}`}
                   >
@@ -1033,114 +998,301 @@ const EnhancedManageUsers = () => {
                     {selectedUser.status}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tổng đơn hàng:</span>
-                  <span className="font-medium">
-                    {selectedUser.orders?.length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tổng tiền đã mua:</span>
-                  <span className="font-bold">
-                    {formatPrice(selectedUser.totalSpent)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Lần cuối đăng nhập:</span>
-                  <span>
-                    {new Date(selectedUser.lastLogin).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tham gia:</span>
-                  <span>
-                    {new Date(selectedUser.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
               </div>
             </div>
 
-            {/* Preferences */}
-            <div className="lg:col-span-2 space-y-4">
-              <h3 className="font-semibold text-lg">Sở thích</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {selectedUser.preferences ? (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-4 h-4 rounded ${
-                          selectedUser.preferences.newsletter
-                            ? "bg-green-500"
-                            : "bg-gray-300"
-                        }`}
-                      ></div>
-                      <span className="text-sm">Bản tin</span>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Personal Information */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <User className="h-4 w-4 text-blue-500" />
+                    Thông tin cá nhân
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-xs font-medium text-gray-500">
+                          Họ và tên
+                        </label>
+                        <p className="text-sm text-gray-900 font-medium">
+                          {selectedUser.fullName}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500">
+                          Email
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-gray-900">
+                            {selectedUser.email}
+                          </p>
+                          {selectedUser.isEmailVerified && (
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500">
+                          Số điện thoại
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-gray-900">
+                            {selectedUser.phone || "Chưa cập nhật"}
+                          </p>
+                          {selectedUser.isPhoneVerified && (
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-4 h-4 rounded ${
-                          selectedUser.preferences.notifications
-                            ? "bg-green-500"
-                            : "bg-gray-300"
-                        }`}
-                      ></div>
-                      <span className="text-sm">Thông báo</span>
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-xs font-medium text-gray-500">
+                          ID người dùng
+                        </label>
+                        <p className="text-xs text-gray-900 font-mono">
+                          {selectedUser._id}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500">
+                          Ngày tham gia
+                        </label>
+                        <p className="text-sm text-gray-900">
+                          {new Date(selectedUser.createdAt).toLocaleDateString(
+                            "vi-VN"
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500">
+                          Cập nhật cuối
+                        </label>
+                        <p className="text-sm text-gray-900">
+                          {new Date(selectedUser.updatedAt).toLocaleDateString(
+                            "vi-VN"
+                          )}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-4 h-4 rounded ${
-                          selectedUser.preferences.marketing
-                            ? "bg-green-500"
-                            : "bg-gray-300"
-                        }`}
-                      ></div>
-                      <span className="text-sm">Marketing</span>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-gray-500">Không có sở thích</p>
-                )}
-              </div>
-            </div>
+                  </div>
+                </div>
 
-            {/* Quick Actions */}
-            <div className="lg:col-span-2 space-y-4">
-              <h3 className="font-semibold text-lg">Hành động nhanh</h3>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    handleStatusUpdate(
-                      selectedUser._id,
-                      selectedUser.status === "active" ? "inactive" : "active"
-                    )
-                  }
-                  disabled={isLoading}
-                >
-                  {selectedUser.status === "active" ? "Tạm dừng" : "Kích hoạt"}{" "}
-                  Người dùng
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    handleRoleUpdate(
-                      selectedUser._id,
-                      selectedUser.role === "admin" ? "customer" : "admin"
-                    )
-                  }
-                  disabled={isLoading}
-                >
-                  {selectedUser.role === "admin"
-                    ? "Loại bỏ quản trị viên"
-                    : "Làm quản trị viên"}
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleStatusUpdate(selectedUser._id, "banned")}
-                  disabled={isLoading || selectedUser.status === "banned"}
-                >
-                  Ban người dùng
-                </Button>
+                {/* Address Information */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-green-500" />
+                    Địa chỉ
+                  </h3>
+                  {selectedUser.address ? (
+                    <div className="space-y-1 text-sm">
+                      <p className="text-gray-900">
+                        {selectedUser.address.street || "Chưa cập nhật"}
+                      </p>
+                      <p className="text-gray-600">
+                        {selectedUser.address.city || "Chưa cập nhật"},{" "}
+                        {selectedUser.address.state || "Chưa cập nhật"}{" "}
+                        {selectedUser.address.zipcode || ""}
+                      </p>
+                      <p className="text-gray-600">
+                        {selectedUser.address.country || "Chưa cập nhật"}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">
+                      Chưa có thông tin địa chỉ
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Statistics & Actions */}
+              <div className="space-y-4">
+                {/* Account Statistics */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Users className="h-4 w-4 text-purple-500" />
+                    Thống kê tài khoản
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">
+                        Tổng đơn hàng
+                      </span>
+                      <span className="font-medium text-blue-600">
+                        {selectedUser.orders ? selectedUser.orders.length : 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">
+                        Tổng tiền đã mua
+                      </span>
+                      <span className="font-medium text-green-600">
+                        {selectedUser.totalSpent
+                          ? formatPrice(selectedUser.totalSpent)
+                          : "0 ₫"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">
+                        Đơn hàng gần nhất
+                      </span>
+                      <span className="text-xs text-gray-900">
+                        {selectedUser.orders && selectedUser.orders.length > 0
+                          ? new Date(
+                              Math.max(
+                                ...selectedUser.orders.map(
+                                  (order) => new Date(order.createdAt)
+                                )
+                              )
+                            ).toLocaleDateString("vi-VN")
+                          : "Chưa có đơn hàng"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">
+                        Trạng thái xác thực
+                      </span>
+                      <div className="flex gap-1">
+                        {selectedUser.isEmailVerified && (
+                          <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
+                            Email ✓
+                          </span>
+                        )}
+                        {selectedUser.isPhoneVerified && (
+                          <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
+                            Phone ✓
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-base font-semibold text-gray-900 mb-3">
+                    Hành động nhanh
+                  </h3>
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start gap-2"
+                      onClick={() =>
+                        handleStatusUpdate(
+                          selectedUser._id,
+                          selectedUser.status === "active"
+                            ? "inactive"
+                            : "active"
+                        )
+                      }
+                      disabled={isLoading}
+                    >
+                      {selectedUser.status === "active" ? (
+                        <>
+                          <XCircle className="h-3 w-3" />
+                          Tạm dừng tài khoản
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="h-3 w-3" />
+                          Kích hoạt tài khoản
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start gap-2"
+                      onClick={() =>
+                        handleRoleUpdate(
+                          selectedUser._id,
+                          selectedUser.role === "admin" ? "customer" : "admin"
+                        )
+                      }
+                      disabled={isLoading}
+                    >
+                      <Crown className="h-3 w-3" />
+                      {selectedUser.role === "admin"
+                        ? "Loại bỏ quyền admin"
+                        : "Cấp quyền admin"}
+                    </Button>
+
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full justify-start gap-2"
+                      onClick={() =>
+                        handleStatusUpdate(selectedUser._id, "banned")
+                      }
+                      disabled={isLoading || selectedUser.status === "banned"}
+                    >
+                      <Ban className="h-3 w-3" />
+                      Khóa tài khoản
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-orange-500" />
+                    Hoạt động gần đây
+                  </h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Trạng thái:</span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusStyling(
+                          selectedUser.status
+                        )}`}
+                      >
+                        {getStatusIcon(selectedUser.status)}
+                        {selectedUser.status}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Vai trò:</span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getRoleStyling(
+                          selectedUser.role
+                        )}`}
+                      >
+                        {getRoleIcon(selectedUser.role)}
+                        {selectedUser.role}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Đăng nhập cuối:</span>
+                      <span className="text-gray-900">
+                        {selectedUser.lastLogin
+                          ? new Date(selectedUser.lastLogin).toLocaleString(
+                              "vi-VN"
+                            )
+                          : "Chưa bao giờ"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Cập nhật cuối:</span>
+                      <span className="text-gray-900">
+                        {new Date(selectedUser.updatedAt).toLocaleString(
+                          "vi-VN"
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tham gia:</span>
+                      <span className="text-gray-900">
+                        {new Date(selectedUser.createdAt).toLocaleString(
+                          "vi-VN"
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

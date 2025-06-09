@@ -48,27 +48,23 @@ const ImprovedForgotPassword = () => {
   useEffect(() => {
     const calculateStrength = (password) => {
       let strength = 0;
-      if (password.length >= 8) strength += 25;
-      if (/[A-Z]/.test(password)) strength += 25;
-      if (/[a-z]/.test(password)) strength += 25;
-      if (/[0-9]/.test(password)) strength += 25;
+      if (password.length >= 8) strength += 50;
+      if (/[0-9]/.test(password)) strength += 50;
       return strength;
     };
     setPasswordStrength(calculateStrength(newPassword));
   }, [newPassword]);
 
   const getStrengthColor = (strength) => {
-    if (strength < 25) return "bg-red-500";
-    if (strength < 50) return "bg-orange-500";
-    if (strength < 75) return "bg-yellow-500";
+    if (strength < 50) return "bg-red-500";
+    if (strength < 100) return "bg-yellow-500";
     return "bg-green-500";
   };
 
   const getStrengthText = (strength) => {
-    if (strength < 25) return "Yếu";
-    if (strength < 50) return "Trung bình";
-    if (strength < 75) return "Mạnh";
-    return "Rất mạnh";
+    if (strength < 50) return "Yếu";
+    if (strength < 100) return "Trung bình";
+    return "Mạnh";
   };
 
   // Step 1: Send reset link
@@ -103,7 +99,7 @@ const ImprovedForgotPassword = () => {
     }
 
     if (passwordStrength < 50) {
-      toast.error("Mật khẩu quá yếu! Vui lòng chọn mật khẩu mạnh hơn.");
+      toast.error("Mật khẩu phải có ít nhất 8 ký tự!");
       return;
     }
 
@@ -316,7 +312,7 @@ const ImprovedForgotPassword = () => {
                               className={`font-medium ${
                                 passwordStrength < 50
                                   ? "text-red-500"
-                                  : passwordStrength < 75
+                                  : passwordStrength < 100
                                   ? "text-yellow-500"
                                   : "text-green-500"
                               }`}
@@ -451,8 +447,8 @@ const ImprovedForgotPassword = () => {
             <div className="text-sm text-blue-700">
               <p className="font-medium mb-1">Bảo mật tài khoản</p>
               <p>
-                Chúng tôi khuyến nghị sử dụng mật khẩu mạnh với ít nhất 8 ký tự,
-                bao gồm chữ hoa, chữ thường và số.
+                Chúng tôi khuyến nghị sử dụng mật khẩu có ít nhất 8 ký tự và bao
+                gồm số.
               </p>
             </div>
           </div>

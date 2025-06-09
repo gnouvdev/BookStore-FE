@@ -258,7 +258,7 @@ const RevenueChart = ({ data }) => {
       </div>
 
       {/* Statistics Cards */}
-      {stats && (
+      {/* {stats && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -336,7 +336,7 @@ const RevenueChart = ({ data }) => {
             </div>
           </motion.div>
         </div>
-      )}
+      )} */}
 
       {/* Chart Container */}
       <motion.div
