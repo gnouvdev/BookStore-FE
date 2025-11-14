@@ -11,7 +11,16 @@ export const recommendationsv2Api = createApi({
         method: "GET",
       }),
     }),
+    getContextualRecommendations: builder.query({
+      query: () => ({
+        url: "/recommendationv2/contextual",
+        method: "GET",
+      }),
+    }),
   }),
 });
 
-export const { useGetCollaborativeRecommendationsQuery } = recommendationsv2Api;
+export const {
+  useGetCollaborativeRecommendationsQuery,
+  useGetContextualRecommendationsQuery,
+} = recommendationsv2Api;

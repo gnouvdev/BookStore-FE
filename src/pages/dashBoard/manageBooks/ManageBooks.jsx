@@ -153,7 +153,11 @@ const EnhancedManageBooks = () => {
 
     // Status filter
     if (selectedStatus !== "all") {
-      filtered = filtered.filter((book) => book.status === selectedStatus);
+      if (selectedStatus === "in_stock") {
+        filtered = filtered.filter((book) => book.quantity > 0);
+      } else if (selectedStatus === "out_of_stock") {
+        filtered = filtered.filter((book) => book.quantity === 0);
+      }
     }
 
     // Sorting
@@ -258,7 +262,7 @@ const EnhancedManageBooks = () => {
       }
     } catch (error) {
       console.error("Lỗi khi cập nhật sách:", error);
-        toast.error(error.response?.data?.message || "Không thể cập nhật sách");
+      toast.error(error.response?.data?.message || "Không thể cập nhật sách");
     } finally {
       setIsLoading(false);
     }
@@ -321,7 +325,7 @@ const EnhancedManageBooks = () => {
               <SelectItem value="50">50</SelectItem>
             </SelectContent>
           </Select>
-            <span className="text-sm text-gray-600">trang</span>
+          <span className="text-sm text-gray-600">trang</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -390,9 +394,7 @@ const EnhancedManageBooks = () => {
                 <h1 className="text-2xl font-bold text-gray-900">
                   Quản lý sách
                 </h1>
-                <p className="text-gray-600">
-                  Quản lý kho sách và catelog
-                </p>
+                <p className="text-gray-600">Quản lý kho sách và catelog</p>
               </div>
             </div>
 
@@ -450,12 +452,12 @@ const EnhancedManageBooks = () => {
 
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
-                    <SelectValue placeholder="Trạng thái" />
+                  <SelectValue placeholder="Trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                  <SelectItem value="active">Hoạt động</SelectItem>
-                  <SelectItem value="inactive">Không hoạt động</SelectItem>
+                  <SelectItem value="in_stock">Còn hàng</SelectItem>
+                  <SelectItem value="out_of_stock">Hết hàng</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -673,10 +675,10 @@ const EnhancedManageBooks = () => {
                         <td className="px-6 py-4">
                           <Badge
                             variant={
-                              book.status === "active" ? "default" : "secondary"
+                              book.quantity > 0 ? "default" : "secondary"
                             }
                           >
-                            {book.status}
+                            {book.quantity > 0 ? "Còn hàng" : "Hết hàng"}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -810,7 +812,7 @@ const EnhancedManageBooks = () => {
                                 }}
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                  Xóa
+                                Xóa
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -834,7 +836,8 @@ const EnhancedManageBooks = () => {
           <DialogHeader>
             <DialogTitle>Xóa sách</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xóa "{selectedBook?.title}"? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn xóa "{selectedBook?.title}"? Hành động này
+              không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-6">
@@ -894,7 +897,9 @@ const EnhancedManageBooks = () => {
                   </div>
                   <div>
                     <span className="text-gray-500">Trạng thái:</span>
-                    <p className="font-medium">{selectedBook.status}</p>
+                    <p className="font-medium">
+                      {selectedBook.quantity > 0 ? "Còn hàng" : "Hết hàng"}
+                    </p>
                   </div>
                   <div>
                     <span className="text-gray-500">Ngôn ngữ:</span>

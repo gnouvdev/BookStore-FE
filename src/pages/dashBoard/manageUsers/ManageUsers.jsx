@@ -620,10 +620,6 @@ const EnhancedManageUsers = () => {
                 <Download className="h-4 w-4" />
                 Xuất Excel
               </Button>
-              <Button onClick={() => setShowAddModal(true)} className="gap-2">
-                <UserPlus className="h-4 w-4" />
-                Thêm người dùng
-              </Button>
             </div>
           </div>
 
@@ -648,19 +644,6 @@ const EnhancedManageUsers = () => {
                 <option value="all">Tất cả vai trò</option>
                 <option value="customer">Khách hàng</option>
                 <option value="admin">Quản trị viên</option>
-                <option value="moderator">Moderator</option>
-              </Select>
-
-              <Select
-                value={selectedStatus}
-                onChange={setSelectedStatus}
-                className="w-40 bg-white/70 backdrop-blur-sm"
-              >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="active">Hoạt động</option>
-                <option value="inactive">Không hoạt động</option>
-                <option value="banned">Bị khóa</option>
-                <option value="pending">Chờ xác thực</option>
               </Select>
 
               <Select
@@ -726,7 +709,7 @@ const EnhancedManageUsers = () => {
             <>
               {/* Stats Bar */}
               <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 rounded-lg">
                       <Users className="h-4 w-4 text-blue-600" />
@@ -739,22 +722,6 @@ const EnhancedManageUsers = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">
-                        Người dùng hoạt động
-                      </p>
-                      <p className="font-semibold">
-                        {
-                          filteredUsers.filter((u) => u.status === "active")
-                            .length
-                        }
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 rounded-lg">
                       <Crown className="h-4 w-4 text-purple-600" />
                     </div>
@@ -762,20 +729,6 @@ const EnhancedManageUsers = () => {
                       <p className="text-sm text-gray-600">Quản trị viên</p>
                       <p className="font-semibold">
                         {filteredUsers.filter((u) => u.role === "admin").length}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-yellow-100 rounded-lg">
-                      <Clock className="h-4 w-4 text-yellow-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Chờ xác thực</p>
-                      <p className="font-semibold">
-                        {
-                          filteredUsers.filter((u) => u.status === "pending")
-                            .length
-                        }
                       </p>
                     </div>
                   </div>
@@ -814,7 +767,7 @@ const EnhancedManageUsers = () => {
                         Trạng thái
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Hoạt động
+                        Thời gian hoạt động
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Tham gia
@@ -893,22 +846,19 @@ const EnhancedManageUsers = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="space-y-1">
-                              <p className="text-sm text-gray-900">
-                                {user.orders?.length || 0} đơn hàng
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {formatPrice(user.totalSpent || 0)} tiền đã mua
-                              </p>
-                              <p className="text-xs text-gray-400">
-                                Lần cuối:{" "}
-                                {user.lastLogin
-                                  ? new Date(
-                                      user.lastLogin
-                                    ).toLocaleDateString()
-                                  : "Không bao giờ"}
-                              </p>
-                            </div>
+                            <span className="text-sm text-gray-900">
+                              {user.createdAt
+                                ? (() => {
+                                    const now = new Date();
+                                    const joined = new Date(user.createdAt);
+                                    const diffMs = now - joined;
+                                    const diffDays = Math.floor(
+                                      diffMs / (1000 * 60 * 60 * 24)
+                                    );
+                                    return `${diffDays} ngày`;
+                                  })()
+                                : "Không xác định"}
+                            </span>
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
@@ -1297,152 +1247,6 @@ const EnhancedManageUsers = () => {
             </div>
           </div>
         )}
-      </Modal>
-
-      {/* Add/Edit User Modal */}
-      <Modal
-        isOpen={showAddModal || showEditModal}
-        onClose={() => {
-          setShowAddModal(false);
-          setShowEditModal(false);
-          setFormData({
-            firstName: "",
-            lastName: "",
-            email: "",
-            phone: "",
-            role: "customer",
-            status: "active",
-          });
-        }}
-        title={showAddModal ? "Thêm người dùng mới" : "Chỉnh sửa người dùng"}
-        size="md"
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (showAddModal) {
-              handleAddUser(formData);
-            } else {
-              // Handle edit user logic here
-              setShowEditModal(false);
-            }
-          }}
-          className="space-y-4"
-        >
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tên
-              </label>
-              <Input
-                value={formData.firstName}
-                onChange={(e) =>
-                  setFormData({ ...formData, firstName: e.target.value })
-                }
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Họ
-              </label>
-              <Input
-                value={formData.lastName}
-                onChange={(e) =>
-                  setFormData({ ...formData, lastName: e.target.value })
-                }
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <Input
-              type="email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Số điện thoại
-            </label>
-            <Input
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Vai trò
-              </label>
-              <Select
-                value={formData.role}
-                onChange={(value) => setFormData({ ...formData, role: value })}
-              >
-                <option value="customer">Khách hàng</option>
-                <option value="moderator">Moderator</option>
-                <option value="admin">Quản trị viên</option>
-              </Select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Trạng thái
-              </label>
-              <Select
-                value={formData.status}
-                onChange={(value) =>
-                  setFormData({ ...formData, status: value })
-                }
-              >
-                <option value="active">Hoạt động</option>
-                <option value="inactive">Không hoạt động</option>
-                <option value="pending">Chờ xác thực</option>
-                <option value="banned">Bị khóa</option>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex gap-3 justify-end pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowAddModal(false);
-                setShowEditModal(false);
-                setFormData({
-                  firstName: "",
-                  lastName: "",
-                  email: "",
-                  phone: "",
-                  role: "customer",
-                  status: "active",
-                });
-              }}
-            >
-              Hủy bỏ
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? "Đang lưu..."
-                : showAddModal
-                ? "Thêm người dùng"
-                : "Cập nhật người dùng"}
-            </Button>
-          </div>
-        </form>
       </Modal>
 
       {/* Delete Confirmation Modal */}

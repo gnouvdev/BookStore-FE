@@ -7,11 +7,13 @@ import GenreBooks from "../../components/GenreBooks";
 import Recommendationsv2 from "../../components/Recommendationsv2";
 import InteractiveBookExplorer from "./InteractiveBook";
 import ChatBox from "../../components/ChatBox";
-import SimplifiedMiniBanner from './../../components/miniBanner';
+import SimplifiedMiniBanner from "./../../components/miniBanner";
+import ContextualBooks from "./ContextualBooks";
 const Home = () => {
   return (
     <>
       <Banner />
+      <ContextualBooks />
       <Recommended />
       <Recommendationsv2 />
       <InteractiveBookExplorer />

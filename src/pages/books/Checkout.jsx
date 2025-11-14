@@ -313,9 +313,40 @@ const EnhancedCheckoutPage = () => {
       };
 
       const order = await createOrder(orderData).unwrap();
+
+      // Nếu là VNPAY thì tạo link và chuyển hướng
+      if (selectedPayment.code === "VNPAY") {
+        // Gọi API tạo link VNPAY
+        const vnpayPayload = {
+          orderItems,
+          user: { _id: userProfileData.user._id },
+          shippingInfo: {
+            name: data.name,
+            email: currentUser?.email,
+            address: {
+              street: data.street,
+              city: data.city,
+              country: data.country || "",
+              zipcode: data.zip || "",
+            },
+            phone: data.phone,
+          },
+          paymentMethodId: selectedPayment._id,
+        };
+        const vnpayRes = await createVNPayUrl(vnpayPayload).unwrap();
+        if (vnpayRes?.paymentUrl) {
+          await clearCartApi();
+          dispatch(clearCart());
+          window.location.href = vnpayRes.paymentUrl;
+          return;
+        } else {
+          throw new Error("Không tạo được link thanh toán VNPAY");
+        }
+      }
+
+      // Nếu không phải VNPAY thì chuyển sang trang cảm ơn như cũ
       await clearCartApi();
       dispatch(clearCart());
-
       navigate("/orders/thanks");
     } catch (error) {
       console.error("API Error:", error);
@@ -965,7 +996,9 @@ const EnhancedCheckoutPage = () => {
                   </button>
                 </div>
                 {voucherError && (
-                  <p className="text-red-500 text-sm">{t("cart." + voucherError)}</p>
+                  <p className="text-red-500 text-sm">
+                    {t("cart." + voucherError)}
+                  </p>
                 )}
                 {appliedVoucher && (
                   <div className="flex justify-between text-green-600">

@@ -517,7 +517,7 @@
       "philosophy_desc": "Philosophy",
       "bestseller_desc": "Best sellers",
       "adventure_desc": "Adventure",
-      "inspiring_desc": "Inspiring",  
+      "inspiring_desc": "Inspiring",
       "romantic_desc": "Romantic",
       "suspenseful_desc": "Suspenseful",
       "thoughtful_desc": "Thoughtful",
@@ -540,7 +540,6 @@
       "romance_desc": "Romance",
       "science_fiction": "Science Fiction",
       "biography": "Biography"
-      
     },
     "recommendations": {
       "title": "Recommendations",
@@ -595,5 +594,20 @@
     "Processing Time": "Processing Time",
     "Need Help?": "Need Help?",
     "Our support team is here to help you": "Our support team is here to help you"
+  },
+  "contextualBooks": {
+    "title": "Special Holiday Offers!",
+    "specialHoliday": "Special Holiday",
+    "todayHoliday": "Today: {{holiday}}",
+    "tomorrowHoliday": "Tomorrow: {{holiday}}",
+    "upcomingHoliday": "{{days}} days until {{holiday}}",
+    "description": "Discover special books perfect for {{holiday}}",
+    "error": "Unable to load contextual books",
+    "special": "Special",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "daysUntil": "{{days}} days left",
+    "holiday_name": "Holiday Name",
+    "tags": "Tags"
   }
 }

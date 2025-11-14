@@ -561,7 +561,7 @@
     "full_name": "Tên đầy đủ",
     "email_address": "Địa chỉ email",
     "phone_number": "Số điện thoại",
-    "address_information": "Thông tin địa chỉ", 
+    "address_information": "Thông tin địa chỉ",
     "street_address": "Địa chỉ",
     "city": "Thành phố",
     "country": "Quốc gia",
@@ -600,5 +600,20 @@
     "Need Help?": "Cần trợ giúp?",
     "Our support team is here to help you": "Đội hỗ trợ của chúng tôi sẵn sàng giúp bạn",
     "Your order will be processed within 1-2 business days. You'll receive a confirmation email shortly.": "Đơn hàng của bạn sẽ được xử lý trong 1-2 ngày làm việc. Bạn sẽ nhận được email xác nhận sớm."
+  },
+  "contextualBooks": {
+    "title": "Siêu ưu đãi mùa lễ!",
+    "specialHoliday": "Ngày lễ đặc biệt",
+    "todayHoliday": "Hôm nay: {{holiday}}",
+    "tomorrowHoliday": "Ngày mai: {{holiday}}",
+    "upcomingHoliday": "Còn {{days}} ngày đến {{holiday}}",
+    "description": "Khám phá những cuốn sách đặc biệt phù hợp với {{holiday}}",
+    "error": "Không thể tải sách theo ngữ cảnh",
+    "special": "Đặc biệt",
+    "today": "Hôm nay",
+    "tomorrow": "Ngày mai",
+    "daysUntil": "Còn {{days}} ngày",
+    "holiday_name": "Tên ngày lễ",
+    "tags": "Thẻ"
   }
 }

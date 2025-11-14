@@ -30,6 +30,7 @@ import {
 import { toast } from "react-hot-toast";
 import { FaPaperPlane, FaUser, FaTimes, FaComments } from "react-icons/fa";
 import { auth } from "../firebase/firebase.config";
+import ChatBookCard from "./ChatBookCard";
 
 // Animation variants
 const buttonVariants = {
@@ -111,6 +112,7 @@ const ChatBox = () => {
   const chatBoxRef = useRef(null);
   const buttonRef = useRef(null);
   const [adminId, setAdminId] = useState(null);
+  const [chatMode, setChatMode] = useState("bot"); // "bot" hoặc "admin"
 
   console.log("ChatBox render:", {
     currentUser,
@@ -124,16 +126,24 @@ const ChatBox = () => {
     console.log("Admin ID state:", adminId);
   }, [currentUser, adminId]);
 
-  // Lấy lịch sử chat với admin
+  // Lấy lịch sử chat với admin hoặc bot
+  const chatTargetId = chatMode === "bot" ? "chatbot" : adminId;
   const {
     data: chatHistoryData,
     isLoading: isLoadingHistory,
     error: chatHistoryError,
     refetch: refetchChatHistory,
-  } = useGetChatHistoryQuery(adminId, {
-    skip: !adminId || !currentUser?.uid,
+  } = useGetChatHistoryQuery(chatTargetId, {
+    skip: !chatTargetId || !currentUser?.uid,
     refetchOnMountOrArgChange: true,
   });
+
+  // Reload chat history khi chuyển đổi giữa bot và admin
+  useEffect(() => {
+    if (isOpen && chatTargetId && currentUser?.uid) {
+      refetchChatHistory();
+    }
+  }, [chatMode, isOpen, chatTargetId, currentUser?.uid, refetchChatHistory]);
 
   // Debug log cho chat history
   useEffect(() => {
@@ -215,7 +225,7 @@ const ChatBox = () => {
 
   // Handle socket events
   useEffect(() => {
-    if (!socket || !isOpen || !adminId || !currentUser?.uid) return;
+    if (!socket || !isOpen || !chatTargetId || !currentUser?.uid) return;
 
     const userRoom = `chat:${currentUser.uid}`;
     console.log("Joining chat room:", userRoom);
@@ -227,7 +237,17 @@ const ChatBox = () => {
     const handleNewMessage = (data) => {
       console.log("New message received:", data);
       if (data.message) {
-        if (adminId) {
+        // Kiểm tra xem tin nhắn có liên quan đến chat hiện tại không
+        const message = data.message;
+        console.log("Message books:", message.books);
+        const isRelevant =
+          (chatMode === "bot" &&
+            (message.senderId === "chatbot" ||
+              message.receiverId === "chatbot")) ||
+          (chatMode === "admin" &&
+            (message.senderId === adminId || message.receiverId === adminId));
+
+        if (isRelevant && chatTargetId) {
           refetchChatHistory();
         }
         if (!isOpen) {
@@ -243,7 +263,15 @@ const ChatBox = () => {
       socket.emit("leaveChat", userRoom);
       socket.off("newMessage", handleNewMessage);
     };
-  }, [socket, isOpen, adminId, currentUser?.uid, refetchChatHistory]);
+  }, [
+    socket,
+    isOpen,
+    chatTargetId,
+    currentUser?.uid,
+    refetchChatHistory,
+    chatMode,
+    adminId,
+  ]);
 
   // Simulate typing indicator
   useEffect(() => {
@@ -258,10 +286,11 @@ const ChatBox = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!message.trim() || !adminId || !currentUser?.uid) {
+    const receiverId = chatMode === "bot" ? "chatbot" : adminId;
+    if (!message.trim() || !receiverId || !currentUser?.uid) {
       console.error("Cannot send message:", {
         message: message.trim(),
-        adminId,
+        receiverId,
         userId: currentUser?.uid,
       });
       return;
@@ -279,7 +308,7 @@ const ChatBox = () => {
       }
 
       const messageData = {
-        receiverId: adminId,
+        receiverId: receiverId,
         message: message.trim(),
       };
 
@@ -291,7 +320,7 @@ const ChatBox = () => {
       console.log("Message sent successfully:", result);
 
       setMessage("");
-      if (adminId) {
+      if (chatTargetId) {
         await refetchChatHistory();
       }
     } catch (error) {
@@ -304,7 +333,7 @@ const ChatBox = () => {
     setIsOpen(true);
     setIsMinimized(false);
 
-    if (adminId && currentUser?.uid) {
+    if (chatTargetId && currentUser?.uid) {
       try {
         await refetchChatHistory();
         console.log("Chat history refetched after opening");
@@ -373,46 +402,70 @@ const ChatBox = () => {
                 <div className="flex items-center space-x-3">
                   <Avatar className="w-8 h-8 border-2 border-white/30">
                     <AvatarFallback className="bg-white/20 text-white text-sm">
-                      A
+                      {chatMode === "bot" ? "🤖" : "A"}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-semibold text-sm">Admin Support</h3>
+                    <h3 className="font-semibold text-sm">
+                      {chatMode === "bot" ? "Chatbot AI" : "Admin Support"}
+                    </h3>
                     <div className="flex items-center gap-1 text-xs text-blue-100">
                       <Circle className="w-2 h-2 fill-green-400 text-green-400" />
-                      {isTyping ? "Đang nhập..." : "Trực tuyến"}
+                      {chatMode === "bot"
+                        ? "Luôn sẵn sàng"
+                        : isTyping
+                        ? "Đang nhập..."
+                        : "Trực tuyến"}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-1">
+                {/* Toggle between bot and admin */}
+                <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setIsMinimized(!isMinimized)}
-                    className="text-white hover:bg-white/20 w-8 h-8 p-0 rounded-full"
+                    onClick={() => {
+                      setChatMode(chatMode === "bot" ? "admin" : "bot");
+                    }}
+                    className="text-white hover:bg-white/20 text-xs px-2 py-1 h-auto"
+                    title={
+                      chatMode === "bot"
+                        ? "Chuyển sang Admin"
+                        : "Chuyển sang Bot"
+                    }
                   >
-                    <Minus className="w-4 h-4" />
+                    {chatMode === "bot" ? "👤" : "🤖"}
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleToggleSize}
-                    className="text-white hover:bg-white/20 w-8 h-8 p-0 rounded-full"
-                  >
-                    {isMaximized ? (
-                      <Minimize2 className="w-4 h-4" />
-                    ) : (
-                      <Maximize2 className="w-4 h-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClose}
-                    className="text-white hover:bg-white/20 w-8 h-8 p-0 rounded-full"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsMinimized(!isMinimized)}
+                      className="text-white hover:bg-white/20 w-8 h-8 p-0 rounded-full"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleToggleSize}
+                      className="text-white hover:bg-white/20 w-8 h-8 p-0 rounded-full"
+                    >
+                      {isMaximized ? (
+                        <Minimize2 className="w-4 h-4" />
+                      ) : (
+                        <Maximize2 className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClose}
+                      className="text-white hover:bg-white/20 w-8 h-8 p-0 rounded-full"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -456,49 +509,86 @@ const ChatBox = () => {
                           Chào mừng!
                         </h4>
                         <p className="text-sm text-gray-500">
-                          Hãy gửi tin nhắn để bắt đầu cuộc trò chuyện với admin
+                          {chatMode === "bot"
+                            ? "Hãy gửi tin nhắn để bắt đầu trò chuyện với chatbot AI. Tôi có thể giúp bạn tìm sách, tư vấn sách phù hợp, hoặc trả lời các câu hỏi!"
+                            : "Hãy gửi tin nhắn để bắt đầu cuộc trò chuyện với admin"}
                         </p>
                       </motion.div>
                     ) : (
                       <AnimatePresence mode="popLayout">
-                        {chatHistoryData.data.map((msg) => (
-                          <motion.div
-                            key={msg._id}
-                            variants={messageVariants}
-                            initial="hidden"
-                            animate="visible"
-                            layout
-                            className={`flex ${
-                              msg.senderId === currentUser.uid
-                                ? "justify-end"
-                                : "justify-start"
-                            }`}
-                          >
-                            <motion.div
-                              layout
-                              className={`max-w-[85%] rounded-2xl px-4 py-2 shadow-sm ${
-                                msg.senderId === currentUser.uid
-                                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-                                  : "bg-white text-gray-900 border border-gray-200"
-                              }`}
-                            >
-                              <p className="text-sm leading-relaxed">
-                                {msg.message}
-                              </p>
-                              <p
-                                className={`text-xs mt-1 ${
+                        {chatHistoryData.data.map((msg) => {
+                          console.log("Rendering message:", {
+                            id: msg._id,
+                            hasBooks: !!msg.books,
+                            booksCount: msg.books?.length || 0,
+                            books: msg.books,
+                          });
+                          return (
+                            <div key={msg._id} className="space-y-2">
+                              {/* Message text */}
+                              <motion.div
+                                variants={messageVariants}
+                                initial="hidden"
+                                animate="visible"
+                                layout
+                                className={`flex ${
                                   msg.senderId === currentUser.uid
-                                    ? "text-blue-100"
-                                    : "text-gray-500"
+                                    ? "justify-end"
+                                    : "justify-start"
                                 }`}
                               >
-                                {format(new Date(msg.createdAt), "HH:mm", {
-                                  locale: vi,
-                                })}
-                              </p>
-                            </motion.div>
-                          </motion.div>
-                        ))}
+                                <motion.div
+                                  layout
+                                  className={`max-w-[85%] rounded-2xl px-4 py-2 shadow-sm ${
+                                    msg.senderId === currentUser.uid
+                                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                                      : "bg-white text-gray-900 border border-gray-200"
+                                  }`}
+                                >
+                                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                                    {msg.message}
+                                  </p>
+                                  <p
+                                    className={`text-xs mt-1 ${
+                                      msg.senderId === currentUser.uid
+                                        ? "text-blue-100"
+                                        : "text-gray-500"
+                                    }`}
+                                  >
+                                    {format(new Date(msg.createdAt), "HH:mm", {
+                                      locale: vi,
+                                    })}
+                                  </p>
+                                </motion.div>
+                              </motion.div>
+
+                              {/* Hiển thị book cards bên ngoài message bubble */}
+                              {msg.books &&
+                                Array.isArray(msg.books) &&
+                                msg.books.length > 0 && (
+                                  <motion.div
+                                    variants={messageVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    className={`flex ${
+                                      msg.senderId === currentUser.uid
+                                        ? "justify-end"
+                                        : "justify-start"
+                                    }`}
+                                  >
+                                    <div className="w-full max-w-[90%] space-y-2">
+                                      {msg.books.map((book) => (
+                                        <ChatBookCard
+                                          key={book._id}
+                                          book={book}
+                                        />
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                            </div>
+                          );
+                        })}
                       </AnimatePresence>
                     )}
 

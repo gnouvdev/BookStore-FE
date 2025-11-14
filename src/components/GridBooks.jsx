@@ -147,28 +147,28 @@ const EnhancedGridBooks = ({ genre }) => {
       // Apply sorting
       if (filters.sortBy) {
         switch (filters.sortBy) {
-          case t("filter.priceLowToHigh"):
+          case "price_asc":
             result.sort(
               (a, b) => (a.price?.newPrice || 0) - (b.price?.newPrice || 0)
             );
             break;
-          case t("filter.priceHighToLow"):
+          case "price_desc":
             result.sort(
               (a, b) => (b.price?.newPrice || 0) - (a.price?.newPrice || 0)
             );
             break;
-          case t("filter.newest"):
+          case "newest":
             result.sort(
               (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
             );
             break;
-          case t("filter.trending"):
+          case "trending":
             result.sort((a, b) => (b.trending ? 1 : 0) - (a.trending ? 1 : 0));
             break;
-          case t("filter.rating"):
+          case "rating":
             result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
             break;
-          case t("filter.title"):
+          case "title":
             result.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
             break;
           default:

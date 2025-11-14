@@ -356,7 +356,8 @@ const EnhancedUpdateBook = () => {
         handleAuthError();
       } else {
         const errorMessage =
-          error.data?.message || "Không thể cập nhật cuốn sách. Vui lòng thử lại.";
+          error.data?.message ||
+          "Không thể cập nhật cuốn sách. Vui lòng thử lại.";
         toast.error(errorMessage, {
           style: {
             borderRadius: "12px",
@@ -432,7 +433,7 @@ const EnhancedUpdateBook = () => {
         >
           <div className="text-6xl mb-4">😞</div>
           <h2 className="text-2xl font-bold text-red-600 mb-2">
-              Lỗi tải dữ liệu cuốn sách
+            Lỗi tải dữ liệu cuốn sách
           </h2>
           <p className="text-gray-600">Không thể tải dữ liệu cuốn sách</p>
         </motion.div>
@@ -541,7 +542,9 @@ const EnhancedUpdateBook = () => {
                       Tên sách *
                     </label>
                     <input
-                      {...register("title", { required: "Tên sách là bắt buộc" })}
+                      {...register("title", {
+                        required: "Tên sách là bắt buộc",
+                      })}
                       type="text"
                       placeholder="Nhập tên sách"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
@@ -809,7 +812,7 @@ const EnhancedUpdateBook = () => {
                   <input
                     {...register("quantity", {
                       required: "Quantity is required",
-                      min: 1,
+                      min: 0,
                     })}
                     type="number"
                     placeholder="Nhập số lượng"
