@@ -148,7 +148,8 @@
       "no_reviews": "No reviews found",
       "write_a_review": "Write a Review",
       "review": "Your Review",
-      "rating": "Your Rating"
+      "rating": "Your Rating",
+      "error":"Error"
     },
     "delivery": {
       "free": "Free nationwide express delivery for orders over 20$",
@@ -182,10 +183,12 @@
     "remove": "Remove",
     "shopping_items": "Shopping Items",
     "checkout": "Checkout",
+    "street_address":"Street Address",
     "or": "Or",
     "enter_voucher": "Enter Voucher",
     "enter_your_street_address": "Enter your street address",
     "enter_your_zip_code": "Enter your zipcode",
+    "zip_code": "Zip Code",
     "invalid_phone_number": "Invalid phone number",
     "apply": "Apply",
     "voucher_applied": "Voucher applied",
@@ -213,6 +216,7 @@
     "tax": "Tax",
     "quantity": "Quantity",
     "free": "Free",
+    "login_now":"Login now",
     "secure_checkout": "Secure Checkout",
     "your_payment_information_is_protected": "Your payment information is protected",
     "view_details": "View Details",

@@ -235,12 +235,6 @@ const EnhancedSingleBook = () => {
     if (product && product._id) {
       try {
         await addToCart({ bookId: product._id, quantity }).unwrap();
-        Swal.fire({
-          icon: "success",
-          title: t("cart.add_success"),
-          showConfirmButton: false,
-          timer: 1500,
-        });
       } catch (error) {
         console.error("Error adding to cart:", error);
         Swal.fire({

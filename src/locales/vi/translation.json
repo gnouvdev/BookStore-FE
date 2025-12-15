@@ -179,12 +179,15 @@
     "invalid_phone_number": "Số điện thoại không hợp lệ",
     "enter_your_street_address": "Nhập địa chỉ của bạn",
     "enter_your_zip_code": "Nhập mã bưu điện của bạn",
+    "zip_code": "Mã bưu điện",
+    "street_address": "Địa chỉ",
     "apply": "Áp dụng",
     "voucher_applied": "Mã giảm giá đã được áp dụng",
     "shipping_taxes": "Phí vận chuyển",
     "shopping_items": "Sản phẩm",
     "checkout": "Thanh toán",
     "or": "Hoặc",
+    "login_now": "Đăng nhập để mua hàng nào!",
     "invalid_voucher": "Mã giảm giá không hợp lệ",
     "please_select_a_payment_method": "Vui lòng chọn phương thức thanh toán",
     "please_wait_while_we_load_your_profile_data": "Vui lòng chờ trong khi chúng tôi tải dữ liệu hồ sơ của bạn",
@@ -351,7 +354,8 @@
     "comment": "Bình luận",
     "submit": "Gửi",
     "write_review": "Viết đánh giá",
-    "comment_placeholder": "Viết đánh giá cho cuốn sách này"
+    "comment_placeholder": "Viết đánh giá cho cuốn sách này",
+    "error": "Bạn chưa mua sách này!"
   },
   "categories": {
     "Bussines": "Kinh doanh",
