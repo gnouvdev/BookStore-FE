@@ -92,7 +92,7 @@ const OrderDetails = () => {
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/orders/${id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -207,7 +207,7 @@ const OrderDetails = () => {
         await cancelOrder(id).unwrap();
         toast.success("Đơn hàng đã được hủy thành công");
         // Reload order details
-        const response = await fetch(`http://localhost:5000/api/orders/${id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

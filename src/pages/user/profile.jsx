@@ -79,7 +79,7 @@ const EnhancedProfile = () => {
 
       setIsLoading(true)
       try {
-        const response = await axios.get("http://localhost:5000/api/users/profile", {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -213,7 +213,7 @@ const EnhancedProfile = () => {
       }
 
       const response = await axios.put(
-        "http://localhost:5000/api/users/profile",
+       `${import.meta.env.VITE_API_URL}/api/users/profile`,
         { ...formData, photoURL: photoUrl },
         {
           headers: {
