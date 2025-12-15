@@ -7,13 +7,13 @@ export const recommendationsv2Api = createApi({
   endpoints: (builder) => ({
     getCollaborativeRecommendations: builder.query({
       query: () => ({
-        url: "/recommendationv2/collaborative",
+        url: "/api/recommendationv2/collaborative",
         method: "GET",
       }),
     }),
     getContextualRecommendations: builder.query({
       query: () => ({
-        url: "/recommendationv2/contextual",
+        url: "/api/recommendationv2/contextual",
         method: "GET",
       }),
     }),
