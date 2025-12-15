@@ -198,7 +198,7 @@ const ChatBox = () => {
           token.substring(0, 10) + "..."
         );
 
-        const response = await fetch("http://localhost:5000/api/users/admin", {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/admin`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

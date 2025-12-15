@@ -61,7 +61,7 @@ const EnhancedRegister = () => {
   // Helper functions
   const fetchUserProfile = async (token) => {
     try {
-      const response = await axios.get("http://localhost:5000/api/users/profile", {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       return response.data.user
@@ -113,7 +113,7 @@ const EnhancedRegister = () => {
       const idToken = await firebaseUser.getIdToken()
 
       // 3. Backend registration
-      const response = await axios.post("http://localhost:5000/api/users/register", {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/register`, {
         idToken,
         fullName: data.fullName,
         email: data.email,
@@ -187,7 +187,7 @@ const EnhancedRegister = () => {
       const user = result.user
       const idToken = await user.getIdToken()
 
-      const response = await axios.post("http://localhost:5000/api/auth/google", { idToken })
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/google`, { idToken })
       const { token, role = "user" } = response.data
 
       localStorage.setItem("token", token)

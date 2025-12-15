@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "../context/AuthContext";
 
 // Mock baseUrl for demo
-const baseUrl = "http://localhost:5000/api";
+const baseUrl = `${import.meta.env.VITE_API_URL}/api`;
 
 const ImprovedAdminLogin = () => {
   const [message, setMessage] = useState("");

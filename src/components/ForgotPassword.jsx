@@ -35,7 +35,7 @@ const ImprovedForgotPassword = () => {
   const [emailSent, setEmailSent] = useState(false);
 
   // Mock baseUrl for demo
-  const baseUrl = "http://localhost:5000/api";
+  const baseUrl = `${import.meta.env.VITE_API_URL}/api`;
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");

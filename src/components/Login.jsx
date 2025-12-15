@@ -80,7 +80,7 @@ const EnhancedLogin = () => {
         token.substring(0, 10) + "..."
       );
       const response = await axios.get(
-        "http://localhost:5000/api/users/profile",
+        `${import.meta.env.VITE_API_URL}/api/users/profile`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -192,7 +192,7 @@ const EnhancedLogin = () => {
         console.log("Auth header:", authHeader.substring(0, 20) + "...");
 
         const response = await axios.post(
-          "http://localhost:5000/api/auth/login",
+          `${import.meta.env.VITE_API_URL}/api/auth/login`,
           loginData,
           {
             headers: {
@@ -224,7 +224,7 @@ const EnhancedLogin = () => {
           // Kiểm tra user đã tồn tại chưa
           try {
             const checkResponse = await axios.get(
-              `http://localhost:5000/api/users/check-email/${firebaseUser.email}`,
+              `${import.meta.env.VITE_API_URL}/api/users/check-email/${firebaseUser.email}`,
               {
                 headers: {
                   Authorization: authHeader,
@@ -236,7 +236,7 @@ const EnhancedLogin = () => {
               // User đã tồn tại, thử đăng nhập lại
               console.log("User already exists, retrying login...");
               const retryResponse = await axios.post(
-                "http://localhost:5000/api/auth/login",
+               `${import.meta.env.VITE_API_URL}/api/auth/login`,
                 loginData,
                 {
                   headers: {
@@ -254,7 +254,7 @@ const EnhancedLogin = () => {
             } else {
               // User chưa tồn tại, đăng ký mới
               const registerResponse = await axios.post(
-                "http://localhost:5000/api/users/register",
+                `${import.meta.env.VITE_API_URL}/api/users/register`,
                 {
                   idToken,
                   email: firebaseUser.email,
@@ -286,7 +286,7 @@ const EnhancedLogin = () => {
             console.error("Error checking user:", checkError);
             // Nếu không check được, thử đăng ký trực tiếp
             const registerResponse = await axios.post(
-              "http://localhost:5000/api/users/register",
+              `${import.meta.env.VITE_API_URL}/api/users/register`,
               {
                 idToken,
                 email: firebaseUser.email,
@@ -422,7 +422,7 @@ const EnhancedLogin = () => {
 
       // 3. Backend authentication
       const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        `${import.meta.env.VITE_API_URL}/api/auth/login`,
         {
           idToken,
           email: user.email,
@@ -463,7 +463,7 @@ const EnhancedLogin = () => {
       } else if (response.status === 401) {
         // User not found, try to register
         const registerResponse = await axios.post(
-          "http://localhost:5000/api/users/register",
+          `${import.meta.env.VITE_API_URL}/api/users/register`,
           {
             idToken,
             email: user.email,
