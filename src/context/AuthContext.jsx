@@ -207,7 +207,15 @@ export const AuthProvider = ({ children }) => {
         }, 100);
       } else {
         // User logout - clear cart và reset RTK Query cache
-        if (previousUserId) {
+        // NHƯNG: Nếu đang có admin token, không clear (admin không dùng Firebase)
+        const storedToken = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("user");
+        const isAdmin = storedUser
+          ? JSON.parse(storedUser)?.role === "admin"
+          : false;
+
+        // Chỉ clear nếu không phải admin
+        if (previousUserId && !isAdmin) {
           console.log(
             "User logged out (onAuthStateChanged), clearing cart and resetting cache..."
           );
@@ -219,10 +227,26 @@ export const AuthProvider = ({ children }) => {
           // Clear token
           setToken(null);
           previousUserId = null;
+          setCurrentUser(null);
+          // Dispatch event để các component biết đã logout
+          window.dispatchEvent(new CustomEvent("userLoggedOut"));
+        } else if (isAdmin && storedToken && storedUser) {
+          // Nếu là admin, giữ nguyên token và user
+          console.log("Admin session detected, preserving admin token");
+          const adminUser = JSON.parse(storedUser);
+          setCurrentUser(adminUser);
+          setToken(storedToken);
+          // Sync admin user to Redux
+          dispatch(
+            setCredentials({
+              user: adminUser,
+              token: storedToken,
+            })
+          );
+        } else if (!previousUserId && !isAdmin) {
+          // Nếu không có previousUserId và không phải admin, clear state
+          setCurrentUser(null);
         }
-        setCurrentUser(null);
-        // Dispatch event để các component biết đã logout
-        window.dispatchEvent(new CustomEvent("userLoggedOut"));
       }
       setLoading(false);
     });

@@ -89,6 +89,15 @@ const ImprovedAdminLogin = () => {
         localStorage.setItem("user", JSON.stringify(cleanUser));
         setCurrentUser(cleanUser);
 
+        // Dispatch event để AuthContext biết token đã được set
+        window.dispatchEvent(new CustomEvent("tokenSet"));
+        // Dispatch event để các component biết admin đã login
+        window.dispatchEvent(
+          new CustomEvent("userLoggedIn", {
+            detail: { userId: user.id, role: "admin" },
+          })
+        );
+
         setLoginStep("success");
 
         // Success animation and navigation
