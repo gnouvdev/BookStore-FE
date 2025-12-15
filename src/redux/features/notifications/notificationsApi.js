@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_URL}/api`,
+  baseUrl: `${import.meta.env.VITE_API_URL}`,
   prepareHeaders: (headers) => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -14,7 +14,7 @@ const baseQuery = fetchBaseQuery({
 // Wrapper để xử lý 401 errors một cách graceful
 const baseQueryWithAuth = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
-  
+
   // Nếu lỗi 401 và không có token, không log error (user chưa login)
   if (result.error && result.error.status === 401) {
     const token = localStorage.getItem("token");
@@ -29,7 +29,7 @@ const baseQueryWithAuth = async (args, api, extraOptions) => {
       };
     }
   }
-  
+
   return result;
 };
 
@@ -39,19 +39,19 @@ export const notificationsApi = createApi({
   tagTypes: ["Notifications"],
   endpoints: (builder) => ({
     getNotifications: builder.query({
-      query: () => "/notifications",
+      query: () => "/api/notifications",
       providesTags: ["Notifications"],
     }),
     markAsRead: builder.mutation({
       query: (notificationId) => ({
-        url: `/notifications/${notificationId}/read`,
+        url: `/api/notifications/${notificationId}/read`,
         method: "PUT",
       }),
       invalidatesTags: ["Notifications"],
     }),
     markAllAsRead: builder.mutation({
       query: () => ({
-        url: "/notifications/read-all",
+        url: "/api/notifications/read-all",
         method: "PUT",
       }),
       invalidatesTags: ["Notifications"],
