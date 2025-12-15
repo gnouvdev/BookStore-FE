@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const voucherApi = createApi({
   reducerPath: "voucherApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/vouchers",
+    baseUrl: `${import.meta.env.VITE_API_URL}/api/vouchers`,
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.token;
       if (token) {
