@@ -4,7 +4,7 @@ import axios from "axios";
 import { getToken } from "./tokenStorage";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:5000/", // Your API base URL
+  baseURL: `${import.meta.env.VITE_API_URL}/`, // Your API base URL
 });
 
 axiosInstance.interceptors.request.use(
