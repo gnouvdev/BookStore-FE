@@ -6,7 +6,6 @@ import News from "./News";
 import GenreBooks from "../../components/GenreBooks";
 import Recommendationsv2 from "../../components/Recommendationsv2";
 import InteractiveBookExplorer from "./InteractiveBook";
-import ChatBox from "../../components/ChatBox";
 import SimplifiedMiniBanner from "./../../components/miniBanner";
 import ContextualBooks from "./ContextualBooks";
 const Home = () => {
@@ -26,8 +25,6 @@ const Home = () => {
       <GenreBooks genre={"Adventure"} />
       <SimplifiedMiniBanner genre1={"Horror1"} genre2={"Horror2"} />
       <GenreBooks genre={"Manga"} />
-      {/* <TopSales /> */}
-      <ChatBox />
       <News />
     </>
   );

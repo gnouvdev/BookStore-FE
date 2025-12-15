@@ -4,6 +4,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaShoppingCart,
@@ -32,11 +33,176 @@ import "../../styles/cart-checkout.css";
 
 const EnhancedCartPage = () => {
   const { t } = useTranslation();
-  const { user } = useSelector((state) => state.auth);
-  const { data: cart, isLoading, isError, error } = useGetCartQuery();
+  const { user: reduxUser } = useSelector((state) => state.auth);
+  const { currentUser } = useAuth(); // Sử dụng currentUser từ context (reactive hơn)
+
+  // Ưu tiên sử dụng currentUser từ context, fallback về Redux user
+  const user = currentUser || reduxUser;
+  const previousUserRef = useRef(null);
+
+  // Sử dụng user?.uid làm key để cache riêng biệt cho mỗi user
+  // Track skip state để detect khi query được enable lại
+  const [wasSkipped, setWasSkipped] = useState(!user?.uid);
+
+  const {
+    data: cart,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useGetCartQuery(user?.uid || null, {
+    skip: !user?.uid, // Skip query nếu chưa có user
+    refetchOnMountOrArgChange: true, // Force refetch khi mount hoặc arg thay đổi
+    refetchOnFocus: true, // Force refetch khi focus
+  });
+
+  // Detect khi skip thay đổi từ true -> false (user login) - PRIMARY MECHANISM
+  useEffect(() => {
+    const isSkipped = !user?.uid;
+
+    // Khi query được enable lại (skip: false)
+    if (wasSkipped && !isSkipped && user?.uid) {
+      console.log(
+        "✅ Query enabled (user logged in), will refetch cart for:",
+        user?.uid
+      );
+
+      // Kiểm tra token có trong localStorage chưa
+      const checkTokenAndRefetch = () => {
+        const token = localStorage.getItem("token");
+        if (token) {
+          console.log("Token found, executing refetch for user:", user?.uid);
+          refetch();
+        } else {
+          console.log("Token not found yet, retrying in 200ms...");
+          setTimeout(checkTokenAndRefetch, 200);
+        }
+      };
+
+      // Bắt đầu check sau một chút delay
+      const timeoutId = setTimeout(checkTokenAndRefetch, 300);
+
+      setWasSkipped(isSkipped);
+      return () => clearTimeout(timeoutId);
+    }
+
+    setWasSkipped(isSkipped);
+  }, [user?.uid, wasSkipped, refetch]);
   const [clearCart, { isLoading: isClearingCart }] = useClearCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
   const [updateCartItemQuantity] = useUpdateCartItemQuantityMutation();
+
+  // Refetch cart khi user login hoặc đổi user (sử dụng currentUser từ context)
+  useEffect(() => {
+    const handleUserLoggedIn = (event) => {
+      const newUserId = event.detail?.userId;
+      console.log(
+        "User logged in event, new user ID:",
+        newUserId,
+        "Current user from context:",
+        currentUser?.uid
+      );
+      // Đợi để đảm bảo token đã được set và Redux state đã được cập nhật
+      setTimeout(() => {
+        // Kiểm tra cả currentUser từ context và user từ Redux
+        if (currentUser?.uid === newUserId || user?.uid === newUserId) {
+          console.log("Refetching cart after login event...");
+          refetch();
+        }
+      }, 500);
+    };
+
+    const handleUserChanged = (event) => {
+      const newUserId = event.detail?.userId;
+      console.log(
+        "User changed event, new user ID:",
+        newUserId,
+        "Current user from context:",
+        currentUser?.uid
+      );
+      // Đợi để đảm bảo cache đã được reset và state đã được cập nhật
+      setTimeout(() => {
+        if (currentUser?.uid === newUserId || user?.uid === newUserId) {
+          console.log("Refetching cart after user change event...");
+          refetch();
+        }
+      }, 600);
+    };
+
+    const handleUserLoggedOut = () => {
+      console.log("User logged out event, clearing cart display");
+      // Cart sẽ tự động clear vì skip: true khi không có user
+    };
+
+    window.addEventListener("userLoggedIn", handleUserLoggedIn);
+    window.addEventListener("userChanged", handleUserChanged);
+    window.addEventListener("userLoggedOut", handleUserLoggedOut);
+
+    return () => {
+      window.removeEventListener("userLoggedIn", handleUserLoggedIn);
+      window.removeEventListener("userChanged", handleUserChanged);
+      window.removeEventListener("userLoggedOut", handleUserLoggedOut);
+    };
+  }, [currentUser?.uid, user?.uid, refetch]);
+
+  // Track user changes và refetch khi cần (sử dụng currentUser từ context)
+  useEffect(() => {
+    const previousUser = previousUserRef.current;
+    const currentUserId = currentUser?.uid || user?.uid; // Ưu tiên currentUser từ context
+
+    // Nếu user thay đổi từ null -> có user (login mới)
+    if (!previousUser && currentUserId) {
+      console.log(
+        "User logged in (null -> user), will refetch cart for:",
+        currentUserId
+      );
+      // Đợi để đảm bảo token đã được set vào localStorage và Redux state đã được cập nhật
+      const timeoutId = setTimeout(() => {
+        console.log("Refetching cart for newly logged in user:", currentUserId);
+        refetch();
+      }, 600);
+
+      previousUserRef.current = currentUserId;
+      return () => clearTimeout(timeoutId);
+    }
+
+    // Nếu user thay đổi từ user cũ -> user mới (switch user)
+    if (previousUser && currentUserId && previousUser !== currentUserId) {
+      console.log(
+        "User switched from",
+        previousUser,
+        "to",
+        currentUserId,
+        ", will refetch cart"
+      );
+      // Đợi để đảm bảo cache đã được reset và state đã được cập nhật
+      const timeoutId = setTimeout(() => {
+        console.log("Refetching cart for switched user:", currentUserId);
+        refetch();
+      }, 600);
+
+      previousUserRef.current = currentUserId;
+      return () => clearTimeout(timeoutId);
+    }
+
+    // Nếu user thay đổi từ có user -> null (logout)
+    if (previousUser && !currentUserId) {
+      console.log(
+        "User logged out, clearing previous user reference and cache"
+      );
+      previousUserRef.current = null;
+      // Cache đã được reset trong AuthContext, không cần làm gì thêm
+    }
+
+    // Cập nhật previousUserRef nếu chưa có (initial mount với user)
+    if (
+      currentUserId &&
+      previousUser === null &&
+      previousUserRef.current === null
+    ) {
+      previousUserRef.current = currentUserId;
+    }
+  }, [currentUser?.uid, user?.uid, refetch]);
 
   const [removingItems, setRemovingItems] = useState(new Set());
   const [updatingItems, setUpdatingItems] = useState(new Set());
@@ -294,9 +460,7 @@ const EnhancedCartPage = () => {
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             {t("cart.please_login")}
           </h2>
-          <p className="text-gray-600 mb-6">
-            {t("cart.please_login")}
-          </p>
+          <p className="text-gray-600 mb-6">{t("cart.please_login")}</p>
           <Link
             to="/login"
             className="inline-block bg-blue-500 text-white px-8 py-3 rounded-xl hover:bg-blue-600 transition-colors duration-200 font-semibold"

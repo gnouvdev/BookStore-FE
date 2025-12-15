@@ -1,0 +1,392 @@
+"use client";
+import {
+  TrendingUp,
+  AlertCircle,
+  Brain,
+  RefreshCw,
+  Sparkles,
+  PackagePlus,
+  Tag,
+  Zap,
+  TrendingDown,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+export default function EnhancedAIBusinessAssistant({
+  businessInsights,
+  insightsLoading,
+  onRefresh,
+}) {
+  return (
+    <section className="relative bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 border-2 border-gray-200/60 rounded-2xl shadow-lg overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+
+      <div className="relative p-6 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg blur-sm opacity-50 animate-pulse"></div>
+                <Badge className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 px-3 py-1">
+                  <Brain className="w-3 h-3 mr-1.5" />
+                  <span className="font-semibold uppercase tracking-wide text-xs">
+                    AI Business Assistant
+                  </span>
+                  <span className="ml-2 inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                </Badge>
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-900 bg-clip-text text-transparent">
+              Phân tích nhu cầu & xu hướng khách hàng
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Tổng hợp tìm kiếm, lượt xem, wishlist, chatbot và sách trending để
+              đề xuất hành động thông minh
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-2 hover:border-blue-500 hover:bg-blue-50 transition-all bg-transparent"
+              onClick={onRefresh}
+              disabled={insightsLoading}
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${
+                  insightsLoading ? "animate-spin text-blue-600" : ""
+                }`}
+              />
+              Làm mới
+            </Button>
+          </div>
+        </div>
+
+        {insightsLoading ? (
+          <div className="grid md:grid-cols-2 gap-4">
+            {[1, 2].map((item) => (
+              <div
+                key={item}
+                className="bg-white/60 backdrop-blur-sm border-2 border-gray-200 rounded-xl p-4 animate-pulse space-y-4"
+              >
+                <div className="h-4 bg-gray-200 rounded w-1/3" />
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-3 bg-gray-200 rounded" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : businessInsights ? (
+          <>
+            {businessInsights.topInsights?.length > 0 && (
+              <ul className="grid md:grid-cols-2 gap-3">
+                {businessInsights.topInsights.map((insight, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-start gap-3 bg-white/80 backdrop-blur-sm border-2 border-orange-200 rounded-xl p-3 hover:shadow-md transition-all"
+                  >
+                    <span className="text-2xl">🔥</span>
+                    <span className="text-sm text-gray-800 font-medium">
+                      {insight}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="grid lg:grid-cols-3 gap-4">
+              <div className="bg-white/80 backdrop-blur-sm border-2 border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Xu hướng tìm kiếm
+                  </h3>
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                </div>
+                <ul className="space-y-2">
+                  {businessInsights.metrics?.searchTrends
+                    ?.slice(0, 5)
+                    .map((trend) => (
+                      <li
+                        key={trend.query}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <div>
+                          <p className="font-medium text-gray-800">
+                            {trend.query}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {trend.count} lượt tìm
+                          </p>
+                        </div>
+                        <span
+                          className={`text-xs font-semibold ${
+                            trend.change >= 0
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {trend.change > 0 ? "+" : ""}
+                          {trend.change}%
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm border-2 border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Nhu cầu nổi bật
+                  </h3>
+                  <Sparkles className="w-4 h-4 text-purple-500" />
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs uppercase text-gray-500">Wishlist</p>
+                    <ul className="mt-1 space-y-1">
+                      {businessInsights.metrics?.wishlistLeaders
+                        ?.slice(0, 3)
+                        .map((item) => (
+                          <li
+                            key={item.bookId}
+                            className="flex items-center justify-between text-sm text-gray-700"
+                          >
+                            <span>
+                              {item.book?.title || "Sách chưa xác định"}
+                            </span>
+                            <span className="text-gray-500">
+                              {item.count} lượt
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase text-gray-500">
+                      Chatbot giới thiệu
+                    </p>
+                    <ul className="mt-1 space-y-1">
+                      {businessInsights.metrics?.chatbotHot
+                        ?.slice(0, 3)
+                        .map((item) => (
+                          <li
+                            key={item.bookId || item.title}
+                            className="flex items-center justify-between text-sm text-gray-700"
+                          >
+                            <span>
+                              {item.book?.title || item.title || "Sách"}
+                            </span>
+                            <span className="text-gray-500">
+                              {item.hits} lần
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm border-2 border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Sản phẩm cần chú ý
+                  </h3>
+                  <AlertCircle className="w-4 h-4 text-red-500" />
+                </div>
+                <ul className="space-y-2">
+                  {businessInsights.metrics?.lowConversion?.length ? (
+                    businessInsights.metrics.lowConversion
+                      .slice(0, 4)
+                      .map((item) => (
+                        <li
+                          key={item.bookId}
+                          className="text-sm text-gray-700 border border-gray-200 rounded-lg p-2"
+                        >
+                          <p className="font-medium">
+                            {item.book?.title || "Sách"}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {item.views} lượt xem · {item.sold} đơn ·{" "}
+                            {item.conversion}% chuyển đổi
+                          </p>
+                        </li>
+                      ))
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      Chưa có dữ liệu chuyển đổi.
+                    </p>
+                  )}
+                </ul>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="relative bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-xl p-[2px] overflow-hidden group hover:shadow-2xl transition-all">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-600 opacity-0 group-hover:opacity-100 blur-xl transition-opacity"></div>
+                <div className="relative bg-white rounded-xl p-5 h-full backdrop-blur-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                      <PackagePlus className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      Gợi ý nhập hàng & Highlight
+                    </h3>
+                  </div>
+
+                  {/* Stock Up Recommendations */}
+                  {businessInsights.recommendations?.stockUp?.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <PackagePlus className="w-4 h-4 text-blue-600" />
+                        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                          Nhập hàng ngay
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {businessInsights.recommendations.stockUp.map(
+                          (item, idx) => (
+                            <span
+                              key={`stock-${idx}`}
+                              className="px-3 py-2 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-200 text-blue-700 text-xs font-semibold rounded-lg hover:shadow-md transition-all cursor-pointer"
+                            >
+                              <span className="font-bold">{item.title}</span>
+                              <span className="text-blue-600">
+                                : {item.reason}
+                              </span>
+                            </span>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Highlight Recommendations */}
+                  {businessInsights.recommendations?.highlight?.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Tag className="w-4 h-4 text-purple-600" />
+                        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                          Khuyến mãi nổi bật
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {businessInsights.recommendations.highlight.map(
+                          (item, idx) => (
+                            <span
+                              key={`highlight-${idx}`}
+                              className="px-3 py-2 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-purple-200 text-purple-700 text-xs font-semibold rounded-lg hover:shadow-md transition-all cursor-pointer"
+                            >
+                              <span className="font-bold">{item.title}</span>
+                              <span className="text-purple-600">
+                                : {item.reason}
+                              </span>
+                            </span>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {!businessInsights.recommendations?.stockUp?.length &&
+                    !businessInsights.recommendations?.highlight?.length && (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        Chưa có gợi ý nhập hàng hoặc sản phẩm nổi bật
+                      </p>
+                    )}
+                </div>
+              </div>
+
+              <div className="relative bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600 rounded-xl p-[2px] overflow-hidden group hover:shadow-2xl transition-all">
+                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-600 opacity-0 group-hover:opacity-100 blur-xl transition-opacity"></div>
+                <div className="relative bg-white rounded-xl p-5 h-full backdrop-blur-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
+                      <Zap className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                      Thời điểm vàng & Cảnh báo giảm
+                    </h3>
+                  </div>
+
+                  {/* Timing Recommendations */}
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap className="w-4 h-4 text-green-600" />
+                      <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        Thời điểm vàng
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {businessInsights.recommendations?.timing?.length ? (
+                        businessInsights.recommendations.timing.map(
+                          (item, idx) => (
+                            <span
+                              key={`timing-${idx}`}
+                              className="px-3 py-2 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 text-green-700 text-xs font-semibold rounded-lg hover:shadow-md transition-all cursor-pointer"
+                            >
+                              <span className="font-bold">{item.window}</span>
+                              <span className="text-green-600">
+                                : {item.reason}
+                              </span>
+                            </span>
+                          )
+                        )
+                      ) : (
+                        <span className="text-xs text-gray-500 italic">
+                          Chưa có dữ liệu thời điểm vàng
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Drop Warnings */}
+                  <div className="pt-4 border-t-2 border-gray-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingDown className="w-4 h-4 text-red-600" />
+                      <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        Cảnh báo giảm
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {businessInsights.recommendations?.drop?.length ? (
+                        businessInsights.recommendations.drop.map(
+                          (item, idx) => (
+                            <span
+                              key={`drop-${idx}`}
+                              className="px-3 py-2 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 text-red-700 text-xs font-semibold rounded-lg hover:shadow-md transition-all cursor-pointer"
+                            >
+                              <span className="font-bold">{item.title}</span>
+                              <span className="text-red-600">
+                                : {item.reason}
+                              </span>
+                            </span>
+                          )
+                        )
+                      ) : (
+                        <span className="text-xs text-gray-500 italic">
+                          Không có cảnh báo giảm
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-8">
+            <Brain className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">
+              Chưa có đủ dữ liệu để AI phân tích. Hệ thống sẽ tự động cập nhật
+              khi có thêm hành vi người dùng.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

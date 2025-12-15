@@ -7,13 +7,18 @@ import BookCard from "../books/BookCart";
 
 const ContextualBooks = () => {
   const { t } = useTranslation();
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
+  
+  // Check cả token để đảm bảo token đã được load
+  const hasToken = !!localStorage.getItem("token");
+  const shouldSkip = authLoading || !currentUser || !hasToken;
+  
   const {
     data: response,
     error,
     isLoading,
   } = useGetContextualRecommendationsQuery(undefined, {
-    skip: !currentUser, // Chỉ gọi API khi có user đăng nhập
+    skip: shouldSkip, // Chỉ gọi API khi có user đăng nhập và token
   });
 
   const books = response?.data || [];

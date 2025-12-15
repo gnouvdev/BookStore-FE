@@ -88,13 +88,7 @@ const BannerWithParticles = () => {
   ];
 
   // Add console.log to check image paths
-  console.log("Banner images:", {
-    img1,
-    img2,
-    img3,
-    img4,
-    img5,
-  });
+
 
   // Particle component
   const Particle = ({ delay = 0 }) => (

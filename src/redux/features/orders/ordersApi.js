@@ -90,6 +90,13 @@ export const ordersApi = createApi({
       }),
       invalidatesTags: ["Orders"],
     }),
+    cancelOrder: builder.mutation({
+      query: (id) => ({
+        url: `/orders/${id}/cancel`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["Orders"],
+    }),
   }),
 });
 
@@ -100,6 +107,7 @@ export const {
   useCreateOrderMutation,
   useUpdateOrderStatusMutation,
   useDeleteOrderMutation,
+  useCancelOrderMutation,
 } = ordersApi;
 
 export default ordersApi;

@@ -16,11 +16,16 @@ import {
   FaClock,
 } from "react-icons/fa";
 import { RiShoppingBag3Line } from "react-icons/ri";
-import { useGetOrdersQuery } from "../../redux/features/orders/ordersApi";
+import {
+  useGetOrdersQuery,
+  useCancelOrderMutation,
+} from "../../redux/features/orders/ordersApi";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import gsap from "gsap";
+import Swal from "sweetalert2";
+import { FaBan } from "react-icons/fa";
 
 const EnhancedOrderPage = () => {
   const { currentUser } = useAuth();
@@ -42,8 +47,14 @@ const EnhancedOrderPage = () => {
       skip: !currentUser?.email,
     }
   );
+  const [cancelOrder, { isLoading: isCancelling }] = useCancelOrderMutation();
 
-  const orders = data?.data || [];
+  // Sắp xếp đơn hàng mới nhất lên trên (tạo copy để tránh lỗi read-only)
+  const orders = [...(data?.data || [])].sort((a, b) => {
+    const dateA = new Date(a.createdAt || a.updatedAt || 0);
+    const dateB = new Date(b.createdAt || b.updatedAt || 0);
+    return dateB - dateA; // Mới nhất lên trên
+  });
 
   // Enhanced animations
   useEffect(() => {
@@ -171,6 +182,32 @@ const EnhancedOrderPage = () => {
 
   const handleOrderClick = (orderId) => {
     navigate(`/orders/${orderId}`);
+  };
+
+  const handleCancelOrder = async (orderId, e) => {
+    e.stopPropagation(); // Prevent triggering order click
+
+    const result = await Swal.fire({
+      title: "Xác nhận hủy đơn hàng",
+      text: "Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể hoàn tác.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Có, hủy đơn hàng",
+      cancelButtonText: "Không",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await cancelOrder(orderId).unwrap();
+        toast.success("Đơn hàng đã được hủy thành công");
+      } catch (error) {
+        toast.error(
+          error?.data?.message || "Không thể hủy đơn hàng. Vui lòng thử lại."
+        );
+      }
+    }
   };
 
   // Handle unauthenticated users
@@ -592,6 +629,21 @@ const EnhancedOrderPage = () => {
 
                     {/* Action Buttons */}
                     <div className="flex items-center justify-end gap-3 mt-6">
+                      {order.status === "pending" && (
+                        <motion.button
+                          onClick={(e) => handleCancelOrder(order._id, e)}
+                          disabled={isCancelling}
+                          className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <FaBan />
+                          {isCancelling
+                            ? t("order.cancelling")
+                            : t("order.cancel_order")}
+                        </motion.button>
+                      )}
+
                       {order.status === "completed" && (
                         <motion.button
                           onClick={(e) => {

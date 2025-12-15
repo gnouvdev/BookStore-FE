@@ -29,16 +29,18 @@ import Profile from "./../pages/user/profile";
 import ManageOrders from "./../pages/dashBoard/manageOrders/ManageOrders";
 import WishlistPage from "../pages/wishlist/WishlistPage";
 import VNPayCallback from "./../pages/vnpaycallback/VNPayCallback";
+import PaymentSuccess from "./../pages/payment/PaymentSuccess";
+import PaymentFailed from "./../pages/payment/PaymentFailed";
 import ForgotPassword from "./../components/ForgotPassword";
 import HomePage from "./../pages/home/HomePage";
 import AboutUs from "./../pages/home/AboutUs";
 import Notifications from "./../pages/notifications/Notifications";
 
 import Chat from "../pages/dashBoard/chat/Chat";
-import ManageVoucher from './../pages/dashBoard/manageVoucher/ManageVoucher';
-import ContactPage from './../pages/home/Contact';
-import OrderDetails from './../pages/orders/OrderDetails';
-import TermPolicy from './../pages/home/TermPolicy';
+import ManageVoucher from "./../pages/dashBoard/manageVoucher/ManageVoucher";
+import ContactPage from "./../pages/home/Contact";
+import OrderDetails from "./../pages/orders/OrderDetails";
+import TermPolicy from "./../pages/home/TermPolicy";
 
 const router = createBrowserRouter([
   {
@@ -68,6 +70,18 @@ const router = createBrowserRouter([
       {
         path: "/vnpay/callback",
         element: <VNPayCallback />,
+      },
+      {
+        path: "/payment/success",
+        element: (
+          <PrivateRoute>
+            <PaymentSuccess />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "/payment/failed",
+        element: <PaymentFailed />,
       },
       {
         path: "/login",
@@ -241,7 +255,7 @@ const router = createBrowserRouter([
           },
           {
             path: "manage-voucher",
-            element: <ManageVoucher/>,
+            element: <ManageVoucher />,
           },
         ],
       },

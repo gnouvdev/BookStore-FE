@@ -20,6 +20,9 @@ import {
   Download,
   BarChart2,
   PieChart,
+  Brain,
+  RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -27,6 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import RevenueChart from "./RevenueChart";
+import EnhancedAIBusinessAssistant from "./EnhancedAIBusinessAssistant";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +43,7 @@ import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import CustomDialog from "@/components/ui/custom-dialog";
 import baseUrl from "../../utils/baseURL";
+import { useGetBusinessInsightsQuery } from "../../redux/features/dashboard/dashboardApi";
 
 const ImprovedDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -83,7 +88,19 @@ const ImprovedDashboard = () => {
   const [reportType, setReportType] = useState("sales");
   const [dateRange] = useState("30days");
   const [customDateRange] = useState(null);
+  const [chartDateRange, setChartDateRange] = useState({
+    startDate: null,
+    endDate: null,
+  });
   const navigate = useNavigate();
+
+  // Use RTK Query for business insights
+  const {
+    data: businessInsightsData,
+    isLoading: insightsLoading,
+    refetch: refetchInsights,
+  } = useGetBusinessInsightsQuery();
+  const businessInsights = businessInsightsData?.data || businessInsightsData;
 
   // Fetch dashboard data
   const fetchDashboardData = async () => {
@@ -96,12 +113,23 @@ const ImprovedDashboard = () => {
         return;
       }
 
+      // Build monthly sales URL with date range if provided
+      let monthlySalesUrl = `${baseUrl}/admin/dashboard/monthly-sales`;
+      if (chartDateRange.startDate || chartDateRange.endDate) {
+        const params = new URLSearchParams();
+        if (chartDateRange.startDate)
+          params.append("startDate", chartDateRange.startDate);
+        if (chartDateRange.endDate)
+          params.append("endDate", chartDateRange.endDate);
+        monthlySalesUrl += `?${params.toString()}`;
+      }
+
       // Fetch all required data in parallel
       const [overviewRes, salesRes, ordersRes, booksRes] = await Promise.all([
         axios.get(`${baseUrl}/admin/dashboard/overview`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`${baseUrl}/admin/dashboard/monthly-sales`, {
+        axios.get(monthlySalesUrl, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get(`${baseUrl}/admin/dashboard/recent-orders`, {
@@ -149,7 +177,16 @@ const ImprovedDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refetch monthly sales when date range changes
+  useEffect(() => {
+    if (chartDateRange.startDate || chartDateRange.endDate) {
+      fetchDashboardData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartDateRange]);
 
   // Fetch report data when modal opens
   const fetchReportData = async () => {
@@ -296,6 +333,7 @@ const ImprovedDashboard = () => {
     if (showReportModal) {
       fetchReportData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showReportModal, reportType]);
 
   const formatCurrency = (value) => {
@@ -1361,6 +1399,13 @@ const ImprovedDashboard = () => {
         </div>
       </div>
 
+      {/* AI Business Assistant */}
+      <EnhancedAIBusinessAssistant
+        businessInsights={businessInsights}
+        insightsLoading={insightsLoading}
+        onRefresh={refetchInsights}
+      />
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
@@ -1505,7 +1550,11 @@ const ImprovedDashboard = () => {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Revenue Chart */}
         <div className="xl:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <RevenueChart data={data.monthlySales} />
+          <RevenueChart
+            data={data.monthlySales}
+            dateRange={chartDateRange}
+            onDateRangeChange={setChartDateRange}
+          />
         </div>
 
         {/* Recent Orders */}

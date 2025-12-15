@@ -6,10 +6,13 @@ export const cartApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: baseUrl,
     prepareHeaders: (headers) => {
+      // Lấy token từ localStorage hoặc Firebase
       const token = localStorage.getItem("token");
-      console.log("Sending token:", token); // Debug
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
+      } else {
+        // Nếu không có token trong localStorage, thử lấy từ Firebase
+        // (sẽ được xử lý trong component nếu cần)
       }
       return headers;
     },
@@ -17,8 +20,17 @@ export const cartApi = createApi({
   tagTypes: ["Cart"], // Định nghĩa tag cho giỏ hàng
   endpoints: (builder) => ({
     getCart: builder.query({
-      query: () => "/cart",
-      providesTags: ["Cart"], // Đánh dấu dữ liệu giỏ hàng
+      // eslint-disable-next-line no-unused-vars
+      query: (userId) => {
+        // Sử dụng userId trong query để cache riêng biệt cho mỗi user
+        return "/cart";
+      },
+      // eslint-disable-next-line no-unused-vars
+      providesTags: (result, error, userId) => [
+        { type: "Cart", id: userId || "default" },
+      ], // Đánh dấu dữ liệu giỏ hàng với user ID
+      keepUnusedDataFor: 0, // Không giữ cache khi không sử dụng
+      refetchOnMountOrArgChange: true, // Force refetch khi mount hoặc arg thay đổi
     }),
     addToCart: builder.mutation({
       query: ({ bookId, quantity }) => ({
@@ -26,21 +38,33 @@ export const cartApi = createApi({
         method: "POST",
         body: { bookId, quantity },
       }),
-      invalidatesTags: ["Cart"], // Làm mới giỏ hàng sau khi thêm
+      // eslint-disable-next-line no-unused-vars
+      invalidatesTags: (result, error, arg, meta) => {
+        // Invalidate tất cả cart tags để đảm bảo refetch
+        return [{ type: "Cart" }];
+      },
     }),
     clearCart: builder.mutation({
       query: () => ({
         url: "/cart",
         method: "DELETE",
       }),
-      invalidatesTags: ["Cart"], // Làm mới giỏ hàng sau khi xóa
+      // eslint-disable-next-line no-unused-vars
+      invalidatesTags: (result, error, arg, meta) => {
+        // Invalidate tất cả cart tags
+        return [{ type: "Cart" }];
+      },
     }),
     removeFromCart: builder.mutation({
       query: (bookId) => ({
         url: `/cart/${bookId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Cart"], // Làm mới giỏ hàng sau khi xóa item
+      // eslint-disable-next-line no-unused-vars
+      invalidatesTags: (result, error, arg, meta) => {
+        // Invalidate tất cả cart tags
+        return [{ type: "Cart" }];
+      },
     }),
     updateCartItemQuantity: builder.mutation({
       query: ({ bookId, quantity }) => ({
@@ -48,7 +72,11 @@ export const cartApi = createApi({
         method: "PATCH",
         body: { quantity },
       }),
-      invalidatesTags: ["Cart"],
+      // eslint-disable-next-line no-unused-vars
+      invalidatesTags: (result, error, arg, meta) => {
+        // Invalidate tất cả cart tags
+        return [{ type: "Cart" }];
+      },
     }),
   }),
 });

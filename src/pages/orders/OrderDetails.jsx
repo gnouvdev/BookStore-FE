@@ -21,6 +21,7 @@ import {
   Calendar,
   Hash,
   ShoppingBag,
+  Ban,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
@@ -29,6 +30,8 @@ import { Button } from "../../components/ui/button";
 import { ScrollArea } from "../../components/ui/scroll-area";
 import { Separator } from "../../components/ui/separator";
 import { t } from "i18next";
+import { useCancelOrderMutation } from "../../redux/features/orders/ordersApi";
+import Swal from "sweetalert2";
 
 const getStatusConfig = (status) => {
   switch (status) {
@@ -84,6 +87,7 @@ const OrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cancelOrder, { isLoading: isCancelling }] = useCancelOrderMutation();
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -185,6 +189,40 @@ const OrderDetails = () => {
   };
 
   const originalTotalPrice = calculateTotalPrice();
+
+  const handleCancelOrder = async () => {
+    const result = await Swal.fire({
+      title: "Xác nhận hủy đơn hàng",
+      text: "Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể hoàn tác.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Có, hủy đơn hàng",
+      cancelButtonText: "Không",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await cancelOrder(id).unwrap();
+        toast.success("Đơn hàng đã được hủy thành công");
+        // Reload order details
+        const response = await fetch(`http://localhost:5000/api/orders/${id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setOrder(data.data);
+        }
+      } catch (error) {
+        toast.error(
+          error?.data?.message || "Không thể hủy đơn hàng. Vui lòng thử lại."
+        );
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -415,21 +453,22 @@ const OrderDetails = () => {
                       {originalTotalPrice.toLocaleString("vi-VN")}đ
                     </span>
                   </div>
-                  {order.paymentDetails?.paymentAmount < originalTotalPrice && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">
-                        {t("orders.discount")}
-                      </span>
-                      <span className="font-medium text-green-600">
-                        -
-                        {(
-                          originalTotalPrice -
-                          order.paymentDetails.paymentAmount
-                        ).toLocaleString("vi-VN")}
-                        đ
-                      </span>
-                    </div>
-                  )}
+                  {order.paymentDetails?.paymentAmount &&
+                    order.paymentDetails.paymentAmount < originalTotalPrice && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">
+                          {t("orders.discount")}
+                        </span>
+                        <span className="font-medium text-green-600">
+                          -
+                          {(
+                            originalTotalPrice -
+                            order.paymentDetails.paymentAmount
+                          ).toLocaleString("vi-VN")}
+                          đ
+                        </span>
+                      </div>
+                    )}
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">
                       {t("orders.shipping_fee")}
@@ -444,9 +483,11 @@ const OrderDetails = () => {
                       {t("orders.total")}
                     </span>
                     <span className="text-lg font-bold text-blue-600">
-                      {order.paymentDetails?.paymentAmount.toLocaleString(
-                        "vi-VN"
-                      )}
+                      {(
+                        order.paymentDetails?.paymentAmount ||
+                        order.totalPrice ||
+                        originalTotalPrice
+                      ).toLocaleString("vi-VN")}
                       đ
                     </span>
                   </div>
@@ -516,6 +557,26 @@ const OrderDetails = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Cancel Order Button - Only show for pending orders */}
+              {order.status === "pending" && (
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+                  <div className="p-6">
+                    <Button
+                      onClick={handleCancelOrder}
+                      disabled={isCancelling}
+                      className="w-full bg-red-500 hover:bg-red-600 text-white"
+                      variant="destructive"
+                    >
+                      <Ban className="w-4 h-4 mr-2" />
+                      {isCancelling ? "Đang hủy..." : "Hủy đơn hàng"}
+                    </Button>
+                    <p className="text-sm text-gray-500 mt-2 text-center">
+                      Bạn chỉ có thể hủy đơn hàng ở trạng thái "pending"
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

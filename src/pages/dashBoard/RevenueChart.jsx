@@ -1,8 +1,9 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable no-unused-vars */
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { motion } from "framer-motion"
+import { useState, useMemo, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   LineChart,
   Line,
@@ -16,42 +17,61 @@ import {
   Area,
   BarChart,
   Bar,
-} from "recharts"
-import { TrendingUp, TrendingDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+} from "recharts";
+import { TrendingUp, TrendingDown, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-const RevenueChart = ({ data }) => {
-  const [chartType, setChartType] = useState("line")
-  const [timeRange, setTimeRange] = useState("6months")
+const RevenueChart = ({ data, dateRange, onDateRangeChange }) => {
+  const [chartType, setChartType] = useState("line");
+  const [timeRange, setTimeRange] = useState("6months");
+  const [localDateRange, setLocalDateRange] = useState({
+    startDate: dateRange?.startDate || "",
+    endDate: dateRange?.endDate || "",
+  });
 
   // Process and filter data based on time range
   const processedData = useMemo(() => {
-    if (!data || data.length === 0) return []
+    if (!data || data.length === 0) return [];
 
-    const months = timeRange === "3months" ? 3 : timeRange === "6months" ? 6 : 12
-    return data.slice(-months)
-  }, [data, timeRange])
+    const months =
+      timeRange === "3months" ? 3 : timeRange === "6months" ? 6 : 12;
+    return data.slice(-months);
+  }, [data, timeRange]);
 
   // Calculate trends and statistics
   const stats = useMemo(() => {
-    if (!processedData || processedData.length < 2) return null
+    if (!processedData || processedData.length < 2) return null;
 
-    const current = processedData[processedData.length - 1]
-    const previous = processedData[processedData.length - 2]
+    const current = processedData[processedData.length - 1];
+    const previous = processedData[processedData.length - 2];
 
-    const revenueChange = ((current.totalSales - previous.totalSales) / previous.totalSales) * 100
-    const ordersChange = ((current.totalOrders - previous.totalOrders) / previous.totalOrders) * 100
-    const avgOrderChange = ((current.averageOrderValue - previous.averageOrderValue) / previous.averageOrderValue) * 100
+    const revenueChange =
+      ((current.totalSales - previous.totalSales) / previous.totalSales) * 100;
+    const ordersChange =
+      ((current.totalOrders - previous.totalOrders) / previous.totalOrders) *
+      100;
+    const avgOrderChange =
+      ((current.averageOrderValue - previous.averageOrderValue) /
+        previous.averageOrderValue) *
+      100;
 
     return {
       revenueChange,
       ordersChange,
       avgOrderChange,
-      totalRevenue: processedData.reduce((sum, item) => sum + item.totalSales, 0),
-      totalOrders: processedData.reduce((sum, item) => sum + item.totalOrders, 0),
-    }
-  }, [processedData])
+      totalRevenue: processedData.reduce(
+        (sum, item) => sum + item.totalSales,
+        0
+      ),
+      totalOrders: processedData.reduce(
+        (sum, item) => sum + item.totalOrders,
+        0
+      ),
+    };
+  }, [processedData]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -59,8 +79,8 @@ const RevenueChart = ({ data }) => {
       currency: "VND",
       notation: "compact",
       maximumFractionDigits: 1,
-    }).format(value)
-  }
+    }).format(value);
+  };
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -73,20 +93,24 @@ const RevenueChart = ({ data }) => {
           <p className="font-semibold text-gray-800 mb-2">{label}</p>
           {payload.map((entry, index) => (
             <div key={index} className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: entry.color }}
+              />
               <span className="text-sm text-gray-600">
                 {entry.name}:{" "}
-                {entry.dataKey === "totalSales" || entry.dataKey === "averageOrderValue"
+                {entry.dataKey === "totalSales" ||
+                entry.dataKey === "averageOrderValue"
                   ? formatCurrency(entry.value)
                   : entry.value.toLocaleString()}
               </span>
             </div>
           ))}
         </motion.div>
-      )
+      );
     }
-    return null
-  }
+    return null;
+  };
 
   if (!data || data.length === 0) {
     return (
@@ -96,17 +120,19 @@ const RevenueChart = ({ data }) => {
         </div>
         <div className="text-center">
           <p className="font-medium">Không có dữ liệu</p>
-          <p className="text-sm">Dữ liệu doanh thu sẽ xuất hiện ở đây khi có dữ liệu</p>
+          <p className="text-sm">
+            Dữ liệu doanh thu sẽ xuất hiện ở đây khi có dữ liệu
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   const renderChart = () => {
     const commonProps = {
       data: processedData,
       margin: { top: 20, right: 30, left: 20, bottom: 10 },
-    }
+    };
 
     switch (chartType) {
       case "area":
@@ -124,8 +150,18 @@ const RevenueChart = ({ data }) => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="monthName" stroke="#666" tick={{ fontSize: 12 }} />
-            <YAxis yAxisId="left" stroke="#8884d8" tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
-            <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" tick={{ fontSize: 12 }} />
+            <YAxis
+              yAxisId="left"
+              stroke="#8884d8"
+              tickFormatter={formatCurrency}
+              tick={{ fontSize: 12 }}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              stroke="#82ca9d"
+              tick={{ fontSize: 12 }}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
             <Area
@@ -147,29 +183,61 @@ const RevenueChart = ({ data }) => {
               fill="url(#ordersGradient)"
             />
           </AreaChart>
-        )
+        );
 
       case "bar":
         return (
           <BarChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="monthName" stroke="#666" tick={{ fontSize: 12 }} />
-            <YAxis yAxisId="left" stroke="#8884d8" tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
-            <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" tick={{ fontSize: 12 }} />
+            <YAxis
+              yAxisId="left"
+              stroke="#8884d8"
+              tickFormatter={formatCurrency}
+              tick={{ fontSize: 12 }}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              stroke="#82ca9d"
+              tick={{ fontSize: 12 }}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
-            <Bar yAxisId="left" dataKey="totalSales" name="Revenue" fill="#8884d8" radius={[4, 4, 0, 0]} />
-            <Bar yAxisId="right" dataKey="totalOrders" name="Orders" fill="#82ca9d" radius={[4, 4, 0, 0]} />
+            <Bar
+              yAxisId="left"
+              dataKey="totalSales"
+              name="Revenue"
+              fill="#8884d8"
+              radius={[4, 4, 0, 0]}
+            />
+            <Bar
+              yAxisId="right"
+              dataKey="totalOrders"
+              name="Orders"
+              fill="#82ca9d"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
-        )
+        );
 
       default:
         return (
           <LineChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="monthName" stroke="#666" tick={{ fontSize: 12 }} />
-            <YAxis yAxisId="left" stroke="#8884d8" tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
-            <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" tick={{ fontSize: 12 }} />
+            <YAxis
+              yAxisId="left"
+              stroke="#8884d8"
+              tickFormatter={formatCurrency}
+              tick={{ fontSize: 12 }}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              stroke="#82ca9d"
+              tick={{ fontSize: 12 }}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
             <Line
@@ -203,56 +271,146 @@ const RevenueChart = ({ data }) => {
               activeDot={{ r: 7, fill: "#ffc658" }}
             />
           </LineChart>
-        )
+        );
     }
-  }
+  };
+
+  // Sync local date range with parent
+  useEffect(() => {
+    if (dateRange) {
+      setLocalDateRange({
+        startDate: dateRange.startDate || "",
+        endDate: dateRange.endDate || "",
+      });
+    }
+  }, [dateRange]);
+
+  const handleDateChange = (field, value) => {
+    const newRange = {
+      ...localDateRange,
+      [field]: value,
+    };
+    setLocalDateRange(newRange);
+    if (onDateRangeChange) {
+      onDateRangeChange(newRange);
+    }
+  };
+
+  const clearDateFilter = () => {
+    const clearedRange = { startDate: "", endDate: "" };
+    setLocalDateRange(clearedRange);
+    if (onDateRangeChange) {
+      onDateRangeChange(clearedRange);
+    }
+  };
 
   return (
     <div className="space-y-6">
       {/* Header with Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">Phân tích doanh thu</h3>
-          <p className="text-sm text-gray-500">Theo dõi hiệu suất kinh doanh theo thời gian</p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {/* Time Range Selector */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            {[
-              { key: "3months", label: "3M" },
-              { key: "6months", label: "6M" },
-              { key: "12months", label: "1Y" },
-            ].map((range) => (
-              <Button
-                key={range.key}
-                variant={timeRange === range.key ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setTimeRange(range.key)}
-                className="rounded-md"
-              >
-                {range.label}
-              </Button>
-            ))}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Phân tích doanh thu
+            </h3>
+            <p className="text-sm text-gray-500">
+              Theo dõi hiệu suất kinh doanh theo thời gian
+            </p>
           </div>
 
-          {/* Chart Type Selector */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            {[
-              { key: "line", label: "Line" },
-              { key: "area", label: "Area" },
-              { key: "bar", label: "Bar" },
-            ].map((type) => (
-              <Button
-                key={type.key}
-                variant={chartType === type.key ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setChartType(type.key)}
-                className="rounded-md"
+          <div className="flex flex-wrap gap-2">
+            {/* Time Range Selector */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              {[
+                { key: "3months", label: "3M" },
+                { key: "6months", label: "6M" },
+                { key: "12months", label: "1Y" },
+              ].map((range) => (
+                <Button
+                  key={range.key}
+                  variant={timeRange === range.key ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setTimeRange(range.key)}
+                  className="rounded-md"
+                >
+                  {range.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Chart Type Selector */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              {[
+                { key: "line", label: "Line" },
+                { key: "area", label: "Area" },
+                { key: "bar", label: "Bar" },
+              ].map((type) => (
+                <Button
+                  key={type.key}
+                  variant={chartType === type.key ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setChartType(type.key)}
+                  className="rounded-md"
+                >
+                  {type.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Date Range Filter */}
+        <div className="flex flex-col sm:flex-row gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">
+              Lọc theo ngày:
+            </span>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 flex-1">
+            <div className="flex-1">
+              <Label
+                htmlFor="startDate"
+                className="text-xs text-gray-600 mb-1 block"
               >
-                {type.label}
-              </Button>
-            ))}
+                Từ ngày
+              </Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={localDateRange.startDate}
+                onChange={(e) => handleDateChange("startDate", e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <div className="flex-1">
+              <Label
+                htmlFor="endDate"
+                className="text-xs text-gray-600 mb-1 block"
+              >
+                Đến ngày
+              </Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={localDateRange.endDate}
+                onChange={(e) => handleDateChange("endDate", e.target.value)}
+                className="h-9"
+                min={localDateRange.startDate}
+              />
+            </div>
+            {(localDateRange.startDate || localDateRange.endDate) && (
+              <div className="flex items-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearDateFilter}
+                  className="h-9"
+                >
+                  Xóa bộ lọc
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -352,7 +510,7 @@ const RevenueChart = ({ data }) => {
         </div>
       </motion.div>
     </div>
-  )
-}
+  );
+};
 
-export default RevenueChart
+export default RevenueChart;

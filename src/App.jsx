@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { Provider } from "react-redux";
 import { store } from "./redux/store";
 import Navbar from "./components/Navbar";
+import ChatBox from "./components/ChatBox";
 import { SocketProvider } from "./context/SocketContext";
 import Footer from "./components/Footer";
 
@@ -18,6 +19,7 @@ function App() {
               <Outlet />
             </main>
             <Footer />
+            <ChatBox />
             <Toaster position="top-center" reverseOrder={false} />
           </div>
         </SocketProvider>

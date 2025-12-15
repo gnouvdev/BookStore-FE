@@ -1,7 +1,14 @@
 /* eslint-disable no-unused-vars */
-"use client"
-import { motion } from "framer-motion"
-import { FaFacebook, FaInstagram, FaTwitter, FaEnvelope, FaPhone, FaMapMarkerAlt } from "react-icons/fa"
+"use client";
+import { motion } from "framer-motion";
+import {
+  FaFacebook,
+  FaInstagram,
+  FaTwitter,
+  FaEnvelope,
+  FaPhone,
+  FaMapMarkerAlt,
+} from "react-icons/fa";
 
 const Footer = () => {
   return (
@@ -29,8 +36,8 @@ const Footer = () => {
               </h3>
             </div>
             <p className="text-gray-300 leading-relaxed">
-              Your ultimate destination for discovering amazing books. We bring you the best collection of literature
-              from around the world.
+              Your ultimate destination for discovering amazing books. We bring
+              you the best collection of literature from around the world.
             </p>
             <div className="flex items-center gap-2 text-gray-300">
               <FaMapMarkerAlt className="text-blue-400" />
@@ -47,7 +54,14 @@ const Footer = () => {
           >
             <h4 className="text-xl font-bold text-white mb-4">Quick Links</h4>
             <ul className="space-y-3">
-              {["Home", "Books", "Categories", "Authors", "About", "Contact"].map((item, index) => (
+              {[
+                "Home",
+                "Books",
+                "Categories",
+                "Authors",
+                "About",
+                "Contact",
+              ].map((item, index) => (
                 <li key={index}>
                   <a
                     href={item.toLowerCase() === "about" ? "/about" : "/"}
@@ -70,7 +84,14 @@ const Footer = () => {
           >
             <h4 className="text-xl font-bold text-white mb-4">Categories</h4>
             <ul className="space-y-3">
-              {["Fiction", "Non-Fiction", "Business", "Adventure", "Horror", "Manga"].map((item, index) => (
+              {[
+                "Fiction",
+                "Non-Fiction",
+                "Business",
+                "Adventure",
+                "Horror",
+                "Manga",
+              ].map((item, index) => (
                 <li key={index}>
                   <a
                     href={`/product/${item.toLowerCase()}`}
@@ -93,7 +114,8 @@ const Footer = () => {
           >
             <h4 className="text-xl font-bold text-white mb-4">Stay Updated</h4>
             <p className="text-gray-300 mb-4">
-              Subscribe to our newsletter for the latest book releases and exclusive offers!
+              Subscribe to our newsletter for the latest book releases and
+              exclusive offers!
             </p>
             <div className="space-y-3">
               <div className="flex">
@@ -122,13 +144,22 @@ const Footer = () => {
             <div className="text-gray-400 text-center md:text-left">
               <p>&copy; 2024 BookStore. All rights reserved.</p>
               <div className="flex gap-6 mt-2">
-                <a href="#privacy" className="hover:text-blue-400 transition-colors duration-300">
+                <a
+                  href="term-policy"
+                  className="hover:text-blue-400 transition-colors duration-300"
+                >
                   Privacy Policy
                 </a>
-                <a href="#terms" className="hover:text-blue-400 transition-colors duration-300">
+                <a
+                  href="#terms"
+                  className="hover:text-blue-400 transition-colors duration-300"
+                >
                   Terms of Service
                 </a>
-                <a href="#cookies" className="hover:text-blue-400 transition-colors duration-300">
+                <a
+                  href="#cookies"
+                  className="hover:text-blue-400 transition-colors duration-300"
+                >
                   Cookie Policy
                 </a>
               </div>
@@ -137,9 +168,21 @@ const Footer = () => {
             {/* Social Icons */}
             <div className="flex gap-4">
               {[
-                { icon: FaFacebook, href: "https://facebook.com", color: "hover:text-blue-500" },
-                { icon: FaTwitter, href: "https://twitter.com", color: "hover:text-blue-400" },
-                { icon: FaInstagram, href: "https://instagram.com", color: "hover:text-pink-500" },
+                {
+                  icon: FaFacebook,
+                  href: "https://facebook.com",
+                  color: "hover:text-blue-500",
+                },
+                {
+                  icon: FaTwitter,
+                  href: "https://twitter.com",
+                  color: "hover:text-blue-400",
+                },
+                {
+                  icon: FaInstagram,
+                  href: "https://instagram.com",
+                  color: "hover:text-pink-500",
+                },
               ].map(({ icon: Icon, href, color }, index) => (
                 <motion.a
                   key={index}
@@ -158,7 +201,7 @@ const Footer = () => {
         </div>
       </div>
     </footer>
-  )
-}
+  );
+};
 
-export default Footer
+export default Footer;

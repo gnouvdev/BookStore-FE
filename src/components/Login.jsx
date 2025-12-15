@@ -385,6 +385,9 @@ const EnhancedLogin = () => {
       localStorage.setItem("user", JSON.stringify(cleanUser));
       console.log("Saved to localStorage");
 
+      // Dispatch custom event để AuthContext biết token đã được set
+      window.dispatchEvent(new CustomEvent("tokenSet"));
+
       // 4. Update context
       setCurrentUser(cleanUser);
       console.log("Updated context");
@@ -449,6 +452,9 @@ const EnhancedLogin = () => {
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(cleanUser));
 
+        // Dispatch custom event để AuthContext biết token đã được set
+        window.dispatchEvent(new CustomEvent("tokenSet"));
+
         // 6. Update context
         setCurrentUser(cleanUser);
 
@@ -481,6 +487,9 @@ const EnhancedLogin = () => {
           // Save to localStorage
           localStorage.setItem("token", token);
           localStorage.setItem("user", JSON.stringify(cleanUser));
+
+          // Dispatch custom event để AuthContext biết token đã được set
+          window.dispatchEvent(new CustomEvent("tokenSet"));
 
           // Update context
           setCurrentUser(cleanUser);

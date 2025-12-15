@@ -170,8 +170,7 @@ const BookCard = ({ book }) => {
   };
 
   // Tính số sao hiển thị
-  console.log("Book data:", book);
-  console.log("Rating:", book.rating);
+ 
   const rating =
     typeof book.rating === "number"
       ? book.rating

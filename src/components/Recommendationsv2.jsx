@@ -22,7 +22,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 const EnhancedRecommendationsv2 = () => {
   const { t } = useTranslation();
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
   const sectionRef = useRef(null);
   const cardsRef = useRef([]);
   const titleRef = useRef(null);
@@ -30,10 +30,14 @@ const EnhancedRecommendationsv2 = () => {
   const [hoveredCard, setHoveredCard] = useState(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
+  // Check cả token để đảm bảo token đã được load
+  const hasToken = !!localStorage.getItem("token");
+  const shouldSkip = authLoading || !currentUser || !hasToken;
+
   const { data, error, isLoading } = useGetCollaborativeRecommendationsQuery(
     undefined,
     {
-      skip: !currentUser,
+      skip: shouldSkip,
     }
   );
 
@@ -118,7 +122,8 @@ const EnhancedRecommendationsv2 = () => {
     },
   };
 
-  if (!currentUser) return null;
+  // Đợi auth loading xong và có currentUser + token
+  if (authLoading || !currentUser || !hasToken) return null;
 
   if (isLoading) {
     return (

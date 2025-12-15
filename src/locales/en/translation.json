@@ -334,7 +334,9 @@
     "track_and_manage_your_orders": "Track and Manage Your Orders",
     "my_orders": "My Orders",
     "write_review": "Write Review",
-    "buy_again": "Buy Again"
+    "buy_again": "Buy Again",
+    "cancel_order": "Cancel Order",
+    "cancelling": "Cancelling..."
   },
   "reviews": {
     "title": "Reviews",

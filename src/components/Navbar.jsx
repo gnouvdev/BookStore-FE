@@ -112,8 +112,10 @@ const EnhancedNavbar = () => {
   });
 
   // Get notifications
+  // Check cả token để đảm bảo token đã được load
+  const hasToken = !!localStorage.getItem("token");
   const { data: notificationsData } = useGetNotificationsQuery(undefined, {
-    skip: !currentUser,
+    skip: !currentUser || !hasToken,
     pollingInterval: 30000, // Poll every 30 seconds
   });
 

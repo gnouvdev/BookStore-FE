@@ -338,7 +338,9 @@
     "track_and_manage_your_orders": "Theo dõi và quản lý đơn hàng của bạn",
     "product_name": "Tên sản phẩm",
     "action": "Hành động",
-    "my_orders": "Đơn hàng của tôi"
+    "my_orders": "Đơn hàng của tôi",
+    "cancel_order": "Hủy đơn hàng",
+    "cancelling": "Đang hủy..."
   },
   "reviews": {
     "title": "Đánh giá",

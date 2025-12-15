@@ -22,7 +22,15 @@ export const dashboardApi = createApi({
     }),
 
     getMonthlySales: builder.query({
-      query: () => "/admin/dashboard/monthly-sales",
+      query: ({ startDate, endDate } = {}) => {
+        const params = new URLSearchParams();
+        if (startDate) params.append("startDate", startDate);
+        if (endDate) params.append("endDate", endDate);
+        const queryString = params.toString();
+        return `/admin/dashboard/monthly-sales${
+          queryString ? `?${queryString}` : ""
+        }`;
+      },
       providesTags: ["Dashboard"],
     }),
 
@@ -62,6 +70,11 @@ export const dashboardApi = createApi({
         },
       }),
     }),
+
+    getBusinessInsights: builder.query({
+      query: () => "/admin/dashboard/business-insights",
+      providesTags: ["Dashboard"],
+    }),
   }),
 });
 
@@ -72,4 +85,5 @@ export const {
   useGetTopSellingBooksQuery,
   useGetUsersQuery,
   useExportReportMutation,
+  useGetBusinessInsightsQuery,
 } = dashboardApi;
