@@ -15,7 +15,7 @@ const Home = () => {
       <ContextualBooks />
       <Recommended />
       <Recommendationsv2 />
-      <InteractiveBookExplorer />
+      {/* <InteractiveBookExplorer /> */}
       <GenreBooks genre={"Fiction"} />
       <SimplifiedMiniBanner genre1={"Business1"} genre2={"Business2"} />
       <GenreBooks genre={"Bussines"} />
