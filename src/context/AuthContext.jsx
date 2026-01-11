@@ -21,8 +21,22 @@ import { recommendationsv2Api } from "../redux/features/recommendationv2/recomme
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Initialize currentUser from localStorage on mount
+  const getInitialUser = () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        return parsedUser;
+      }
+    } catch (error) {
+      console.error("Error parsing initial user:", error);
+    }
+    return null;
+  };
+
+  const [currentUser, setCurrentUser] = useState(getInitialUser());
+  const [loading, setLoading] = useState(true); // Keep loading state for onAuthStateChanged
 
   //THÊM STATE TOKEN
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -77,9 +91,10 @@ export const AuthProvider = ({ children }) => {
         })
       );
       console.log("Redux state updated with user:", currentUser.uid);
-    } else if (!currentUser) {
-      // Nếu không có currentUser, clear Redux auth state
-      console.log("No currentUser, clearing Redux auth state");
+    } else if (!currentUser && !token) {
+      // Chỉ clear Redux auth state nếu không có cả currentUser và token
+      // (không clear nếu chỉ thiếu một trong hai)
+      console.log("No currentUser and token, clearing Redux auth state");
       dispatch(logoutAction());
     }
   }, [currentUser, token, dispatch]);
@@ -238,9 +253,15 @@ export const AuthProvider = ({ children }) => {
               userToSet = {
                 email: parsedUser.email || user.email,
                 uid: parsedUser.uid || user.uid,
-                photoURL: parsedUser.photoURL || user.photoURL ||
+                photoURL:
+                  parsedUser.photoURL ||
+                  user.photoURL ||
                   "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-                displayName: parsedUser.displayName || parsedUser.fullName || user.displayName || null,
+                displayName:
+                  parsedUser.displayName ||
+                  parsedUser.fullName ||
+                  user.displayName ||
+                  null,
                 fullName: parsedUser.fullName || parsedUser.displayName || null,
                 role: parsedUser.role || "user",
                 address: parsedUser.address || null,
@@ -251,7 +272,11 @@ export const AuthProvider = ({ children }) => {
             // Không có token, dùng data từ localStorage
             userToSet = {
               ...parsedUser,
-              displayName: parsedUser.displayName || parsedUser.fullName || user.displayName || null,
+              displayName:
+                parsedUser.displayName ||
+                parsedUser.fullName ||
+                user.displayName ||
+                null,
               fullName: parsedUser.fullName || parsedUser.displayName || null,
             };
           }
@@ -337,11 +362,7 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

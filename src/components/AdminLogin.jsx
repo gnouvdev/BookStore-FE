@@ -77,12 +77,17 @@ const ImprovedAdminLogin = () => {
       const { token, user } = response.data;
 
       if (token && user?.role === "admin") {
-        // Create clean user object
+        // Create clean user object với đầy đủ thông tin
         const cleanUser = {
           ...user,
-          uid: user.id,
-          firebaseId: user.id,
+          uid: user.id || user._id,
+          firebaseId: user.id || user._id,
           role: "admin",
+          displayName:
+            user.fullName || user.displayName || user.name || "Admin",
+          fullName: user.fullName || user.displayName || user.name || "Admin",
+          email: user.email || "",
+          photoURL: user.photoURL || user.avatar || null,
         };
 
         localStorage.setItem("token", token);

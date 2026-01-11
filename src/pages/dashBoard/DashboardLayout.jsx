@@ -114,41 +114,29 @@ const ImprovedDashboardLayout = () => {
 
   // Check authentication on mount and route change
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem("token");
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      
-      // Basic check first
-      if (!token || user.role !== "admin") {
+    const token = localStorage.getItem("token");
+    const storedUserStr = localStorage.getItem("user");
+    
+    if (!token || !storedUserStr) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/admin");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(storedUserStr);
+      if (user.role !== "admin") {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         navigate("/admin");
-        return;
       }
-
-      // Verify token with backend (optional but recommended)
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/verify-token`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          // Token invalid, logout
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          navigate("/admin");
-        }
-      } catch (error) {
-        // If verification fails, still allow (token might be valid but endpoint not available)
-        console.log("Token verification error (non-critical):", error);
-      }
-    };
-
-    checkAuth();
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/admin");
+    }
   }, [location.pathname, navigate]);
 
   // Close sidebar on route change (mobile)
