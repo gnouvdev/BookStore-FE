@@ -228,47 +228,35 @@ export const AuthProvider = ({ children }) => {
 
         if (storedUser) {
           const parsedUser = JSON.parse(storedUser);
-          // Nếu user trong localStorage không có displayName hoặc không khớp với uid hiện tại, fetch lại
-          if (
-            !parsedUser.displayName ||
-            parsedUser.uid !== currentUserId ||
-            !currentToken
-          ) {
-            if (currentToken) {
-              const profileUser = await fetchUserProfile(currentToken);
-              if (profileUser) {
-                userToSet = profileUser;
-              } else {
-                // Fallback về Firebase user nếu fetch thất bại
-                userToSet = {
-                  email: user.email,
-                  uid: user.uid,
-                  photoURL:
-                    user.photoURL ||
-                    "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-                  displayName: user.displayName || null,
-                  role: "user",
-                };
-                localStorage.setItem("user", JSON.stringify(userToSet));
-              }
+          // Luôn fetch lại profile từ backend nếu có token để đảm bảo data mới nhất
+          if (currentToken) {
+            const profileUser = await fetchUserProfile(currentToken);
+            if (profileUser) {
+              userToSet = profileUser;
             } else {
-              // Không có token, dùng Firebase user
+              // Nếu fetch thất bại, dùng data từ localStorage nhưng merge với Firebase user
               userToSet = {
-                email: user.email,
-                uid: user.uid,
-                photoURL:
-                  user.photoURL ||
+                email: parsedUser.email || user.email,
+                uid: parsedUser.uid || user.uid,
+                photoURL: parsedUser.photoURL || user.photoURL ||
                   "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-                displayName: user.displayName || null,
-                role: "user",
+                displayName: parsedUser.displayName || parsedUser.fullName || user.displayName || null,
+                fullName: parsedUser.fullName || parsedUser.displayName || null,
+                role: parsedUser.role || "user",
+                address: parsedUser.address || null,
               };
               localStorage.setItem("user", JSON.stringify(userToSet));
             }
           } else {
-            userToSet = parsedUser;
+            // Không có token, dùng data từ localStorage
+            userToSet = {
+              ...parsedUser,
+              displayName: parsedUser.displayName || parsedUser.fullName || user.displayName || null,
+              fullName: parsedUser.fullName || parsedUser.displayName || null,
+            };
           }
         } else {
-          // Chưa có user trong localStorage, fetch từ backend hoặc tạo từ Firebase
+          // Chưa có user trong localStorage, fetch từ backend
           if (currentToken) {
             const profileUser = await fetchUserProfile(currentToken);
             if (profileUser) {
@@ -282,6 +270,7 @@ export const AuthProvider = ({ children }) => {
                   user.photoURL ||
                   "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
                 displayName: user.displayName || null,
+                fullName: user.displayName || null,
                 role: "user",
               };
               localStorage.setItem("user", JSON.stringify(userToSet));
@@ -295,6 +284,7 @@ export const AuthProvider = ({ children }) => {
                 user.photoURL ||
                 "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
               displayName: user.displayName || null,
+              fullName: user.displayName || null,
               role: "user",
             };
             localStorage.setItem("user", JSON.stringify(userToSet));

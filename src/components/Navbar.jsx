@@ -271,11 +271,34 @@ const EnhancedNavbar = () => {
 
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      if (userData.photoURL) return userData.photoURL;
+      try {
+        const userData = JSON.parse(storedUser);
+        if (userData.photoURL) return userData.photoURL;
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
+      }
     }
 
     return avatarImg;
+  };
+
+  // Get user display name with fallback to localStorage
+  const getUserDisplayName = () => {
+    if (currentUser?.displayName) return currentUser.displayName;
+    if (currentUser?.fullName) return currentUser.fullName;
+
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        return userData.displayName || userData.fullName || "User";
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
+        return "User";
+      }
+    }
+
+    return "User";
   };
 
   const handleHistorySelect = (query) => {
@@ -559,27 +582,22 @@ const EnhancedNavbar = () => {
                       >
                         <div className="p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
                           <p className="font-semibold">
-                            {currentUser?.displayName ||
-                              currentUser?.fullName ||
+                            {getUserDisplayName()}
+                          </p>
+                          <p className="text-sm opacity-90">
+                            {currentUser?.email ||
                               (() => {
                                 const storedUser = localStorage.getItem("user");
                                 if (storedUser) {
                                   try {
                                     const userData = JSON.parse(storedUser);
-                                    return (
-                                      userData.displayName ||
-                                      userData.fullName ||
-                                      "User"
-                                    );
+                                    return userData.email || "";
                                   } catch (e) {
-                                    return "User";
+                                    return "";
                                   }
                                 }
-                                return "User";
+                                return "";
                               })()}
-                          </p>
-                          <p className="text-sm opacity-90">
-                            {currentUser?.email || ""}
                           </p>
                         </div>
                         <div className="p-2">
