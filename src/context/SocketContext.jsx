@@ -36,7 +36,11 @@ export const SocketProvider = ({ children }) => {
           console.log("Firebase userId:", userId);
           console.log("Firebase token obtained");
 
-          const newSocket = io("http://localhost:5000", {
+          // Get socket URL from environment variable (remove /api if present)
+          const socketUrl =
+            import.meta.env.VITE_API_URL?.replace(/\/api$/, "") ||
+            "http://localhost:5000";
+          const newSocket = io(socketUrl, {
             auth: { token },
             reconnection: true,
             reconnectionDelay: 1000,

@@ -185,11 +185,14 @@ const ChatBox = () => {
           token.substring(0, 10) + "..."
         );
 
-        const response = await fetch("http://localhost:5000/api/users/admin", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/users/admin`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

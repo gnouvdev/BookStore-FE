@@ -4,7 +4,7 @@ import { getAuth } from "firebase/auth";
 export const chatApi = createApi({
   reducerPath: "chatApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api",
+    baseUrl: `${import.meta.env.VITE_API_URL}/api`,
     prepareHeaders: async (headers) => {
       try {
         // First try to get token from localStorage (for admin)
