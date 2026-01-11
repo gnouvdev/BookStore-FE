@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useGetContextualRecommendationsQuery } from "../../redux/features/recommendationv2/recommendationsv2Api";
 import { useAuth } from "../../context/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -7,19 +7,58 @@ import BookCard from "../books/BookCart";
 
 const ContextualBooks = () => {
   const { t } = useTranslation();
-  const { currentUser, loading: authLoading } = useAuth();
-  
-  // Check cả token để đảm bảo token đã được load
-  const hasToken = !!localStorage.getItem("token");
-  const shouldSkip = authLoading || !currentUser || !hasToken;
-  
+  const { currentUser } = useAuth();
   const {
     data: response,
     error,
     isLoading,
+    refetch,
   } = useGetContextualRecommendationsQuery(undefined, {
-    skip: shouldSkip, // Chỉ gọi API khi có user đăng nhập và token
+    skip: !currentUser, // Chỉ gọi API khi có user đăng nhập
   });
+
+  // Listen for user changes and refetch recommendations
+  useEffect(() => {
+    const handleUserChanged = () => {
+      console.log("User changed, refetching contextual recommendations...");
+      // Delay to ensure token is set
+      setTimeout(() => {
+        if (currentUser) {
+          refetch();
+        }
+      }, 500);
+    };
+
+    const handleUserLoggedIn = () => {
+      console.log("User logged in, refetching contextual recommendations...");
+      // Delay to ensure token is set
+      setTimeout(() => {
+        if (currentUser) {
+          refetch();
+        }
+      }, 500);
+    };
+
+    window.addEventListener("userChanged", handleUserChanged);
+    window.addEventListener("userLoggedIn", handleUserLoggedIn);
+
+    // Also refetch when currentUser changes (e.g., on mount after login)
+    if (currentUser) {
+      const timeoutId = setTimeout(() => {
+        refetch();
+      }, 1000);
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener("userChanged", handleUserChanged);
+        window.removeEventListener("userLoggedIn", handleUserLoggedIn);
+      };
+    }
+
+    return () => {
+      window.removeEventListener("userChanged", handleUserChanged);
+      window.removeEventListener("userLoggedIn", handleUserLoggedIn);
+    };
+  }, [currentUser, refetch]);
 
   const books = response?.data || [];
   const context = response?.context;

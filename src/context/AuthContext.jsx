@@ -16,6 +16,7 @@ import {
 import { clearCart } from "../redux/features/cart/cartSlice";
 import { useDispatch } from "react-redux";
 import { cartApi } from "../redux/features/cart/cartApi";
+import { recommendationsv2Api } from "../redux/features/recommendationv2/recommendationsv2Api";
 
 const AuthContext = createContext(null);
 
@@ -154,13 +155,49 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  // Fetch user profile from backend
+  const fetchUserProfile = async (token) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/users/profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user) {
+          const profileUser = {
+            email: data.user.email,
+            uid: data.user.firebaseId || data.user._id,
+            photoURL: data.user.photoURL || null,
+            displayName: data.user.fullName || data.user.displayName || null,
+            role: data.user.role || "user",
+            fullName: data.user.fullName || null,
+            address: data.user.address || null,
+          };
+          localStorage.setItem("user", JSON.stringify(profileUser));
+          return profileUser;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+    return null;
+  };
+
   // Lắng nghe sự thay đổi trạng thái đăng nhập
   useEffect(() => {
     let previousUserId = null;
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const currentUserId = user.uid;
+        const currentToken = localStorage.getItem("token");
 
         // Nếu user đổi (khác user trước đó), clear cart và reset RTK Query cache
         if (previousUserId && previousUserId !== currentUserId) {
@@ -168,6 +205,13 @@ export const AuthProvider = ({ children }) => {
           dispatch(clearCart());
           // Reset RTK Query cache để đảm bảo không dùng cache của user cũ
           dispatch(cartApi.util.resetApiState());
+          // Invalidate recommendations để refetch với user mới
+          dispatch(
+            recommendationsv2Api.util.invalidateTags([
+              "CollaborativeRecommendations",
+              "ContextualRecommendations",
+            ])
+          );
           // Dispatch event để các component khác biết user đã đổi
           window.dispatchEvent(
             new CustomEvent("userChanged", {
@@ -178,27 +222,90 @@ export const AuthProvider = ({ children }) => {
 
         previousUserId = currentUserId;
 
-        // Nếu đã có user trong localStorage, sử dụng thông tin đó
+        // Kiểm tra và fetch user profile từ backend nếu cần
         const storedUser = localStorage.getItem("user");
+        let userToSet = null;
+
         if (storedUser) {
-          setCurrentUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          // Nếu user trong localStorage không có displayName hoặc không khớp với uid hiện tại, fetch lại
+          if (
+            !parsedUser.displayName ||
+            parsedUser.uid !== currentUserId ||
+            !currentToken
+          ) {
+            if (currentToken) {
+              const profileUser = await fetchUserProfile(currentToken);
+              if (profileUser) {
+                userToSet = profileUser;
+              } else {
+                // Fallback về Firebase user nếu fetch thất bại
+                userToSet = {
+                  email: user.email,
+                  uid: user.uid,
+                  photoURL:
+                    user.photoURL ||
+                    "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+                  displayName: user.displayName || null,
+                  role: "user",
+                };
+                localStorage.setItem("user", JSON.stringify(userToSet));
+              }
+            } else {
+              // Không có token, dùng Firebase user
+              userToSet = {
+                email: user.email,
+                uid: user.uid,
+                photoURL:
+                  user.photoURL ||
+                  "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+                displayName: user.displayName || null,
+                role: "user",
+              };
+              localStorage.setItem("user", JSON.stringify(userToSet));
+            }
+          } else {
+            userToSet = parsedUser;
+          }
         } else {
-          // Nếu chưa có, tạo user object từ Firebase
-          const cleanUser = {
-            email: user.email,
-            uid: user.uid,
-            photoURL:
-              user.photoURL ||
-              "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-            displayName: user.displayName || null,
-            role: "user", // Mặc định là user
-          };
-          setCurrentUser(cleanUser);
+          // Chưa có user trong localStorage, fetch từ backend hoặc tạo từ Firebase
+          if (currentToken) {
+            const profileUser = await fetchUserProfile(currentToken);
+            if (profileUser) {
+              userToSet = profileUser;
+            } else {
+              // Fallback về Firebase user
+              userToSet = {
+                email: user.email,
+                uid: user.uid,
+                photoURL:
+                  user.photoURL ||
+                  "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+                displayName: user.displayName || null,
+                role: "user",
+              };
+              localStorage.setItem("user", JSON.stringify(userToSet));
+            }
+          } else {
+            // Không có token, tạo từ Firebase
+            userToSet = {
+              email: user.email,
+              uid: user.uid,
+              photoURL:
+                user.photoURL ||
+                "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+              displayName: user.displayName || null,
+              role: "user",
+            };
+            localStorage.setItem("user", JSON.stringify(userToSet));
+          }
         }
+
+        setCurrentUser(userToSet);
 
         // Đợi một chút để đảm bảo state đã được cập nhật trước khi dispatch event
         setTimeout(() => {
-          // Dispatch event để refetch cart khi user login
+          // Dispatch event để refetch cart và recommendations khi user login
           window.dispatchEvent(
             new CustomEvent("userLoggedIn", {
               detail: { userId: currentUserId },
@@ -207,15 +314,7 @@ export const AuthProvider = ({ children }) => {
         }, 100);
       } else {
         // User logout - clear cart và reset RTK Query cache
-        // NHƯNG: Nếu đang có admin token, không clear (admin không dùng Firebase)
-        const storedToken = localStorage.getItem("token");
-        const storedUser = localStorage.getItem("user");
-        const isAdmin = storedUser
-          ? JSON.parse(storedUser)?.role === "admin"
-          : false;
-
-        // Chỉ clear nếu không phải admin
-        if (previousUserId && !isAdmin) {
+        if (previousUserId) {
           console.log(
             "User logged out (onAuthStateChanged), clearing cart and resetting cache..."
           );
@@ -227,26 +326,10 @@ export const AuthProvider = ({ children }) => {
           // Clear token
           setToken(null);
           previousUserId = null;
-          setCurrentUser(null);
-          // Dispatch event để các component biết đã logout
-          window.dispatchEvent(new CustomEvent("userLoggedOut"));
-        } else if (isAdmin && storedToken && storedUser) {
-          // Nếu là admin, giữ nguyên token và user
-          console.log("Admin session detected, preserving admin token");
-          const adminUser = JSON.parse(storedUser);
-          setCurrentUser(adminUser);
-          setToken(storedToken);
-          // Sync admin user to Redux
-          dispatch(
-            setCredentials({
-              user: adminUser,
-              token: storedToken,
-            })
-          );
-        } else if (!previousUserId && !isAdmin) {
-          // Nếu không có previousUserId và không phải admin, clear state
-          setCurrentUser(null);
         }
+        setCurrentUser(null);
+        // Dispatch event để các component biết đã logout
+        window.dispatchEvent(new CustomEvent("userLoggedOut"));
       }
       setLoading(false);
     });
@@ -256,7 +339,6 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
-    loading,
     registerUser,
     loginUser,
     signInWithGoogle,

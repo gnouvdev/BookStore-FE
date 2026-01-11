@@ -36,7 +36,7 @@ export const SocketProvider = ({ children }) => {
           console.log("Firebase userId:", userId);
           console.log("Firebase token obtained");
 
-          const newSocket = io(`${import.meta.env.VITE_API_URL}`, {
+          const newSocket = io("http://localhost:5000", {
             auth: { token },
             reconnection: true,
             reconnectionDelay: 1000,
@@ -47,41 +47,16 @@ export const SocketProvider = ({ children }) => {
 
           // Xử lý kết nối thành công
           newSocket.on("connect", async () => {
-            console.log("[SocketContext] Socket connected:", newSocket.id);
+            console.log("Socket connected:", newSocket.id);
 
             // Refresh token trước khi register để đảm bảo token còn hiệu lực
             try {
               // eslint-disable-next-line no-unused-vars
               const freshToken = await user.getIdToken(true);
               newSocket.emit("register", userId);
-              console.log("[SocketContext] Registered user:", userId);
-
-              // Join chat room ngay sau khi register
-              const chatRoom = `chat:${userId}`;
-              console.log(
-                "[SocketContext] Attempting to join chat room:",
-                chatRoom
-              );
-              newSocket.emit("joinChat", userId, (response) => {
-                if (response && response.error) {
-                  console.error(
-                    "[SocketContext] Error joining chat room:",
-                    response.error
-                  );
-                } else {
-                  console.log(
-                    "[SocketContext] Successfully joined chat room:",
-                    chatRoom,
-                    "Response:",
-                    response
-                  );
-                }
-              });
+              console.log("Registered user:", userId);
             } catch (tokenError) {
-              console.error(
-                "[SocketContext] Error refreshing token on connect:",
-                tokenError
-              );
+              console.error("Error refreshing token on connect:", tokenError);
             }
           });
 
@@ -122,38 +97,15 @@ export const SocketProvider = ({ children }) => {
 
           // Xử lý reconnect
           newSocket.on("reconnect", async (attemptNumber) => {
-            console.log(
-              "[SocketContext] Socket reconnected after",
-              attemptNumber,
-              "attempts"
-            );
+            console.log("Socket reconnected after", attemptNumber, "attempts");
 
             // Refresh token và register lại sau khi reconnect
             try {
               // eslint-disable-next-line no-unused-vars
               const freshToken = await user.getIdToken(true);
               newSocket.emit("register", userId);
-
-              // Join chat room lại sau khi reconnect
-              const chatRoom = `chat:${userId}`;
-              newSocket.emit("joinChat", userId, (response) => {
-                if (response && response.error) {
-                  console.error(
-                    "[SocketContext] Error joining chat room on reconnect:",
-                    response.error
-                  );
-                } else {
-                  console.log(
-                    "[SocketContext] Successfully joined chat room on reconnect:",
-                    chatRoom
-                  );
-                }
-              });
             } catch (tokenError) {
-              console.error(
-                "[SocketContext] Error refreshing token on reconnect:",
-                tokenError
-              );
+              console.error("Error refreshing token on reconnect:", tokenError);
             }
           });
 

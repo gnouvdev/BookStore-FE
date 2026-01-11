@@ -4,24 +4,24 @@ import { getAuth } from "firebase/auth";
 export const chatApi = createApi({
   reducerPath: "chatApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `${import.meta.env.VITE_API_URL}/api`,
+    baseUrl: "http://localhost:5000/api",
     prepareHeaders: async (headers) => {
       try {
-        // Ưu tiên Firebase token cho user (không phải admin)
+        // First try to get token from localStorage (for admin)
+        const adminToken = localStorage.getItem("token");
+        if (adminToken) {
+          console.log("Using admin token from localStorage");
+          headers.set("Authorization", `Bearer ${adminToken}`);
+          return headers;
+        }
+
+        // If no admin token, try Firebase token
         const auth = getAuth();
         const user = auth.currentUser;
         if (user) {
           const token = await user.getIdToken();
           console.log("Using Firebase token for API request");
           headers.set("Authorization", `Bearer ${token}`);
-          return headers;
-        }
-
-        // Chỉ dùng admin token nếu không có Firebase user (admin login)
-        const adminToken = localStorage.getItem("token");
-        if (adminToken) {
-          console.log("Using admin token from localStorage (no Firebase user)");
-          headers.set("Authorization", `Bearer ${adminToken}`);
         } else {
           console.log("No authentication token found");
         }
@@ -39,12 +39,7 @@ export const chatApi = createApi({
         console.log("Fetching chat history for user:", userId);
         return `/chat/history/${userId}`;
       },
-      providesTags: (result, error, userId) => [
-        { type: "Chat", id: userId },
-        { type: "Chat", id: "chatbot" }, // Thêm chatbot tag để invalidate khi cần
-      ],
-      // Force refetch mỗi lần, không cache
-      keepUnusedDataFor: 0,
+      providesTags: (result, error, userId) => [{ type: "Chat", id: userId }],
     }),
     sendMessage: builder.mutation({
       query: (data) => {
@@ -57,7 +52,6 @@ export const chatApi = createApi({
       },
       invalidatesTags: (result, error, { receiverId }) => [
         { type: "Chat", id: receiverId },
-        { type: "Chat", id: "chatbot" }, // Invalidate chatbot tag nếu gửi đến chatbot
       ],
     }),
     getChatUsers: builder.query({

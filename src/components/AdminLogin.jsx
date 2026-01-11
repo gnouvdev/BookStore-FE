@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "../context/AuthContext";
 
 // Mock baseUrl for demo
-const baseUrl = `${import.meta.env.VITE_API_URL}/api`;
+const baseUrl = "http://localhost:5000/api";
 
 const ImprovedAdminLogin = () => {
   const [message, setMessage] = useState("");
@@ -88,15 +88,6 @@ const ImprovedAdminLogin = () => {
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(cleanUser));
         setCurrentUser(cleanUser);
-
-        // Dispatch event để AuthContext biết token đã được set
-        window.dispatchEvent(new CustomEvent("tokenSet"));
-        // Dispatch event để các component biết admin đã login
-        window.dispatchEvent(
-          new CustomEvent("userLoggedIn", {
-            detail: { userId: user.id, role: "admin" },
-          })
-        );
 
         setLoginStep("success");
 

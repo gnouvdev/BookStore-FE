@@ -95,13 +95,13 @@ const EnhancedCheckoutPage = () => {
     setValue,
   } = useForm({
     defaultValues: {
-      name: currentUser?.displayName || "",
-      email: currentUser?.email || "",
-      phone: userProfileData?.user?.phone || "",
-      street: userProfileData?.user?.address?.street || "",
-      city: userProfileData?.user?.address?.city || "",
-      country: userProfileData?.user?.address?.country || "",
-      zip: userProfileData?.user?.address?.zip || "",
+      name: "",
+      email: "",
+      phone: "",
+      street: "",
+      city: "",
+      country: "",
+      zip: "",
     },
   });
 
@@ -125,18 +125,27 @@ const EnhancedCheckoutPage = () => {
     }
   }, []);
 
-  // Thêm useEffect để cập nhật form khi userProfileData thay đổi
+  // Thêm useEffect để cập nhật form khi userProfileData hoặc currentUser thay đổi
   useEffect(() => {
     if (userProfileData?.user) {
-      const { phone, address } = userProfileData.user;
+      const { phone, address, fullName, email } = userProfileData.user;
       // Cập nhật các trường form với dữ liệu từ API
+      setValue(
+        "name",
+        fullName || currentUser?.displayName || currentUser?.fullName || ""
+      );
+      setValue("email", email || currentUser?.email || "");
       setValue("phone", phone || "");
       setValue("street", address?.street || "");
       setValue("city", address?.city || "");
       setValue("country", address?.country || "");
       setValue("zip", address?.zip || "");
+    } else if (currentUser) {
+      // Fallback nếu chưa có userProfileData
+      setValue("name", currentUser?.displayName || currentUser?.fullName || "");
+      setValue("email", currentUser?.email || "");
     }
-  }, [userProfileData, setValue]);
+  }, [userProfileData, currentUser, setValue]);
 
   if (!currentUser) {
     navigate("/login");

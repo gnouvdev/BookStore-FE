@@ -112,10 +112,8 @@ const EnhancedNavbar = () => {
   });
 
   // Get notifications
-  // Check cả token để đảm bảo token đã được load
-  const hasToken = !!localStorage.getItem("token");
   const { data: notificationsData } = useGetNotificationsQuery(undefined, {
-    skip: !currentUser || !hasToken,
+    skip: !currentUser,
     pollingInterval: 30000, // Poll every 30 seconds
   });
 
@@ -561,10 +559,27 @@ const EnhancedNavbar = () => {
                       >
                         <div className="p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
                           <p className="font-semibold">
-                            {currentUser.displayName || "User"}
+                            {currentUser?.displayName ||
+                              currentUser?.fullName ||
+                              (() => {
+                                const storedUser = localStorage.getItem("user");
+                                if (storedUser) {
+                                  try {
+                                    const userData = JSON.parse(storedUser);
+                                    return (
+                                      userData.displayName ||
+                                      userData.fullName ||
+                                      "User"
+                                    );
+                                  } catch (e) {
+                                    return "User";
+                                  }
+                                }
+                                return "User";
+                              })()}
                           </p>
                           <p className="text-sm opacity-90">
-                            {currentUser.email}
+                            {currentUser?.email || ""}
                           </p>
                         </div>
                         <div className="p-2">

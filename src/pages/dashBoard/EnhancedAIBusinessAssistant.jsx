@@ -246,18 +246,26 @@ export default function EnhancedAIBusinessAssistant({
                           Nhập hàng ngay
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="space-y-3">
                         {businessInsights.recommendations.stockUp.map(
                           (item, idx) => (
-                            <span
+                            <div
                               key={`stock-${idx}`}
-                              className="px-3 py-2 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-200 text-blue-700 text-xs font-semibold rounded-lg hover:shadow-md transition-all cursor-pointer"
+                              className="px-4 py-3 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
                             >
-                              <span className="font-bold">{item.title}</span>
-                              <span className="text-blue-600">
-                                : {item.reason}
-                              </span>
-                            </span>
+                              <div className="flex items-start justify-between mb-2">
+                                <span className="font-bold text-blue-700">{item.title}</span>
+                                <span className="text-xs text-blue-600 bg-blue-200 px-2 py-1 rounded-full">
+                                  {item.reason}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600 leading-relaxed">
+                                <strong>Phân tích:</strong> Sách này đang có nhu cầu cao từ phía khách hàng. 
+                                Việc nhập thêm hàng sẽ giúp đáp ứng nhu cầu, tăng doanh thu và giảm tỷ lệ 
+                                khách hàng bỏ lỡ cơ hội mua sắm. Nên ưu tiên nhập hàng ngay để không bỏ lỡ 
+                                cơ hội kinh doanh.
+                              </p>
+                            </div>
                           )
                         )}
                       </div>
@@ -273,18 +281,27 @@ export default function EnhancedAIBusinessAssistant({
                           Khuyến mãi nổi bật
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="space-y-3">
                         {businessInsights.recommendations.highlight.map(
                           (item, idx) => (
-                            <span
+                            <div
                               key={`highlight-${idx}`}
-                              className="px-3 py-2 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-purple-200 text-purple-700 text-xs font-semibold rounded-lg hover:shadow-md transition-all cursor-pointer"
+                              className="px-4 py-3 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-purple-200 rounded-lg hover:shadow-md transition-all"
                             >
-                              <span className="font-bold">{item.title}</span>
-                              <span className="text-purple-600">
-                                : {item.reason}
-                              </span>
-                            </span>
+                              <div className="flex items-start justify-between mb-2">
+                                <span className="font-bold text-purple-700">{item.title}</span>
+                                <span className="text-xs text-purple-600 bg-purple-200 px-2 py-1 rounded-full">
+                                  {item.reason}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600 leading-relaxed">
+                                <strong>Phân tích:</strong> Sản phẩm này đang được chatbot gợi ý nhiều hoặc 
+                                có nhãn trending, cho thấy tiềm năng bán hàng cao. Nên triển khai các chương 
+                                trình khuyến mãi như flash sale, giảm giá đặc biệt, hoặc pin banner để tăng 
+                                khả năng tiếp cận và chuyển đổi. Đây là cơ hội tốt để tăng doanh số và thu hút 
+                                khách hàng mới.
+                              </p>
+                            </div>
                           )
                         )}
                       </div>
@@ -320,19 +337,28 @@ export default function EnhancedAIBusinessAssistant({
                         Thời điểm vàng
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="space-y-3">
                       {businessInsights.recommendations?.timing?.length ? (
                         businessInsights.recommendations.timing.map(
                           (item, idx) => (
-                            <span
+                            <div
                               key={`timing-${idx}`}
-                              className="px-3 py-2 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 text-green-700 text-xs font-semibold rounded-lg hover:shadow-md transition-all cursor-pointer"
+                              className="px-4 py-3 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 rounded-lg hover:shadow-md transition-all"
                             >
-                              <span className="font-bold">{item.window}</span>
-                              <span className="text-green-600">
-                                : {item.reason}
-                              </span>
-                            </span>
+                              <div className="flex items-start justify-between mb-2">
+                                <span className="font-bold text-green-700">Khoảng {item.window}</span>
+                                <span className="text-xs text-green-600 bg-green-200 px-2 py-1 rounded-full">
+                                  {item.reason}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600 leading-relaxed">
+                                <strong>Phân tích:</strong> Đây là thời điểm khách hàng có xu hướng mua sắm 
+                                nhiều nhất trong tháng. Nên triển khai các chương trình flash sale, banner 
+                                quảng cáo, hoặc chương trình khuyến mãi đặc biệt trong khoảng thời gian này 
+                                để tối đa hóa doanh số. Đầu tư marketing vào thời điểm này sẽ mang lại hiệu quả 
+                                cao nhất.
+                              </p>
+                            </div>
                           )
                         )
                       ) : (
@@ -351,19 +377,27 @@ export default function EnhancedAIBusinessAssistant({
                         Cảnh báo giảm
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="space-y-3">
                       {businessInsights.recommendations?.drop?.length ? (
                         businessInsights.recommendations.drop.map(
                           (item, idx) => (
-                            <span
+                            <div
                               key={`drop-${idx}`}
-                              className="px-3 py-2 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 text-red-700 text-xs font-semibold rounded-lg hover:shadow-md transition-all cursor-pointer"
+                              className="px-4 py-3 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 rounded-lg hover:shadow-md transition-all"
                             >
-                              <span className="font-bold">{item.title}</span>
-                              <span className="text-red-600">
-                                : {item.reason}
-                              </span>
-                            </span>
+                              <div className="flex items-start justify-between mb-2">
+                                <span className="font-bold text-red-700">{item.title}</span>
+                                <span className="text-xs text-red-600 bg-red-200 px-2 py-1 rounded-full">
+                                  {item.reason}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600 leading-relaxed">
+                                <strong>Phân tích:</strong> Thể loại này đang có hiệu suất thấp với ít lượt xem, 
+                                không có wishlist và không có đơn hàng. Nên cân nhắc giảm tồn kho, tạm ngừng nhập 
+                                hàng mới, hoặc triển khai các chương trình giảm giá mạnh để thanh lý. Điều này sẽ 
+                                giúp giải phóng vốn và không gian kho, tập trung vào các sản phẩm có tiềm năng hơn.
+                              </p>
+                            </div>
                           )
                         )
                       ) : (

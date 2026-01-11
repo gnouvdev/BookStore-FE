@@ -100,7 +100,7 @@ const welcomeVariants = {
 };
 
 const ChatBox = () => {
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser } = useAuth();
   const socket = useSocket();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -134,9 +134,8 @@ const ChatBox = () => {
     error: chatHistoryError,
     refetch: refetchChatHistory,
   } = useGetChatHistoryQuery(chatTargetId, {
-    skip: !chatTargetId || !currentUser?.uid || authLoading,
+    skip: !chatTargetId || !currentUser?.uid,
     refetchOnMountOrArgChange: true,
-    pollingInterval: 0, // Tắt polling, chỉ refetch khi cần
   });
 
   // Reload chat history khi chuyển đổi giữa bot và admin
@@ -148,20 +147,8 @@ const ChatBox = () => {
 
   // Debug log cho chat history
   useEffect(() => {
-    console.log("[ChatBox] Chat history data updated:", {
-      hasData: !!chatHistoryData?.data,
-      dataLength: chatHistoryData?.data?.length || 0,
-      isLoading: isLoadingHistory,
-      messages:
-        chatHistoryData?.data?.map((m) => ({
-          id: m._id,
-          senderId: m.senderId,
-          message: m.message?.substring(0, 50),
-          hasBooks: !!m.books,
-          booksCount: m.books?.length || 0,
-        })) || [],
-    });
-  }, [chatHistoryData, isLoadingHistory]);
+    console.log("Chat history data:", chatHistoryData);
+  }, [chatHistoryData]);
 
   // Debug log cho lỗi gửi tin nhắn
   const [sendMessage, { error: sendMessageError, isLoading: isSending }] =
@@ -198,7 +185,7 @@ const ChatBox = () => {
           token.substring(0, 10) + "..."
         );
 
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/admin`, {
+        const response = await fetch("http://localhost:5000/api/users/admin", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -227,131 +214,63 @@ const ChatBox = () => {
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
-    // Sử dụng setTimeout để đảm bảo DOM đã render
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Scroll khi chat history thay đổi
   useEffect(() => {
     if (isOpen && chatHistoryData?.data) {
       scrollToBottom();
     }
   }, [chatHistoryData, isOpen]);
 
-  // Scroll khi mở chat box
+  // Handle socket events
   useEffect(() => {
-    if (isOpen && chatHistoryData?.data) {
-      // Delay một chút để đảm bảo chat box đã render hoàn toàn
-      setTimeout(() => {
-        scrollToBottom();
-      }, 300);
-    }
-  }, [isOpen, chatHistoryData?.data]);
-
-  // Handle socket events - Join room ngay khi có socket và user
-  useEffect(() => {
-    // Đợi auth loading xong và có currentUser
-    if (authLoading || !currentUser?.uid) {
-      return;
-    }
-
-    if (!socket) {
+    // Chỉ setup socket events khi socket đã connected và các điều kiện đủ
+    if (
+      !socket ||
+      !socket.connected ||
+      !isOpen ||
+      !chatTargetId ||
+      !currentUser?.uid
+    ) {
+      console.log("Socket setup skipped:", {
+        hasSocket: !!socket,
+        isConnected: socket?.connected,
+        isOpen,
+        chatTargetId,
+        userId: currentUser?.uid,
+      });
       return;
     }
 
     const userId = currentUser.uid;
     const expectedRoom = `chat:${userId}`;
+    console.log("Setting up socket events for room:", expectedRoom);
 
-    // Function để join chat room
-    const joinChatRoom = () => {
-      if (socket.connected) {
-        console.log(
-          "[ChatBox] Joining chat room:",
-          expectedRoom,
-          "Socket ID:",
-          socket.id
-        );
-        socket.emit("joinChat", userId, (response) => {
-          if (response && response.error) {
-            console.error("[ChatBox] Error joining chat room:", response.error);
-          } else {
-            console.log(
-              "[ChatBox] Successfully joined chat room:",
-              expectedRoom,
-              "Response:",
-              response
-            );
-          }
-        });
+    // Đảm bảo socket connected trước khi emit
+    if (!socket.connected) {
+      console.warn("Socket not connected, waiting for connection...");
+      const connectHandler = () => {
+        console.log("Socket connected, joining chat room:", userId);
+        socket.emit("joinChat", userId);
+      };
+      socket.once("connect", connectHandler);
+
+      return () => {
+        socket.off("connect", connectHandler);
+      };
+    }
+
+    // Join chat room (backend sẽ tự thêm prefix "chat:")
+    socket.emit("joinChat", userId, (response) => {
+      if (response && response.error) {
+        console.error("Error joining chat room:", response.error);
       } else {
-        console.warn(
-          "[ChatBox] Cannot join room: socket not connected, socket state:",
-          {
-            connected: socket.connected,
-            disconnected: socket.disconnected,
-            id: socket.id,
-          }
-        );
+        console.log("Successfully joined chat room:", expectedRoom);
       }
-    };
-
-    // Nếu socket đã connected, join ngay
-    if (socket.connected) {
-      // Delay một chút để đảm bảo socket đã sẵn sàng
-      setTimeout(() => {
-        joinChatRoom();
-      }, 100);
-    } else {
-      // Nếu chưa connected, đợi connect event
-      console.log("[ChatBox] Socket not connected, waiting for connect event");
-      socket.once("connect", () => {
-        console.log("[ChatBox] Socket connected event received, joining room");
-        setTimeout(() => {
-          joinChatRoom();
-        }, 100);
-      });
-    }
-
-    // Join lại khi reconnect
-    const handleReconnect = () => {
-      console.log("Socket reconnected, rejoining chat room:", userId);
-      joinChatRoom();
-    };
-
-    socket.on("reconnect", handleReconnect);
-
-    // Cleanup khi unmount
-    return () => {
-      socket.off("connect", joinChatRoom);
-      socket.off("reconnect", handleReconnect);
-      if (socket.connected) {
-        socket.emit("leaveChat", userId);
-      }
-    };
-  }, [socket, socket?.connected, currentUser?.uid, authLoading]);
-
-  // Handle socket events cho newMessage - Luôn lắng nghe khi có socket
-  useEffect(() => {
-    // Đợi auth loading xong và có currentUser
-    if (authLoading || !currentUser?.uid) {
-      return;
-    }
-
-    // Chỉ setup message listener khi có socket connected
-    if (!socket || !socket.connected) {
-      return;
-    }
-
-    const userId = currentUser.uid;
-    console.log(
-      "[ChatBox] Setting up message listener for room:",
-      `chat:${userId}`
-    );
+    });
 
     const handleNewMessage = (data) => {
-      console.log("[ChatBox] Received newMessage event:", data);
       // Kiểm tra xem có redirectTo trong message không (từ bot response)
       if (data?.message?.redirectTo && data.message.senderId === "chatbot") {
         const redirectPath = data.message.redirectTo;
@@ -372,55 +291,12 @@ const ChatBox = () => {
           (chatMode === "admin" &&
             (message.senderId === adminId || message.receiverId === adminId));
 
-        // Luôn refetch history nếu message liên quan (không cần đợi isOpen)
-        if (isRelevant) {
-          console.log("[ChatBox] Message is relevant, refetching history...", {
-            chatMode,
-            messageSenderId: message.senderId,
-            messageReceiverId: message.receiverId,
-            chatTargetId,
-            messageId: message._id,
-          });
+        if (isRelevant && chatTargetId) {
           // Sử dụng setTimeout để tránh race condition khi refetch quá nhanh
           setTimeout(() => {
-            if (chatTargetId) {
-              console.log("[ChatBox] Calling refetchChatHistory...");
-              // Force refetch với cache bypass
-              refetchChatHistory()
-                .then((result) => {
-                  const messages = result?.data?.data || [];
-                  const lastMessage = messages[messages.length - 1];
-                  console.log("[ChatBox] History refetched successfully", {
-                    dataLength: messages.length,
-                    hasData: messages.length > 0,
-                    lastMessageId: lastMessage?._id,
-                    lastMessageText: lastMessage?.message?.substring(0, 50),
-                    lastMessageCreatedAt: lastMessage?.createdAt,
-                    expectedMessageId: message._id, // Message ID từ socket
-                    hasNewMessage:
-                      lastMessage?._id?.toString() === message._id?.toString(),
-                  });
-                  // Force scroll xuống tin nhắn mới nhất sau khi refetch
-                  setTimeout(() => {
-                    scrollToBottom();
-                  }, 300);
-                })
-                .catch((err) => {
-                  console.error("[ChatBox] Error refetching history:", err);
-                });
-            } else {
-              console.warn("[ChatBox] Cannot refetch: chatTargetId is missing");
-            }
-          }, 1200); // Tăng delay để đảm bảo backend đã lưu message vào database
-        } else {
-          console.log("[ChatBox] Message is not relevant, skipping refetch", {
-            chatMode,
-            messageSenderId: message.senderId,
-            messageReceiverId: message.receiverId,
-            adminId,
-          });
+            refetchChatHistory();
+          }, 100);
         }
-        // Nếu chat box chưa mở, hiển thị notification
         if (!isOpen) {
           setIsMinimized(true);
         }
@@ -440,9 +316,7 @@ const ChatBox = () => {
     // Xử lý reconnect
     const handleReconnect = () => {
       console.log("Socket reconnected, rejoining chat room:", userId);
-      if (socket.connected) {
-        socket.emit("joinChat", userId);
-      }
+      socket.emit("joinChat", userId);
     };
 
     socket.on("newMessage", handleNewMessage);
@@ -450,20 +324,12 @@ const ChatBox = () => {
     socket.on("disconnect", handleDisconnect);
     socket.on("reconnect", handleReconnect);
 
-    // Log để debug
-    console.log("[ChatBox] Socket event listeners registered:", {
-      hasNewMessage: true,
-      hasError: true,
-      hasDisconnect: true,
-      hasReconnect: true,
-      socketConnected: socket.connected,
-      socketId: socket.id,
-      userId,
-      chatTargetId,
-    });
-
     return () => {
-      console.log("[ChatBox] Cleaning up message listeners");
+      console.log("Cleaning up socket events, leaving chat room:", userId);
+      // Chỉ leave nếu socket vẫn connected
+      if (socket.connected) {
+        socket.emit("leaveChat", userId);
+      }
       socket.off("newMessage", handleNewMessage);
       socket.off("error", handleError);
       socket.off("disconnect", handleDisconnect);
@@ -478,7 +344,6 @@ const ChatBox = () => {
     refetchChatHistory,
     chatMode,
     adminId,
-    authLoading,
   ]);
 
   // Simulate typing indicator
@@ -536,51 +401,11 @@ const ChatBox = () => {
       }
 
       setMessage("");
-
-      // Refetch chat history sau khi gửi message
-      // Đợi để backend xử lý bot response và emit qua socket
       if (chatTargetId) {
-        console.log(
-          "[ChatBox] Scheduling history refetch after sending message..."
-        );
-        // Refetch ngay sau khi gửi để hiển thị user message
-        setTimeout(async () => {
-          try {
-            await refetchChatHistory();
-            console.log(
-              "[ChatBox] History refetched after sending user message"
-            );
-            scrollToBottom();
-          } catch (refetchError) {
-            console.error(
-              "[ChatBox] Error refetching chat history:",
-              refetchError
-            );
-          }
-        }, 300);
-
-        // Refetch lại sau khi bot response (backend emit sau 500ms)
-        setTimeout(async () => {
-          try {
-            const result = await refetchChatHistory();
-            console.log("[ChatBox] History refetched after bot response", {
-              dataLength: result?.data?.data?.length || 0,
-              hasData: !!result?.data?.data,
-            });
-            setTimeout(() => {
-              scrollToBottom();
-            }, 200);
-          } catch (refetchError) {
-            console.error(
-              "[ChatBox] Error refetching chat history after bot:",
-              refetchError
-            );
-          }
-        }, 2000); // Tăng delay để đảm bảo backend đã lưu message vào DB
+        await refetchChatHistory();
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      toast.error("Không thể gửi tin nhắn. Vui lòng thử lại.");
     }
   };
 
@@ -598,33 +423,10 @@ const ChatBox = () => {
     setIsOpen(true);
     setIsMinimized(false);
 
-    // Đảm bảo socket đã join chat room
-    if (socket && currentUser?.uid) {
-      const userId = currentUser.uid;
-      if (socket.connected) {
-        socket.emit("joinChat", userId, (response) => {
-          if (response && response.error) {
-            console.error("Error joining chat room on open:", response.error);
-          } else {
-            console.log("Successfully joined chat room on open");
-          }
-        });
-      } else {
-        // Nếu socket chưa connected, đợi connect
-        socket.once("connect", () => {
-          socket.emit("joinChat", userId);
-        });
-      }
-    }
-
     if (chatTargetId && currentUser?.uid) {
       try {
         await refetchChatHistory();
         console.log("Chat history refetched after opening");
-        // Scroll xuống tin nhắn mới nhất sau khi mở
-        setTimeout(() => {
-          scrollToBottom();
-        }, 500);
       } catch (error) {
         console.error("Error refetching chat history:", error);
       }
@@ -639,11 +441,6 @@ const ChatBox = () => {
   const handleToggleSize = () => {
     setIsMaximized(!isMaximized);
   };
-
-  // Đợi auth loading xong
-  if (authLoading) {
-    return null; // Không hiển thị chat box khi đang load auth
-  }
 
   if (!currentUser?.uid) {
     return null; // Không hiển thị chat box nếu chưa đăng nhập

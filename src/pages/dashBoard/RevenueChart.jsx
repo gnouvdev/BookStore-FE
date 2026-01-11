@@ -32,14 +32,38 @@ const RevenueChart = ({ data, dateRange, onDateRangeChange }) => {
     endDate: dateRange?.endDate || "",
   });
 
-  // Process and filter data based on time range
+  // Process and filter data based on time range and date range
   const processedData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
-    const months =
-      timeRange === "3months" ? 3 : timeRange === "6months" ? 6 : 12;
-    return data.slice(-months);
-  }, [data, timeRange]);
+    let filtered = [...data];
+
+    // Filter by date range if provided
+    if (localDateRange.startDate || localDateRange.endDate) {
+      filtered = filtered.filter((item) => {
+        if (!item.month) return false;
+        const itemDate = new Date(item.month);
+        const startDate = localDateRange.startDate ? new Date(localDateRange.startDate) : null;
+        const endDate = localDateRange.endDate ? new Date(localDateRange.endDate) : null;
+        
+        if (startDate && itemDate < startDate) return false;
+        if (endDate) {
+          // Set endDate to end of day for inclusive comparison
+          const endOfDay = new Date(endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (itemDate > endOfDay) return false;
+        }
+        return true;
+      });
+    } else {
+      // If no date range, use time range
+      const months =
+        timeRange === "3months" ? 3 : timeRange === "6months" ? 6 : 12;
+      filtered = filtered.slice(-months);
+    }
+
+    return filtered;
+  }, [data, timeRange, localDateRange]);
 
   // Calculate trends and statistics
   const stats = useMemo(() => {

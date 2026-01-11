@@ -7,8 +7,6 @@ const Filter = ({ onFilterChange }) => {
   const [filters, setFilters] = useState({
     minPrice: 0,
     maxPrice: 1000000,
-    language: "",
-    author: "",
     sortBy: "",
     tags: [],
   });
@@ -108,38 +106,6 @@ const Filter = ({ onFilterChange }) => {
         </div>
       </div>
 
-      {/* Language Filter */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          {t("filter.language")}
-        </label>
-        <select
-          name="language"
-          value={filters.language}
-          onChange={handleFilterChange}
-          className="w-full p-2 border rounded-md"
-        >
-          <option value="">{t("filter.allLanguages")}</option>
-          <option value="Vietnamese">{t("filter.vietnamese")}</option>
-          <option value="English">{t("filter.english")}</option>
-        </select>
-      </div>
-
-      {/* Author Filter */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          {t("filter.author")}
-        </label>
-        <select
-          name="author"
-          value={filters.author}
-          onChange={handleFilterChange}
-          className="w-full p-2 border rounded-md"
-        >
-          <option value="">{t("filter.allAuthors")}</option>
-          <option value="trending">{t("filter.trendingAuthors")}</option>
-        </select>
-      </div>
 
       {/* Sort By Filter */}
       <div className="mb-4">

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   BookOpen,
@@ -35,14 +35,15 @@ const ImprovedDashboardLayout = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [notifications, setNotifications] = useState(3);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Mock user data
+  // Get user data from localStorage
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const user = {
-    name: "Pham Quoc Vuong",
-    role: "Admin",
-    avatar:
-      "https://hoathinh4k3.top/wp-content/uploads/2025/01/007xgN06gy1hxj7l2rmqwj31o12yo4Q-1.jpg",
-    email: "admin@bookstore.com",
+    name: storedUser.fullName || storedUser.displayName || storedUser.name || "Admin",
+    role: storedUser.role || "Admin",
+    avatar: storedUser.photoURL || storedUser.avatar || "https://hoathinh4k3.top/wp-content/uploads/2025/01/007xgN06gy1hxj7l2rmqwj31o12yo4Q-1.jpg",
+    email: storedUser.email || "admin@bookstore.com",
   };
 
   const menuItems = [
@@ -110,6 +111,18 @@ const ImprovedDashboardLayout = () => {
   const isActive = (path) => {
     return location.pathname === path;
   };
+
+  // Check authentication on mount and route change
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    
+    if (!token || user.role !== "admin") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/admin");
+    }
+  }, [location.pathname, navigate]);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {

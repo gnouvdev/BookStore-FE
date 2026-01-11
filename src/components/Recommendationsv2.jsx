@@ -22,7 +22,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 const EnhancedRecommendationsv2 = () => {
   const { t } = useTranslation();
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser } = useAuth();
   const sectionRef = useRef(null);
   const cardsRef = useRef([]);
   const titleRef = useRef(null);
@@ -30,20 +30,57 @@ const EnhancedRecommendationsv2 = () => {
   const [hoveredCard, setHoveredCard] = useState(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
-  // Check cả token để đảm bảo token đã được load
-  const hasToken = !!localStorage.getItem("token");
-  const shouldSkip = authLoading || !currentUser || !hasToken;
-
-  const { data, error, isLoading } = useGetCollaborativeRecommendationsQuery(
-    undefined,
-    {
-      skip: shouldSkip,
-    }
-  );
+  const { data, error, isLoading, refetch } =
+    useGetCollaborativeRecommendationsQuery(undefined, {
+      skip: !currentUser,
+    });
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  // Listen for user changes and refetch recommendations
+  useEffect(() => {
+    const handleUserChanged = () => {
+      console.log("User changed, refetching recommendations...");
+      // Delay to ensure token is set
+      setTimeout(() => {
+        if (currentUser) {
+          refetch();
+        }
+      }, 500);
+    };
+
+    const handleUserLoggedIn = () => {
+      console.log("User logged in, refetching recommendations...");
+      // Delay to ensure token is set
+      setTimeout(() => {
+        if (currentUser) {
+          refetch();
+        }
+      }, 500);
+    };
+
+    window.addEventListener("userChanged", handleUserChanged);
+    window.addEventListener("userLoggedIn", handleUserLoggedIn);
+
+    // Also refetch when currentUser changes (e.g., on mount after login)
+    if (currentUser) {
+      const timeoutId = setTimeout(() => {
+        refetch();
+      }, 1000);
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener("userChanged", handleUserChanged);
+        window.removeEventListener("userLoggedIn", handleUserLoggedIn);
+      };
+    }
+
+    return () => {
+      window.removeEventListener("userChanged", handleUserChanged);
+      window.removeEventListener("userLoggedIn", handleUserLoggedIn);
+    };
+  }, [currentUser, refetch]);
 
   useEffect(() => {
     if (data?.data?.length > 0 && isInView) {
@@ -122,8 +159,7 @@ const EnhancedRecommendationsv2 = () => {
     },
   };
 
-  // Đợi auth loading xong và có currentUser + token
-  if (authLoading || !currentUser || !hasToken) return null;
+  if (!currentUser) return null;
 
   if (isLoading) {
     return (

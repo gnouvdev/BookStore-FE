@@ -40,8 +40,6 @@ const EnhancedGridBooks = ({ genre }) => {
   const [filters, setFilters] = useState({
     minPrice: 0,
     maxPrice: 1000000,
-    language: "",
-    author: "",
     sortBy: "",
   });
 
@@ -129,20 +127,6 @@ const EnhancedGridBooks = ({ genre }) => {
         const price = book.price?.newPrice || 0;
         return price >= filters.minPrice && price <= filters.maxPrice;
       });
-
-      // Apply language filter
-      if (filters.language) {
-        result = result.filter((book) => {
-          const bookLanguage =
-            book.language === t("filter.Vietnamese") ? "Vietnamese" : "English";
-          return bookLanguage === filters.language;
-        });
-      }
-
-      // Apply author filter
-      if (filters.author === t("filter.trending")) {
-        result = result.filter((book) => book.trending);
-      }
 
       // Apply sorting
       if (filters.sortBy) {
@@ -307,16 +291,6 @@ const EnhancedGridBooks = ({ genre }) => {
     { value: "title", label: t("filter.titleAZ"), icon: FaBookOpen },
   ];
 
-  const languageOptions = [
-    { value: "", label: t("filter.allLanguages") },
-    { value: t("filter.English"), label: t("filter.English") },
-    { value: t("filter.Vietnamese"), label: t("filter.Vietnamese") },
-  ];
-
-  const authorOptions = [
-    { value: "", label: t("filter.allAuthors") },
-    { value: t("filter.trending"), label: t("filter.trendingAuthors") },
-  ];
 
   const viewModes = [
     { mode: "grid", icon: FaThLarge, label: "Grid" },
@@ -474,47 +448,6 @@ const EnhancedGridBooks = ({ genre }) => {
                 </div>
               </div>
 
-              {/* Language Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <FaLanguage className="inline mr-2" />
-                  {t("filter.language")}
-                </label>
-                <select
-                  value={filters.language}
-                  onChange={(e) =>
-                    handleFilterChange({ ...filters, language: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                >
-                  {languageOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Author Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <FaUser className="inline mr-2" />
-                  {t("filter.author")}
-                </label>
-                <select
-                  value={filters.author}
-                  onChange={(e) =>
-                    handleFilterChange({ ...filters, author: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                >
-                  {authorOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
               {/* Sort By */}
               <div>
@@ -543,8 +476,6 @@ const EnhancedGridBooks = ({ genre }) => {
                   setFilters({
                     minPrice: 0,
                     maxPrice: 1000000,
-                    language: "",
-                    author: "",
                     sortBy: "",
                   });
                   setSearchQuery("");
