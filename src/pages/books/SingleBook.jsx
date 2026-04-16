@@ -20,6 +20,7 @@ const formatPrice = (value) =>
 const getCurrentPrice = (book) => Number(book?.price?.newPrice ?? book?.price ?? 0);
 const getOriginalPrice = (book) => Number(book?.price?.oldPrice ?? 0);
 const getReviewerId = (user) => user?._id || user?.id || user?.uid || user?.userId;
+const getReviewerName = (user, fallback) => user?.fullName || user?.displayName || user?.name || user?.email || fallback;
 
 const StarRow = ({ value }) => (
   <div className="bookeco-single-stars">
@@ -294,9 +295,9 @@ const SingleBook = () => {
                   reviews.map((review) => (
                     <article key={review._id} className="bookeco-review-card">
                       <div className="bookeco-review-head">
-                        <img src={review.user?.photoURL || "https://via.placeholder.com/56x56?text=U"} alt={review.user?.displayName || "User"} />
+                        <img src={review.user?.photoURL || "https://via.placeholder.com/56x56?text=U"} alt={getReviewerName(review.user, "User")} />
                         <div>
-                          <strong>{review.user?.displayName || t("bookeco.review.reader_name", { defaultValue: "Độc giả BookEco" })}</strong>
+                          <strong>{getReviewerName(review.user, t("bookeco.review.reader_name", { defaultValue: "Độc giả BookEco" }))}</strong>
                           <span>{new Date(review.createdAt).toLocaleDateString("vi-VN")}</span>
                         </div>
                       </div>
