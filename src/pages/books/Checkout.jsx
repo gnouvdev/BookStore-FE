@@ -1,295 +1,140 @@
-/* eslint-disable no-unused-vars */
-"use client";
-
-import { useState, useRef, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import "../../styles/cart-checkout.css";
-import {
-  FaCreditCard,
-  FaMoneyBillWave,
-  FaShieldAlt,
-  FaCheckCircle,
-  FaSpinner,
-  FaUser,
-  FaEnvelope,
-  FaPhone,
-  FaMapMarkerAlt,
-  FaLock,
-  FaShoppingCart,
-} from "react-icons/fa";
-import {
-  RiSecurePaymentLine,
-  RiTruckLine,
-  RiShieldCheckLine,
-} from "react-icons/ri";
-import { useAuth } from "../../context/AuthContext";
+﻿import { useEffect, useMemo, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { CreditCard, ShieldCheck, Truck } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 import Swal from "sweetalert2";
-import { useCreateOrderMutation } from "../../redux/features/orders/ordersApi";
+import { useAuth } from "../../context/AuthContext";
 import { clearCart } from "../../redux/features/cart/cartSlice";
-import {
-  useGetPaymentMethodsQuery,
-  useCreateVNPayUrlMutation,
-} from "../../redux/features/payments/paymentsApi";
-import {
-  useGetCurrentUserQuery,
-  useGetUserProfileQuery,
-} from "../../redux/features/users/userApi";
+import { useClearCartMutation, useGetCartQuery } from "../../redux/features/cart/cartApi";
+import { useCreateOrderMutation } from "../../redux/features/orders/ordersApi";
+import { useCreateVNPayUrlMutation, useGetPaymentMethodsQuery } from "../../redux/features/payments/paymentsApi";
+import { useGetCurrentUserQuery, useGetUserProfileQuery } from "../../redux/features/users/userApi";
+import { useApplyVoucherMutation, useValidateVoucherMutation } from "../../redux/features/voucher/voucherApi";
 import baseUrl from "../../utils/baseURL";
-import { useClearCartMutation } from "../../redux/features/cart/cartApi";
-import gsap from "gsap";
-import { t } from "i18next";
-import { toast } from "react-hot-toast";
-import axios from "axios";
-import {
-  useValidateVoucherMutation,
-  useApplyVoucherMutation,
-} from "../../redux/features/voucher/voucherApi";
+import "../../styles/bookeco-commerce.css";
 
-const EnhancedCheckoutPage = () => {
+const formatPrice = (value) =>
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+
+const Checkout = () => {
+  const { t } = useTranslation();
   const { currentUser } = useAuth();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const reduxCart = useSelector((state) => state.cart.cartItems || []);
+  const { data: remoteCart } = useGetCartQuery(currentUser?.uid || null, { skip: !currentUser?.uid });
+  const cartItems = remoteCart?.data?.items?.length
+    ? remoteCart.data.items.map((item) => ({ ...item.book, quantity: item.quantity, linePrice: item.price }))
+    : reduxCart;
+
   const [selectedPayment, setSelectedPayment] = useState(null);
-  const [isChecked, setIsChecked] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState(null);
-  const [voucherError, setVoucherError] = useState("");
-
-  const cartItems = useSelector((state) => state.cart.cartItems);
-  const [createOrder, { isLoading }] = useCreateOrderMutation();
-
-  const {
-    data: paymentMethodsData,
-    isLoading: isLoadingPayments,
-    error: paymentError,
-  } = useGetPaymentMethodsQuery();
-
-  const {
-    data: userData,
-    isLoading: isLoadingUser,
-    error: userError,
-  } = useGetCurrentUserQuery();
-
-  const { data: userProfileData, isLoading: isLoadingUserProfile } =
-    useGetUserProfileQuery();
-
-  const paymentMethods = paymentMethodsData?.data || [];
-  const [createVNPayUrl] = useCreateVNPayUrlMutation();
-  const [clearCartApi] = useClearCartMutation();
-  const [validateVoucher] = useValidateVoucherMutation();
-  const [applyVoucher] = useApplyVoucherMutation();
-
-  const formRef = useRef(null);
-  const stepsRef = useRef([]);
-  const summaryRef = useRef(null);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    watch,
-    setValue,
-  } = useForm({
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      street: "",
-      city: "",
-      country: "",
-      zip: "",
-    },
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    street: "",
+    city: "",
+    country: "Việt Nam",
+    zip: "",
+    note: "",
   });
 
-  const watchedFields = watch();
+  const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
+  const [clearCartApi] = useClearCartMutation();
+  const [createVNPayUrl] = useCreateVNPayUrlMutation();
+  const [validateVoucher] = useValidateVoucherMutation();
+  const [applyVoucher] = useApplyVoucherMutation();
+  const { data: paymentMethodsData, isLoading: isLoadingPayments } = useGetPaymentMethodsQuery();
+  const { isLoading: isLoadingUser } = useGetCurrentUserQuery();
+  const { data: userProfileData } = useGetUserProfileQuery(undefined, { skip: !currentUser });
 
-  // Enhanced animations
   useEffect(() => {
-    if (formRef.current) {
-      const tl = gsap.timeline();
-
-      tl.fromTo(
-        stepsRef.current,
-        { y: -30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out" }
-      ).fromTo(
-        formRef.current.children,
-        { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out" },
-        "-=0.3"
-      );
+    const user = userProfileData?.user;
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: user.fullName || currentUser?.displayName || "",
+        email: user.email || currentUser?.email || "",
+        phone: user.phone || "",
+        street: user.address?.street || "",
+        city: user.address?.city || "",
+        country: user.address?.country || "Việt Nam",
+        zip: user.address?.zip || "",
+      }));
+      return;
     }
-  }, []);
-
-  // Thêm useEffect để cập nhật form khi userProfileData hoặc currentUser thay đổi
-  useEffect(() => {
-    if (userProfileData?.user) {
-      const { phone, address, fullName, email } = userProfileData.user;
-      // Cập nhật các trường form với dữ liệu từ API
-      setValue(
-        "name",
-        fullName || currentUser?.displayName || currentUser?.fullName || ""
-      );
-      setValue("email", email || currentUser?.email || "");
-      setValue("phone", phone || "");
-      setValue("street", address?.street || "");
-      setValue("city", address?.city || "");
-      setValue("country", address?.country || "");
-      setValue("zip", address?.zip || "");
-    } else if (currentUser) {
-      // Fallback nếu chưa có userProfileData
-      setValue("name", currentUser?.displayName || currentUser?.fullName || "");
-      setValue("email", currentUser?.email || "");
+    if (currentUser) {
+      setFormData((prev) => ({ ...prev, name: currentUser.displayName || "", email: currentUser.email || "" }));
     }
-  }, [userProfileData, currentUser, setValue]);
+  }, [currentUser, userProfileData]);
 
-  if (!currentUser) {
-    navigate("/login");
-    return null;
-  }
+  const paymentMethods = paymentMethodsData?.data?.filter((item) => item.isActive) || [];
 
-  const totalPrice = cartItems.reduce((acc, item) => {
-    const price = item.price || 0;
-    const quantity = item.quantity || 1;
-    return acc + price * quantity;
-  }, 0);
-
-  const handlePaymentMethodSelect = (method) => {
-    setSelectedPayment(method);
-
-    // Animate selection
-    gsap.to(".payment-option", {
-      scale: 1,
-      duration: 0.2,
-      ease: "power2.out",
-    });
-
-    gsap.to(`[data-payment-id="${method._id}"]`, {
-      scale: 1.02,
-      duration: 0.2,
-      ease: "power2.out",
-    });
-  };
+  const subtotal = useMemo(
+    () => cartItems.reduce((sum, item) => {
+      const price = Number(item.linePrice || item.price?.newPrice || item.price?.oldPrice || item.price || 0);
+      return sum + price * Number(item.quantity || 1);
+    }, 0),
+    [cartItems]
+  );
+  const shippingFee = subtotal > 500000 || subtotal === 0 ? 0 : 35000;
+  const voucherDiscount = Number(appliedVoucher?.discount || 0);
+  const total = Math.max(subtotal + shippingFee - voucherDiscount, 0);
 
   const validateStock = async () => {
     for (const item of cartItems) {
-      try {
-        const bookId = item._id || item.bookId;
-        const response = await fetch(`${baseUrl}/books/${bookId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch book: ${response.status}`);
-        }
-
-        const book = await response.json();
-        const bookData = book.data || book;
-
-        if (!bookData || typeof bookData.quantity === "undefined") {
-          throw new Error(`Invalid book data for ${bookId}`);
-        }
-
-        if (bookData.quantity < item.quantity) {
-          throw new Error(`Insufficient stock for ${bookData.title || bookId}`);
-        }
-      } catch (error) {
-        throw new Error(`Stock validation failed: ${error.message}`);
-      }
-    }
-    return true;
-  };
-
-  const handleApplyVoucher = async () => {
-    if (!voucherCode.trim()) {
-      setVoucherError(t("cart.enter_voucher"));
-      return;
-    }
-
-    try {
-      const result = await validateVoucher({
-        code: voucherCode,
-        orderAmount: totalPrice,
-      }).unwrap();
-
-      if (result.success) {
-        setAppliedVoucher({
-          ...result.data.voucher,
-          discount: result.data.discount,
-        });
-        setVoucherError(null);
-        toast.success(t("cart.voucher_applied"));
-      }
-    } catch (error) {
-      setVoucherError(error.data?.message || t("cart.invalid_voucher"));
-      setAppliedVoucher(null);
-    }
-  };
-
-  const onSubmit = async (data) => {
-    if (!cartItems.length) {
-      Swal.fire({
-        title: t("cart.error"),
-        text: t("cart.your_cart_is_empty"),
-        icon: "error",
-        customClass: {
-          popup: "rounded-2xl",
-          confirmButton: "rounded-xl",
-        },
+      const bookId = item._id || item.bookId;
+      const response = await fetch(`${baseUrl}/books/${bookId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
+      const payload = await response.json();
+      const book = payload.data || payload;
+      if (!response.ok || Number(book.quantity || 0) < Number(item.quantity || 1)) {
+        throw new Error(`${item.title || t("common.books", { defaultValue: "Sách" })} ${t("bookeco.checkout.stock_error", { defaultValue: "không còn đủ số lượng trong kho." })}`);
+      }
+    }
+  };
+
+  const handleVoucher = async () => {
+    if (!voucherCode.trim()) return;
+    try {
+      const validation = await validateVoucher({ code: voucherCode, orderAmount: subtotal }).unwrap();
+      setAppliedVoucher({ ...validation.data.voucher, discount: validation.data.discount });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: t("cart.invalid_voucher", { defaultValue: "Mã ưu đãi không hợp lệ" }),
+        text: error?.data?.message || t("bookeco.checkout.voucher_error", { defaultValue: "Vui lòng kiểm tra lại mã ưu đãi." }),
+      });
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!cartItems.length) {
+      Swal.fire({ icon: "warning", title: t("cart.your_cart_is_empty", { defaultValue: "Giỏ hàng đang trống" }) });
       return;
     }
 
     if (!selectedPayment) {
-      Swal.fire({
-        title: t("cart.error"),
-        text: t("cart.please_select_a_payment_method"),
-        icon: "error",
-        customClass: {
-          popup: "rounded-2xl",
-          confirmButton: "rounded-xl",
-        },
-      });
-      return;
-    }
-
-    if (isLoadingUser) {
-      toast.error(t("cart.please_wait_while_we_load_your_profile_data"));
-      return;
-    }
-
-    if (!userProfileData?.user?._id) {
-      Swal.fire({
-        title: t("cart.error"),
-        text: t("cart.user_data_not_loaded_please_try_again"),
-        icon: "error",
-        customClass: {
-          popup: "rounded-2xl",
-          confirmButton: "rounded-xl",
-        },
-      });
+      Swal.fire({ icon: "warning", title: t("cart.please_select_a_payment_method", { defaultValue: "Hãy chọn phương thức thanh toán" }) });
       return;
     }
 
     try {
       await validateStock();
 
-      let finalPrice = totalPrice;
-      let voucherDiscount = 0;
-
+      let finalDiscount = voucherDiscount;
       if (appliedVoucher) {
-        const result = await applyVoucher({
-          code: appliedVoucher.code,
-          orderAmount: totalPrice,
-        }).unwrap();
-        voucherDiscount = result.data.discount;
-        finalPrice = totalPrice - voucherDiscount;
+        const applyResult = await applyVoucher({ code: appliedVoucher.code, orderAmount: subtotal }).unwrap();
+        finalDiscount = Number(applyResult.data.discount || finalDiscount);
       }
 
       const orderItems = cartItems.map((item) => ({
@@ -297,793 +142,188 @@ const EnhancedCheckoutPage = () => {
         quantity: item.quantity || 1,
       }));
 
-      const orderData = {
-        user: userProfileData.user._id,
-        name: data.name,
+      const shippingInfo = {
+        name: formData.name,
         email: currentUser?.email,
-        phone: data.phone,
         address: {
-          street: data.street,
-          city: data.city,
-          country: data.country || "",
-          zip: data.zip || "",
+          street: formData.street,
+          city: formData.city,
+          country: formData.country,
+          zip: formData.zip,
+          zipcode: formData.zip,
         },
-        productIds: orderItems,
-        totalPrice: finalPrice,
-        paymentMethod: selectedPayment._id,
-        status: "pending",
-        paymentStatus: "pending",
-        paymentDetails: {
-          paymentAmount: finalPrice,
-          paymentCurrency: "VND",
-        },
-        voucherCode: appliedVoucher?.code,
-        voucherDiscount,
+        phone: formData.phone,
       };
 
-      const order = await createOrder(orderData).unwrap();
+      const orderPayload = {
+        name: formData.name,
+        email: currentUser?.email,
+        phone: formData.phone,
+        address: {
+          street: formData.street,
+          city: formData.city,
+          country: formData.country,
+          zip: formData.zip,
+        },
+        productIds: orderItems,
+        paymentMethod: selectedPayment._id,
+        note: formData.note,
+        voucherCode: appliedVoucher?.code,
+        voucherDiscount: finalDiscount,
+      };
 
-      // Nếu là VNPAY thì tạo link và chuyển hướng
       if (selectedPayment.code === "VNPAY") {
-        // Gọi API tạo link VNPAY
-        const vnpayPayload = {
+        const vnpayRes = await createVNPayUrl({
           orderItems,
-          user: { _id: userProfileData.user._id },
-          shippingInfo: {
-            name: data.name,
-            email: currentUser?.email,
-            address: {
-              street: data.street,
-              city: data.city,
-              country: data.country || "",
-              zipcode: data.zip || "",
-            },
-            phone: data.phone,
-          },
+          shippingInfo,
           paymentMethodId: selectedPayment._id,
-        };
-        const vnpayRes = await createVNPayUrl(vnpayPayload).unwrap();
+          voucherCode: appliedVoucher?.code,
+        }).unwrap();
         if (vnpayRes?.paymentUrl) {
           await clearCartApi();
           dispatch(clearCart());
           window.location.href = vnpayRes.paymentUrl;
           return;
-        } else {
-          throw new Error("Không tạo được link thanh toán VNPAY");
         }
       }
 
-      // Nếu không phải VNPAY thì chuyển sang trang cảm ơn như cũ
+      await createOrder(orderPayload).unwrap();
       await clearCartApi();
       dispatch(clearCart());
-      navigate("/orders/thanks");
+      window.location.href = "/orders/thanks";
     } catch (error) {
-      console.error("API Error:", error);
-
-      let errorMessage = "Failed to process the order";
-      if (error?.data?.message) {
-        errorMessage = error.data.message;
-      } else if (error?.status === "FETCH_ERROR") {
-        errorMessage = "Network error. Please check your connection.";
-      } else if (error?.message) {
-        errorMessage = error.message;
-      }
-
       Swal.fire({
-        title: t("cart.error"),
-        text: errorMessage,
         icon: "error",
-        customClass: {
-          popup: "rounded-2xl",
-          confirmButton: "rounded-xl",
-        },
+        title: t("bookeco.checkout.submit_error_title", { defaultValue: "Không thể hoàn tất thanh toán" }),
+        text: error?.data?.message || error?.message || t("filter.pleaseTryAgainLater", { defaultValue: "Vui lòng thử lại sau." }),
       });
     }
   };
 
-  if (isLoading || isLoadingPayments || isLoadingUser) {
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isCreatingOrder || isLoadingPayments || isLoadingUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{
-              duration: 1,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "linear",
-            }}
-            className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"
-          />
-          <p className="text-xl font-semibold text-gray-700">
-            {t("cart.loading_checkout")}
-          </p>
-        </motion.div>
-      </div>
+      <section className="bookeco-commerce-shell">
+        <div className="bookeco-empty-state">
+          <div className="bookeco-single-spinner" />
+          <p>{t("bookeco.checkout.loading", { defaultValue: "Đang chuẩn bị thanh toán..." })}</p>
+        </div>
+      </section>
     );
   }
 
-  const supportedMethods = paymentMethods.filter((method) => method.isActive);
-
-  const steps = [
-    { id: 1, title: "Shipping Info", icon: FaUser },
-    { id: 2, title: "Payment", icon: FaCreditCard },
-    { id: 3, title: "Review", icon: FaCheckCircle },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-2 h-2 bg-blue-400/20 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0, 1, 0],
-              scale: [0, 1, 0],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Number.POSITIVE_INFINITY,
-              delay: Math.random() * 2,
-              ease: "easeInOut",
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            {t("cart.secure_checkout")}
-          </h1>
-          <p className="text-gray-600 text-lg">
-            {t("cart.complete_your_order_safely_and_securely")}
-          </p>
-        </motion.div>
-
-        {/* Progress Steps */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-8"
-        >
-          <div className="flex justify-center">
-            <div className="flex items-center space-x-8">
-              {steps.map((step, index) => (
-                <motion.div
-                  key={step.id}
-                  ref={(el) => (stepsRef.current[index] = el)}
-                  className="flex items-center"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 * index }}
-                >
-                  <div
-                    className={`flex items-center justify-center w-12 h-12 rounded-full ${
-                      currentStep >= step.id
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200 text-gray-500"
-                    } transition-all duration-300`}
-                  >
-                    <step.icon className="w-5 h-5" />
-                  </div>
-                  <span
-                    className={`ml-3 font-medium ${
-                      currentStep >= step.id ? "text-blue-600" : "text-gray-500"
-                    }`}
-                  >
-                    {step.title}
-                  </span>
-                  {index < steps.length - 1 && (
-                    <div
-                      className={`w-16 h-1 mx-4 ${
-                        currentStep > step.id ? "bg-blue-500" : "bg-gray-200"
-                      } transition-all duration-300`}
-                    />
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Form */}
-          <div className="lg:col-span-2">
-            {/* Order Summary for Mobile */}
-            <motion.div
-              className="lg:hidden bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-6 mb-6 border border-white/20"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <h3 className="text-xl font-bold text-gray-800 mb-4">
-                {t("cart.order_summary")}
-              </h3>
-              <div className="space-y-3">
-                {cartItems.slice(0, 2).map((item) => (
-                  <div
-                    key={item._id || item.bookId}
-                    className="flex items-center gap-3"
-                  >
-                    <img
-                      src={
-                        item.coverImage || "/placeholder.svg?height=60&width=45"
-                      }
-                      alt={item.title}
-                      className="w-12 h-16 object-cover rounded"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">
-                        {item.title}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {t("cart.quantity")}: {item.quantity}
-                      </p>
-                    </div>
-                    <p className="font-semibold text-gray-900">
-                      {(item.price * item.quantity).toLocaleString("vi-VN")}đ
-                    </p>
-                  </div>
-                ))}
-                {cartItems.length > 2 && (
-                  <p className="text-sm text-gray-500 text-center">
-                    +{cartItems.length - 2} {t("cart.more_items")}
-                  </p>
-                )}
-                <hr className="border-gray-200" />
-                <div className="flex justify-between font-bold text-lg">
-                  <span>{t("cart.total")}:</span>
-                  <span className="text-blue-600">
-                    {totalPrice.toLocaleString("vi-VN")}đ
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Shipping Information */}
-            <motion.div
-              ref={formRef}
-              className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-8 mb-6 border border-white/20"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-                  <FaUser className="text-white" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  {t("cart.shipping_information")}
-                </h2>
-              </div>
-
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Full Name */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FaUser className="inline mr-2" />
-                      {t("cart.full_name")} *
-                    </label>
-                    <input
-                      {...register("name", {
-                        required: t("cart.full_name_is_required"),
-                      })}
-                      type="text"
-                      className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
-                        errors.name
-                          ? "border-red-500"
-                          : watchedFields.name
-                          ? "border-green-500"
-                          : "border-gray-200 focus:border-blue-500"
-                      }`}
-                      placeholder={t("cart.enter_your_full_name")}
-                    />
-                    {errors.name && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-red-500 text-sm mt-1"
-                      >
-                        {t("cart." + errors.name.message)}
-                      </motion.p>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FaEnvelope className="inline mr-2" />
-                      {t("cart.email_address")}
-                    </label>
-                    <input
-                      type="email"
-                      disabled
-                      value={currentUser?.email}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-100 text-gray-600"
-                    />
-                  </div>
-
-                  {/* Phone */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FaPhone className="inline mr-2" />
-                      {t("cart.phone_number")} *
-                    </label>
-                    <input
-                      {...register("phone", {
-                        required: "Phone is required",
-                        pattern: {
-                          value: /^\+?\d{10,15}$/,
-                          message: t("invalid_phone_number"),
-                        },
-                        validate: (value) => {
-                          if (!/^[0-9+]+$/.test(value)) {
-                            return "Phone number can only contain numbers and +";
-                          }
-                          return true;
-                        },
-                      })}
-                      type="text"
-                      className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
-                        errors.phone
-                          ? "border-red-500"
-                          : watchedFields.phone
-                          ? "border-green-500"
-                          : "border-gray-200 focus:border-blue-500"
-                      }`}
-                      placeholder={t("cart.enter_your_phone_number")}
-                    />
-                    {errors.phone && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-red-500 text-sm mt-1"
-                      >
-                        {t("cart." + errors.phone.message)}
-                      </motion.p>
-                    )}
-                  </div>
-
-                  {/* Street Address */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FaMapMarkerAlt className="inline mr-2" />
-                      {t("cart.street_address")} *
-                    </label>
-                    <input
-                      {...register("street", {
-                        required: "Street address is required",
-                      })}
-                      type="text"
-                      className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
-                        errors.street
-                          ? "border-red-500"
-                          : watchedFields.street
-                          ? "border-green-500"
-                          : "border-gray-200 focus:border-blue-500"
-                      }`}
-                      placeholder={t("cart.enter_your_street_address")}
-                    />
-                    {errors.street && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-red-500 text-sm mt-1"
-                      >
-                        {t(errors.street.message)}
-                      </motion.p>
-                    )}
-                  </div>
-
-                  {/* City */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FaMapMarkerAlt className="inline mr-2" />
-                      {t("cart.city")} *
-                    </label>
-                    <input
-                      {...register("city", { required: "City is required" })}
-                      type="text"
-                      className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
-                        errors.city
-                          ? "border-red-500"
-                          : watchedFields.city
-                          ? "border-green-500"
-                          : "border-gray-200 focus:border-blue-500"
-                      }`}
-                      placeholder={t("cart.enter_your_city")}
-                    />
-                    {errors.city && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-red-500 text-sm mt-1"
-                      >
-                        {t("cart." + errors.city.message)}
-                      </motion.p>
-                    )}
-                  </div>
-
-                  {/* Country */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t("cart.country")} *
-                    </label>
-                    <input
-                      {...register("country", {
-                        required: "Country is required",
-                      })}
-                      type="text"
-                      className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
-                        errors.country
-                          ? "border-red-500"
-                          : watchedFields.country
-                          ? "border-green-500"
-                          : "border-gray-200 focus:border-blue-500"
-                      }`}
-                      placeholder={t("cart.enter_your_country")}
-                    />
-                    {errors.country && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-red-500 text-sm mt-1"
-                      >
-                        {t("cart." + errors.country.message)}
-                      </motion.p>
-                    )}
-                  </div>
-
-                  {/* Zip Code */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t("cart.zip_code")} *
-                    </label>
-                    <input
-                      {...register("zip", { required: "Zip code is required" })}
-                      type="text"
-                      className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none ${
-                        errors.zip
-                          ? "border-red-500"
-                          : watchedFields.zip
-                          ? "border-green-500"
-                          : "border-gray-200 focus:border-blue-500"
-                      }`}
-                      placeholder={t("cart.enter_your_zip_code")}
-                    />
-                    {errors.zip && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-red-500 text-sm mt-1"
-                      >
-                        {t("cart." + errors.zip.message)}
-                      </motion.p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Payment Methods */}
-                <div className="mt-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
-                      <FaCreditCard className="text-white" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-800">
-                      {t("cart.payment_method")}
-                    </h3>
-                  </div>
-
-                  {isLoadingPayments ? (
-                    <div className="flex items-center justify-center py-8">
-                      <FaSpinner className="animate-spin text-2xl text-blue-500" />
-                      <span className="ml-3 text-gray-600">
-                        {t("cart.loading_payment_methods")}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {supportedMethods.map((method) => (
-                        <motion.label
-                          key={method._id}
-                          data-payment-id={method._id}
-                          className={`payment-option flex items-center gap-4 border-2 rounded-2xl p-6 cursor-pointer transition-all duration-300 ${
-                            selectedPayment?._id === method._id
-                              ? "border-blue-500 bg-blue-50 shadow-lg"
-                              : "border-gray-200 hover:border-blue-300 hover:shadow-md"
-                          }`}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <input
-                            type="radio"
-                            name="paymentMethod"
-                            value={method._id}
-                            checked={selectedPayment?._id === method._id}
-                            onChange={() => handlePaymentMethodSelect(method)}
-                            className="sr-only"
-                          />
-                          <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                              selectedPayment?._id === method._id
-                                ? "border-blue-500"
-                                : "border-gray-300"
-                            }`}
-                          >
-                            {selectedPayment?._id === method._id && (
-                              <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="w-3 h-3 bg-blue-500 rounded-full"
-                              />
-                            )}
-                          </div>
-                          <div className="flex items-center gap-4 flex-1">
-                            <img
-                              src={
-                                method.icon ||
-                                "/placeholder.svg?height=40&width=40"
-                              }
-                              alt={method.name}
-                              className="w-10 h-10 object-contain"
-                            />
-                            <div>
-                              <h4 className="font-semibold text-gray-800">
-                                {method.name}
-                              </h4>
-                              <p className="text-sm text-gray-600">
-                                {method.description}
-                              </p>
-                            </div>
-                          </div>
-                          {method.code === "VNPAY" && (
-                            <RiSecurePaymentLine className="text-green-500 text-xl" />
-                          )}
-                          {method.code === "COD" && (
-                            <FaMoneyBillWave className="text-green-500 text-xl" />
-                          )}
-                        </motion.label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Terms & Conditions */}
-                <motion.div
-                  className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <input
-                    type="checkbox"
-                    id="terms"
-                    checked={isChecked}
-                    onChange={(e) => setIsChecked(e.target.checked)}
-                    className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-                  />
-                  <label
-                    htmlFor="terms"
-                    className="text-sm text-gray-700 leading-relaxed"
-                  >
-                    {t("cart.i_agree_to_the")}{" "}
-                    <Link
-                      to="/terms"
-                      className="text-blue-600 hover:text-blue-500 font-medium"
-                    >
-                      {t("cart.terms_and_conditions")}
-                    </Link>{" "}
-                    {t("cart.and")}{" "}
-                    <Link
-                      to="/privacy"
-                      className="text-blue-600 hover:text-blue-500 font-medium"
-                    >
-                      {t("cart.privacy_policy")}
-                    </Link>
-                    {t(
-                      "cart.i_understand_that_my_order_will_be_processed_according_to_these_terms"
-                    )}
-                    .
-                  </label>
-                </motion.div>
-
-                {/* Submit Button */}
-                <motion.button
-                  type="submit"
-                  disabled={!isChecked || isLoading || !selectedPayment}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-8 rounded-xl hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 transition-all duration-300 shadow-lg flex items-center justify-center gap-3"
-                  whileHover={{
-                    scale: 1.02,
-                    boxShadow: "0 20px 40px -10px rgba(59, 130, 246, 0.4)",
-                  }}
-                  whileTap={{ scale: 0.98 }}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  {isLoading ? (
-                    <>
-                      <FaSpinner className="animate-spin" />
-                      {t("cart.processing_order")}
-                    </>
-                  ) : (
-                    <>
-                      <FaLock />
-                      {t("cart.place_secure_order")}
-                      <FaShoppingCart />
-                    </>
-                  )}
-                </motion.button>
-              </form>
-            </motion.div>
-          </div>
-
-          {/* Order Summary Sidebar */}
-          <div className="lg:col-span-1">
-            <motion.div
-              ref={summaryRef}
-              className="hidden lg:block bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-6 border border-white/20 sticky top-8"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">
-                {t("cart.order_summary")}
-              </h3>
-
-              {/* Cart Items */}
-              <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
-                {cartItems.map((item) => (
-                  <motion.div
-                    key={item._id || item.bookId}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <img
-                      src={
-                        item.coverImage || "/placeholder.svg?height=60&width=45"
-                      }
-                      alt={item.title}
-                      className="w-12 h-16 object-cover rounded-lg shadow-sm"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-900 truncate">
-                        {item.title}
-                      </h4>
-                      <p className="text-sm text-gray-500">
-                        {t("cart.quantity")}: {item.quantity}
-                      </p>
-                      <p className="text-sm font-semibold text-blue-600">
-                        {(item.price * item.quantity).toLocaleString("vi-VN")}đ
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Price Breakdown */}
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-gray-600">
-                  <span>
-                    {t("cart.subtotal")} ({cartItems.length} {t("cart.items")})
-                  </span>
-                  <span>{totalPrice.toLocaleString("vi-VN")}đ</span>
-                </div>
-
-                {/* Voucher Input */}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={voucherCode}
-                    onChange={(e) => setVoucherCode(e.target.value)}
-                    placeholder={t("cart.enter_voucher")}
-                    className="flex-1 px-4 py-2 border-2 rounded-xl bg-gray-50 focus:bg-white transition-all duration-300 focus:outline-none border-gray-200 focus:border-blue-500"
-                  />
-                  <button
-                    onClick={handleApplyVoucher}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors text-sm"
-                  >
-                    {t("cart.apply")}
-                  </button>
-                </div>
-                {voucherError && (
-                  <p className="text-red-500 text-sm">
-                    {t("cart." + voucherError)}
-                  </p>
-                )}
-                {appliedVoucher && (
-                  <div className="flex justify-between text-green-600">
-                    <span>{t("cart.voucher_applied")}</span>
-                    <span>
-                      -{appliedVoucher.discount?.toLocaleString("vi-VN")}đ
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex justify-between text-gray-600">
-                  <span>{t("cart.shipping")}</span>
-                  <span className="text-green-600 font-semibold">
-                    {t("cart.free")}
-                  </span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>{t("cart.tax")}</span>
-                  <span>{t("cart.included")}</span>
-                </div>
-                <hr className="border-gray-200" />
-                <div className="flex justify-between text-xl font-bold text-gray-900">
-                  <span>{t("cart.total")}</span>
-                  <span className="text-blue-600">
-                    {(
-                      totalPrice - (appliedVoucher?.discount || 0)
-                    ).toLocaleString("vi-VN")}
-                    đ
-                  </span>
-                </div>
-              </div>
-
-              {/* Security Features */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-200">
-                  <RiShieldCheckLine className="text-green-600 text-xl" />
-                  <div>
-                    <p className="text-sm font-semibold text-green-800">
-                      {t("cart.secure_payment")}
-                    </p>
-                    <p className="text-xs text-green-600">
-                      {t("cart.ssl_encrypted_checkout")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-200">
-                  <RiTruckLine className="text-blue-600 text-xl" />
-                  <div>
-                    <p className="text-sm font-semibold text-blue-800">
-                      {t("cart.fast_delivery")}
-                    </p>
-                    <p className="text-xs text-blue-600">
-                      {t("cart.free_shipping_nationwide")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-xl border border-purple-200">
-                  <FaShieldAlt className="text-purple-600 text-xl" />
-                  <div>
-                    <p className="text-sm font-semibold text-purple-800">
-                      {t("cart.money_back_guarantee")}
-                    </p>
-                    <p className="text-xs text-purple-600">
-                      {t("cart.return_policy")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+    <section className="bookeco-commerce-shell">
+      <div className="bookeco-commerce-container">
+        <div className="bookeco-commerce-header">
+          <div>
+            <span className="bookeco-section-kicker">BookEco</span>
+            <h1>{t("bookeco.checkout.title", { defaultValue: "Hoàn tất đơn hàng" })}</h1>
+            <p>{t("bookeco.checkout.subtitle", { defaultValue: "Hoàn tất thông tin nhận hàng và rà lại đơn trước khi xác nhận." })}</p>
           </div>
         </div>
+
+        <div className="bookeco-commerce-steps">
+          <span>{t("bookeco.cart.step_selection", { defaultValue: "Chọn sách" })}</span>
+          <span className="is-active">{t("bookeco.cart.step_review", { defaultValue: "Xác nhận" })}</span>
+          <span>{t("bookeco.cart.step_payment", { defaultValue: "Thanh toán" })}</span>
+        </div>
+
+        <div className="bookeco-commerce-layout">
+          <form className="bookeco-checkout-form" onSubmit={handleSubmit}>
+            <div className="bookeco-checkout-card">
+              <span className="bookeco-checkout-label">{t("cart.shipping_information", { defaultValue: "Thông tin giao hàng" })}</span>
+              <h2>{t("bookeco.checkout.delivery_title", { defaultValue: "Địa chỉ nhận sách" })}</h2>
+              <div className="bookeco-field-grid">
+                <label><span>{t("cart.full_name", { defaultValue: "Họ và tên" })}</span><input value={formData.name} placeholder={t("bookeco.checkout.placeholder_name", { defaultValue: "Nguyễn Văn A" })} onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))} required /></label>
+                <label><span>{t("cart.email_address", { defaultValue: "Email" })}</span><input value={formData.email} placeholder={t("bookeco.checkout.placeholder_email", { defaultValue: "email@example.com" })} disabled /></label>
+                <label><span>{t("cart.phone_number", { defaultValue: "Số điện thoại" })}</span><input value={formData.phone} placeholder={t("bookeco.checkout.placeholder_phone", { defaultValue: "09xx xxx xxx" })} onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))} required /></label>
+                <label className="is-wide"><span>{t("cart.address", { defaultValue: "Địa chỉ" })}</span><input value={formData.street} placeholder={t("bookeco.checkout.placeholder_address", { defaultValue: "Số nhà, tên đường, phường/xã" })} onChange={(e) => setFormData((p) => ({ ...p, street: e.target.value }))} required /></label>
+                <label><span>{t("cart.city", { defaultValue: "Thành phố" })}</span><input value={formData.city} placeholder={t("bookeco.checkout.placeholder_city", { defaultValue: "Thành phố" })} onChange={(e) => setFormData((p) => ({ ...p, city: e.target.value }))} required /></label>
+                <label><span>{t("cart.country", { defaultValue: "Quốc gia" })}</span><input value={formData.country} placeholder={t("bookeco.checkout.placeholder_country", { defaultValue: "Việt Nam" })} onChange={(e) => setFormData((p) => ({ ...p, country: e.target.value }))} /></label>
+                <label><span>{t("cart.zipcode", { defaultValue: "Mã bưu chính" })}</span><input value={formData.zip} placeholder={t("bookeco.checkout.placeholder_zip", { defaultValue: "700000" })} onChange={(e) => setFormData((p) => ({ ...p, zip: e.target.value }))} /></label>
+                <label className="is-wide"><span>{t("bookeco.checkout.note", { defaultValue: "Ghi chú cho đơn hàng" })}</span><textarea value={formData.note} placeholder={t("bookeco.checkout.placeholder_note", { defaultValue: "Bạn có thể bổ sung ghi chú cho người giao hàng hoặc cửa hàng tại đây." })} onChange={(e) => setFormData((p) => ({ ...p, note: e.target.value }))} /></label>
+              </div>
+            </div>
+
+            <div className="bookeco-checkout-card">
+              <span className="bookeco-checkout-label">{t("cart.payment_method", { defaultValue: "Phương thức thanh toán" })}</span>
+              <h2>{t("bookeco.checkout.payment_title", { defaultValue: "Chọn cách thanh toán" })}</h2>
+              <div className="bookeco-payment-list">
+                {paymentMethods.map((method) => (
+                  <button
+                    key={method._id}
+                    type="button"
+                    className={`bookeco-payment-item ${selectedPayment?._id === method._id ? "is-selected" : ""}`}
+                    onClick={() => setSelectedPayment(method)}
+                  >
+                    <strong>{method.name}</strong>
+                    <span>{method.code}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bookeco-checkout-card">
+              <span className="bookeco-checkout-label">{t("cart.enter_voucher", { defaultValue: "Mã ưu đãi" })}</span>
+              <h2>{t("bookeco.checkout.voucher_title", { defaultValue: "Áp dụng ưu đãi" })}</h2>
+              <div className="bookeco-voucher-row">
+                <input value={voucherCode} onChange={(e) => setVoucherCode(e.target.value)} placeholder={t("cart.enter_voucher", { defaultValue: "Nhập mã ưu đãi" })} />
+                <button type="button" className="bookeco-button-secondary" onClick={handleVoucher}>{t("cart.apply", { defaultValue: "Áp dụng" })}</button>
+              </div>
+              {appliedVoucher ? <p>{t("bookeco.checkout.voucher_ok", { defaultValue: "Mã ưu đãi đã được áp dụng vào đơn hàng." })}</p> : null}
+            </div>
+
+            <div className="bookeco-checkout-card">
+              <span className="bookeco-checkout-label">{t("cart.shopping_items", { defaultValue: "Sản phẩm" })}</span>
+              <h2>{t("bookeco.checkout.review_title", { defaultValue: "Rà lại các đầu sách" })}</h2>
+              <div className="bookeco-accessory-list">
+                {cartItems.map((item) => {
+                  const price = Number(item.linePrice || item.price?.newPrice || item.price?.oldPrice || item.price || 0);
+                  return (
+                    <div key={item._id || item.bookId} className="bookeco-accessory-card">
+                      <small>{item.category?.name || t("books.category", { defaultValue: "Danh mục" })}</small>
+                      <strong>{item.title}</strong>
+                      <p>{t("books.quantity", { defaultValue: "Số lượng" })}: {item.quantity || 1} · {formatPrice(price)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </form>
+
+          <aside className="bookeco-summary-card">
+            <small>{t("cart.order_summary", { defaultValue: "Tóm tắt đơn hàng" })}</small>
+            <h2>{t("bookeco.checkout.summary_title", { defaultValue: "Tóm tắt thanh toán" })}</h2>
+            <div className="bookeco-summary-table">
+              <div><span>{t("cart.subtotal", { defaultValue: "Tạm tính" })}</span><strong>{formatPrice(subtotal)}</strong></div>
+              <div><span>{t("cart.shipping", { defaultValue: "Vận chuyển" })}</span><strong>{shippingFee ? formatPrice(shippingFee) : t("cart.free", { defaultValue: "Miễn phí" })}</strong></div>
+              <div><span>{t("cart.apply", { defaultValue: "Ưu đãi" })}</span><strong>{voucherDiscount ? `- ${formatPrice(voucherDiscount)}` : formatPrice(0)}</strong></div>
+            </div>
+            <div className="bookeco-summary-total">
+              <span>{t("cart.total", { defaultValue: "Tổng thanh toán" })}</span>
+              <strong>{formatPrice(total)}</strong>
+            </div>
+            <div className="bookeco-summary-buttons">
+              <button type="submit" className="is-primary" onClick={handleSubmit}>
+                <CreditCard size={18} />
+                {t("cart.place_order", { defaultValue: "Xác nhận thanh toán" })}
+              </button>
+              <a href="/cart">{t("common.cart", { defaultValue: "Quay lại giỏ hàng" })}</a>
+            </div>
+            <div className="bookeco-accessory-list" style={{ marginTop: 20 }}>
+              <div className="bookeco-accessory-card"><small><Truck size={14} style={{ verticalAlign: "middle", marginRight: 6 }} />{t("cart.shipping", { defaultValue: "Vận chuyển" })}</small><p>{t("bookeco.checkout.shipping_note", { defaultValue: "Giao nhanh toàn quốc, miễn phí với đơn đủ điều kiện." })}</p></div>
+              <div className="bookeco-accessory-card"><small><ShieldCheck size={14} style={{ verticalAlign: "middle", marginRight: 6 }} />{t("cart.secure_payment", { defaultValue: "Thanh toán an toàn" })}</small><p>{t("bookeco.checkout.security_note", { defaultValue: "Thông tin thanh toán được mã hóa trước khi gửi tới hệ thống." })}</p></div>
+            </div>
+            <p className="bookeco-summary-note">{t("bookeco.checkout.note_small", { defaultValue: "Thông tin đơn hàng sẽ được lưu trong lịch sử để bạn theo dõi sau khi xác nhận." })}</p>
+          </aside>
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 
-export default EnhancedCheckoutPage;
+export default Checkout;

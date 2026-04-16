@@ -6,7 +6,8 @@ export const categoriesApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: baseUrl,
     prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.token;
+      const stateToken = getState?.()?.auth?.token;
+      const token = stateToken || localStorage.getItem("token");
       if (token) {
         headers.set("authorization", `Bearer ${token}`);
       }

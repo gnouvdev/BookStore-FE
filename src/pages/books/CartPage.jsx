@@ -1,867 +1,239 @@
-/* eslint-disable no-unused-vars */
-"use client";
-
-import { useState, useRef, useEffect } from "react";
-import { useSelector } from "react-redux";
+﻿import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { ArrowLeft, Gift, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import Swal from "sweetalert2";
+import { useSelector } from "react-redux";
 import { useAuth } from "../../context/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  FaShoppingCart,
-  FaTrash,
-  FaPlus,
-  FaMinus,
-  FaArrowRight,
-  FaSpinner,
-  FaShoppingBag,
-} from "react-icons/fa";
-import {
-  RiDeleteBin6Line,
-  RiShoppingCart2Line,
-  RiHeartLine,
-} from "react-icons/ri";
-import {
-  useGetCartQuery,
   useClearCartMutation,
+  useGetCartQuery,
   useRemoveFromCartMutation,
   useUpdateCartItemQuantityMutation,
 } from "../../redux/features/cart/cartApi";
-import { useTranslation } from "react-i18next";
-import Swal from "sweetalert2";
-import gsap from "gsap";
-import "../../styles/cart-checkout.css";
+import "../../styles/bookeco-commerce.css";
 
-const EnhancedCartPage = () => {
+const formatPrice = (value) =>
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+
+const CartPage = () => {
   const { t } = useTranslation();
-  const { user: reduxUser } = useSelector((state) => state.auth);
-  const { currentUser } = useAuth(); // Sử dụng currentUser từ context (reactive hơn)
-
-  // Ưu tiên sử dụng currentUser từ context, fallback về Redux user
+  const { currentUser } = useAuth();
+  const reduxUser = useSelector((state) => state.auth.user);
   const user = currentUser || reduxUser;
-  const previousUserRef = useRef(null);
 
-  // Sử dụng user?.uid làm key để cache riêng biệt cho mỗi user
-  // Track skip state để detect khi query được enable lại
-  const [wasSkipped, setWasSkipped] = useState(!user?.uid);
-
-  const {
-    data: cart,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useGetCartQuery(user?.uid || null, {
-    skip: !user?.uid, // Skip query nếu chưa có user
-    refetchOnMountOrArgChange: true, // Force refetch khi mount hoặc arg thay đổi
-    refetchOnFocus: true, // Force refetch khi focus
+  const { data: cart, isLoading, isError, error } = useGetCartQuery(user?.uid || null, {
+    skip: !user?.uid,
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
   });
 
-  // Detect khi skip thay đổi từ true -> false (user login) - PRIMARY MECHANISM
-  useEffect(() => {
-    const isSkipped = !user?.uid;
-
-    // Khi query được enable lại (skip: false)
-    if (wasSkipped && !isSkipped && user?.uid) {
-      console.log(
-        "✅ Query enabled (user logged in), will refetch cart for:",
-        user?.uid
-      );
-
-      // Kiểm tra token có trong localStorage chưa
-      const checkTokenAndRefetch = () => {
-        const token = localStorage.getItem("token");
-        if (token) {
-          console.log("Token found, executing refetch for user:", user?.uid);
-          refetch();
-        } else {
-          console.log("Token not found yet, retrying in 200ms...");
-          setTimeout(checkTokenAndRefetch, 200);
-        }
-      };
-
-      // Bắt đầu check sau một chút delay
-      const timeoutId = setTimeout(checkTokenAndRefetch, 300);
-
-      setWasSkipped(isSkipped);
-      return () => clearTimeout(timeoutId);
-    }
-
-    setWasSkipped(isSkipped);
-  }, [user?.uid, wasSkipped, refetch]);
-  const [clearCart, { isLoading: isClearingCart }] = useClearCartMutation();
+  const [clearCart, { isLoading: isClearing }] = useClearCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
   const [updateCartItemQuantity] = useUpdateCartItemQuantityMutation();
 
-  // Refetch cart khi user login hoặc đổi user (sử dụng currentUser từ context)
-  useEffect(() => {
-    const handleUserLoggedIn = (event) => {
-      const newUserId = event.detail?.userId;
-      console.log(
-        "User logged in event, new user ID:",
-        newUserId,
-        "Current user from context:",
-        currentUser?.uid
-      );
-      // Đợi để đảm bảo token đã được set và Redux state đã được cập nhật
-      setTimeout(() => {
-        // Kiểm tra cả currentUser từ context và user từ Redux
-        if (currentUser?.uid === newUserId || user?.uid === newUserId) {
-          console.log("Refetching cart after login event...");
-          refetch();
-        }
-      }, 500);
-    };
+  const cartItems = cart?.data?.items || [];
+  const subtotal = useMemo(
+    () => cartItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 1), 0),
+    [cartItems]
+  );
+  const shipping = subtotal > 500000 || subtotal === 0 ? 0 : 30000;
+  const total = subtotal + shipping;
 
-    const handleUserChanged = (event) => {
-      const newUserId = event.detail?.userId;
-      console.log(
-        "User changed event, new user ID:",
-        newUserId,
-        "Current user from context:",
-        currentUser?.uid
-      );
-      // Đợi để đảm bảo cache đã được reset và state đã được cập nhật
-      setTimeout(() => {
-        if (currentUser?.uid === newUserId || user?.uid === newUserId) {
-          console.log("Refetching cart after user change event...");
-          refetch();
-        }
-      }, 600);
-    };
-
-    const handleUserLoggedOut = () => {
-      console.log("User logged out event, clearing cart display");
-      // Cart sẽ tự động clear vì skip: true khi không có user
-    };
-
-    window.addEventListener("userLoggedIn", handleUserLoggedIn);
-    window.addEventListener("userChanged", handleUserChanged);
-    window.addEventListener("userLoggedOut", handleUserLoggedOut);
-
-    return () => {
-      window.removeEventListener("userLoggedIn", handleUserLoggedIn);
-      window.removeEventListener("userChanged", handleUserChanged);
-      window.removeEventListener("userLoggedOut", handleUserLoggedOut);
-    };
-  }, [currentUser?.uid, user?.uid, refetch]);
-
-  // Track user changes và refetch khi cần (sử dụng currentUser từ context)
-  useEffect(() => {
-    const previousUser = previousUserRef.current;
-    const currentUserId = currentUser?.uid || user?.uid; // Ưu tiên currentUser từ context
-
-    // Nếu user thay đổi từ null -> có user (login mới)
-    if (!previousUser && currentUserId) {
-      console.log(
-        "User logged in (null -> user), will refetch cart for:",
-        currentUserId
-      );
-      // Đợi để đảm bảo token đã được set vào localStorage và Redux state đã được cập nhật
-      const timeoutId = setTimeout(() => {
-        console.log("Refetching cart for newly logged in user:", currentUserId);
-        refetch();
-      }, 600);
-
-      previousUserRef.current = currentUserId;
-      return () => clearTimeout(timeoutId);
+  const handleChangeQuantity = async (bookId, nextQuantity) => {
+    if (nextQuantity < 1) {
+      await handleRemoveItem(bookId);
+      return;
     }
-
-    // Nếu user thay đổi từ user cũ -> user mới (switch user)
-    if (previousUser && currentUserId && previousUser !== currentUserId) {
-      console.log(
-        "User switched from",
-        previousUser,
-        "to",
-        currentUserId,
-        ", will refetch cart"
-      );
-      // Đợi để đảm bảo cache đã được reset và state đã được cập nhật
-      const timeoutId = setTimeout(() => {
-        console.log("Refetching cart for switched user:", currentUserId);
-        refetch();
-      }, 600);
-
-      previousUserRef.current = currentUserId;
-      return () => clearTimeout(timeoutId);
-    }
-
-    // Nếu user thay đổi từ có user -> null (logout)
-    if (previousUser && !currentUserId) {
-      console.log(
-        "User logged out, clearing previous user reference and cache"
-      );
-      previousUserRef.current = null;
-      // Cache đã được reset trong AuthContext, không cần làm gì thêm
-    }
-
-    // Cập nhật previousUserRef nếu chưa có (initial mount với user)
-    if (
-      currentUserId &&
-      previousUser === null &&
-      previousUserRef.current === null
-    ) {
-      previousUserRef.current = currentUserId;
-    }
-  }, [currentUser?.uid, user?.uid, refetch]);
-
-  const [removingItems, setRemovingItems] = useState(new Set());
-  const [updatingItems, setUpdatingItems] = useState(new Set());
-  const cartRef = useRef(null);
-  const headerRef = useRef(null);
-  const itemsRef = useRef([]);
-
-  // Enhanced animations
-  useEffect(() => {
-    if (cart?.data?.items?.length && cartRef.current) {
-      const tl = gsap.timeline();
-
-      tl.fromTo(
-        headerRef.current,
-        { y: -50, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
-      ).fromTo(
-        itemsRef.current,
-        { y: 30, opacity: 0, scale: 0.95 },
-        {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          duration: 0.6,
-          stagger: 0.1,
-          ease: "power2.out",
-        },
-        "-=0.4"
-      );
-    }
-  }, [cart?.data?.items]);
-
-  const handleRemoveFromCart = async (bookId, itemIndex) => {
-    setRemovingItems((prev) => new Set([...prev, bookId]));
 
     try {
-      // Animate item removal
-      if (itemsRef.current[itemIndex]) {
-        await gsap.to(itemsRef.current[itemIndex], {
-          x: -100,
-          opacity: 0,
-          scale: 0.8,
-          duration: 0.4,
-          ease: "power2.in",
-        });
-      }
-
-      const response = await removeFromCart(bookId).unwrap();
-
-      Swal.fire({
-        icon: "success",
-        title: t("cart.remove_success"),
-        showConfirmButton: false,
-        timer: 1500,
-        toast: true,
-        position: "top-end",
-      });
-    } catch (error) {
-      console.error("Error removing item:", error);
-
-      // Reset animation on error
-      if (itemsRef.current[itemIndex]) {
-        gsap.set(itemsRef.current[itemIndex], { x: 0, opacity: 1, scale: 1 });
-      }
-
+      await updateCartItemQuantity({ bookId, quantity: nextQuantity }).unwrap();
+    } catch (submitError) {
       Swal.fire({
         icon: "error",
-        title: t("cart.error"),
-        text: error?.data?.message || t("cart.remove_failed"),
+        title: t("cart.error", { defaultValue: "Lỗi" }),
+        text: submitError?.data?.message || t("bookeco.cart.update_error", { defaultValue: "Không thể cập nhật giỏ hàng lúc này." }),
       });
-    } finally {
-      setRemovingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(bookId);
-        return newSet;
+    }
+  };
+
+  const handleRemoveItem = async (bookId) => {
+    try {
+      await removeFromCart(bookId).unwrap();
+    } catch (submitError) {
+      Swal.fire({
+        icon: "error",
+        title: t("cart.error", { defaultValue: "Lỗi" }),
+        text: submitError?.data?.message || t("bookeco.cart.remove_error", { defaultValue: "Không thể xóa sách khỏi giỏ hàng." }),
       });
     }
   };
 
   const handleClearCart = async () => {
     const result = await Swal.fire({
-      title: t("cart.confirm_clear"),
-      text: t("cart.clear_warning"),
       icon: "warning",
+      title: t("cart.confirm_clear", { defaultValue: "Xóa toàn bộ giỏ hàng?" }),
+      text: t("bookeco.cart.clear_copy", { defaultValue: "Thao tác này sẽ gỡ toàn bộ đầu sách đang chờ thanh toán." }),
       showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#6b7280",
-      confirmButtonText: t("cart.yes_clear"),
-      cancelButtonText: t("cart.cancel"),
-      background: "#ffffff",
-      customClass: {
-        popup: "rounded-2xl shadow-2xl",
-        confirmButton: "rounded-xl px-6 py-3",
-        cancelButton: "rounded-xl px-6 py-3",
-      },
+      confirmButtonText: t("cart.clear_cart", { defaultValue: "Xóa giỏ hàng" }),
+      cancelButtonText: t("cart.cancel", { defaultValue: "Quay lại" }),
     });
 
-    if (result.isConfirmed) {
-      try {
-        // Animate all items out
-        await gsap.to(itemsRef.current, {
-          x: -100,
-          opacity: 0,
-          scale: 0.8,
-          duration: 0.4,
-          stagger: 0.05,
-          ease: "power2.in",
-        });
-
-        await clearCart().unwrap();
-
-        Swal.fire({
-          icon: "success",
-          title: t("cart.clear_success"),
-          showConfirmButton: false,
-          timer: 1500,
-          toast: true,
-          position: "top-end",
-        });
-      } catch (error) {
-        console.error("Error clearing cart:", error);
-        Swal.fire({
-          icon: "error",
-          title: t("cart.error"),
-          text: error?.data?.message || t("cart.clear_failed"),
-        });
-      }
-    }
+    if (!result.isConfirmed) return;
+    await clearCart().unwrap();
   };
 
-  const handleQuantityChange = async (bookId, currentQuantity, change) => {
-    const newQuantity = currentQuantity + change;
-
-    if (newQuantity < 1) {
-      const itemIndex = cart.data.items.findIndex(
-        (item) => item.book._id === bookId
-      );
-      await handleRemoveFromCart(bookId, itemIndex);
-      return;
-    }
-
-    setUpdatingItems((prev) => new Set([...prev, bookId]));
-
-    try {
-      console.log(
-        "Updating quantity for book:",
-        bookId,
-        "New quantity:",
-        newQuantity
-      );
-
-      const response = await updateCartItemQuantity({
-        bookId: bookId,
-        quantity: newQuantity,
-      }).unwrap();
-
-      console.log("Update response:", response);
-
-      Swal.fire({
-        icon: "success",
-        title: t("cart.quantity_updated", "Quantity Updated"),
-        showConfirmButton: false,
-        timer: 1500,
-        toast: true,
-        position: "top-end",
-      });
-    } catch (error) {
-      console.error("Error updating quantity:", error);
-      console.error("Error details:", {
-        status: error.status,
-        data: error.data,
-        message: error.message,
-        originalError: error.originalError,
-      });
-
-      Swal.fire({
-        icon: "error",
-        title: t("cart.error", "Error"),
-        text:
-          error?.data?.message ||
-          t("cart.quantity_update_failed", "Failed to update quantity"),
-      });
-    } finally {
-      setUpdatingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(bookId);
-        return newSet;
-      });
-    }
-  };
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{
-              duration: 1,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "linear",
-            }}
-            className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"
-          />
-          <p className="text-xl font-semibold text-gray-700">{t("loading")}</p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (isError) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-4"
-        >
-          <div className="text-6xl mb-4">😞</div>
-          <h2 className="text-2xl font-bold text-red-600 mb-2">{t("error")}</h2>
-          <p className="text-gray-600">{error.message}</p>
-          <Link
-            to="/"
-            className="inline-block mt-4 bg-blue-500 text-white px-6 py-3 rounded-xl hover:bg-blue-600 transition-colors duration-200"
-          >
-            {t("cart.back_to_shop")}
-          </Link>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Login required state
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-4"
-        >
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-            className="text-6xl mb-4"
-          >
-            🔐
-          </motion.div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            {t("cart.please_login")}
-          </h2>
-          <p className="text-gray-600 mb-6">{t("cart.please_login")}</p>
-          <Link
-            to="/login"
-            className="inline-block bg-blue-500 text-white px-8 py-3 rounded-xl hover:bg-blue-600 transition-colors duration-200 font-semibold"
-          >
-            {t("cart.login_now")}
-          </Link>
-        </motion.div>
-      </div>
+      <section className="bookeco-commerce-shell">
+        <div className="bookeco-empty-state">
+          <span className="bookeco-section-kicker">BookEco</span>
+          <h1>{t("bookeco.cart.login_title", { defaultValue: "Đăng nhập để mở tủ sách đang chọn" })}</h1>
+          <p>{t("bookeco.cart.login_copy", { defaultValue: "Giỏ hàng được lưu theo tài khoản để bạn tiếp tục chọn sách trên mọi thiết bị." })}</p>
+          <Link to="/login" className="bookeco-primary-link">{t("common.login", { defaultValue: "Đăng nhập" })}</Link>
+        </div>
+      </section>
     );
   }
 
-  // Empty cart state
-  if (!cart?.data?.items?.length) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center bg-white rounded-2xl p-12 shadow-2xl max-w-lg mx-4"
-        >
-          <motion.div
-            animate={{
-              y: [0, -10, 0],
-              rotate: [0, 5, -5, 0],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "easeInOut",
-            }}
-            className="text-8xl mb-6"
-          >
-            🛒
-          </motion.div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">
-            {t("cart.cart_empty")}
-          </h2>
-          <p className="text-gray-600 mb-8 text-lg">
-            {t("cart.cart_empty_description")}
-          </p>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold text-lg shadow-lg"
-          >
-            <FaShoppingBag />
-            {t("cart.start_shopping")}
-          </Link>
-        </motion.div>
-      </div>
+      <section className="bookeco-commerce-shell">
+        <div className="bookeco-empty-state">
+          <div className="bookeco-single-spinner" />
+          <p>{t("bookeco.cart.loading", { defaultValue: "Đang mở giỏ hàng của bạn..." })}</p>
+        </div>
+      </section>
     );
   }
 
-  const cartItems = cart.data.items;
-  const totalAmount = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  if (isError) {
+    return (
+      <section className="bookeco-commerce-shell">
+        <div className="bookeco-empty-state">
+          <span className="bookeco-section-kicker">BookEco</span>
+          <h1>{t("bookeco.cart.error_title", { defaultValue: "Không tải được giỏ hàng" })}</h1>
+          <p>{error?.data?.message || error?.message || t("filter.pleaseTryAgainLater", { defaultValue: "Vui lòng thử lại sau." })}</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!cartItems.length) {
+    return (
+      <section className="bookeco-commerce-shell">
+        <div className="bookeco-empty-state">
+          <span className="bookeco-section-kicker">BookEco</span>
+          <h1>{t("cart.cart_empty", { defaultValue: "Giỏ hàng của bạn đang trống" })}</h1>
+          <p>{t("cart.cart_empty_description", { defaultValue: "Chọn vài đầu sách bạn muốn giữ lại cho đơn hàng tiếp theo." })}</p>
+          <Link to="/product" className="bookeco-primary-link">{t("cart.continue_shopping", { defaultValue: "Tiếp tục mua sắm" })}</Link>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-2 h-2 bg-blue-400/20 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0, 1, 0],
-              scale: [0, 1, 0],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Number.POSITIVE_INFINITY,
-              delay: Math.random() * 2,
-              ease: "easeInOut",
-            }}
-          />
-        ))}
-      </div>
+    <section className="bookeco-commerce-shell">
+      <div className="bookeco-commerce-container">
+        <Link to="/product" className="bookeco-single-backlink">
+          <ArrowLeft size={16} />
+          {t("cart.continue_shopping", { defaultValue: "Tiếp tục mua sắm" })}
+        </Link>
 
-      <div ref={cartRef} className="relative z-10 max-w-7xl mx-auto px-4 py-8">
-        {/* Enhanced Header */}
-        <motion.div
-          ref={headerRef}
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-8 mb-8 border border-white/20"
-        >
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg"
-              >
-                <RiShoppingCart2Line className="text-white text-2xl" />
-              </motion.div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  {t("cart.cart")}
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  {cartItems.length} {cartItems.length === 1 ? "item" : "items"}{" "}
-                  in your cart
-                </p>
+        <div className="bookeco-commerce-header">
+          <div>
+            <span className="bookeco-section-kicker">BookEco</span>
+            <h1>{t("bookeco.cart.title", { defaultValue: "Bộ sưu tập đang chọn" })}</h1>
+            <p>{t("bookeco.cart.subtitle", { defaultValue: "Rà lại các đầu sách trước khi chuyển sang bước thanh toán." })}</p>
+          </div>
+          <button type="button" className="bookeco-ghost-action" onClick={handleClearCart} disabled={isClearing}>
+            <Trash2 size={16} />
+            {isClearing ? t("bookeco.cart.clearing", { defaultValue: "Đang xóa" }) : t("cart.clear_cart", { defaultValue: "Xóa giỏ hàng" })}
+          </button>
+        </div>
+
+        <div className="bookeco-commerce-steps">
+          <span className="is-active">{t("bookeco.cart.step_selection", { defaultValue: "Selection" })}</span>
+          <span>{t("bookeco.cart.step_review", { defaultValue: "Review" })}</span>
+          <span>{t("bookeco.cart.step_payment", { defaultValue: "Authentication" })}</span>
+        </div>
+
+        <div className="bookeco-commerce-layout">
+          <div className="bookeco-cart-list">
+            {cartItems.map((item) => (
+              <article key={item.book?._id || item._id} className="bookeco-cart-card">
+                <Link to={`/books/${item.book._id}`} className="bookeco-cart-cover-link">
+                  <img src={item.book.coverImage} alt={item.book.title} className="bookeco-cart-cover" />
+                </Link>
+
+                <div className="bookeco-cart-copy">
+                  <span className="bookeco-cart-category">{item.book.category?.name || t("books.category", { defaultValue: "Danh mục" })}</span>
+                  <Link to={`/books/${item.book._id}`} className="bookeco-cart-title">{item.book.title}</Link>
+                  <p>{item.book.author?.name || t("books.author", { defaultValue: "Tác giả" })}</p>
+                  <strong className="bookeco-cart-price">{formatPrice(item.price)}</strong>
+                </div>
+
+                <div className="bookeco-cart-actions">
+                  <div className="bookeco-quantity-picker">
+                    <button type="button" onClick={() => handleChangeQuantity(item.book._id, item.quantity - 1)}>
+                      <Minus size={16} />
+                    </button>
+                    <span>{item.quantity}</span>
+                    <button type="button" onClick={() => handleChangeQuantity(item.book._id, item.quantity + 1)}>
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                  <button type="button" className="bookeco-inline-remove" onClick={() => handleRemoveItem(item.book._id)}>
+                    {t("cart.remove", { defaultValue: "Xóa" })}
+                  </button>
+                </div>
+              </article>
+            ))}
+
+            <div className="bookeco-giftwrap-card">
+              <Gift size={22} />
+              <div className="bookeco-giftwrap-copy">
+                <span className="bookeco-cart-category">{t("bookeco.cart.gift_label", { defaultValue: "Gói quà" })}</span>
+                <strong>{t("bookeco.cart.gift_title", { defaultValue: "Thêm lời nhắn và cách gói trang nhã cho đơn hàng" })}</strong>
+                <p>{t("bookeco.cart.gift_copy", { defaultValue: "Bạn có thể bổ sung ghi chú ở bước thanh toán nếu muốn đơn hàng được chuẩn bị như một món quà." })}</p>
               </div>
             </div>
 
-            <motion.button
-              onClick={handleClearCart}
-              disabled={isClearingCart}
-              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg disabled:opacity-50"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isClearingCart ? (
-                <FaSpinner className="animate-spin" />
-              ) : (
-                <RiDeleteBin6Line />
-              )}
-              {isClearingCart ? "Clearing..." : t("cart.clear_cart")}
-            </motion.button>
-          </div>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <motion.div
-              className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-6 border border-white/20"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                {t("cart.shopping_items")}
-              </h2>
-
-              <div className="space-y-6">
-                <AnimatePresence>
-                  {cartItems.map((item, index) => (
-                    <motion.div
-                      key={item.book._id}
-                      ref={(el) => (itemsRef.current[index] = el)}
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -100, scale: 0.8 }}
-                      transition={{ duration: 0.4 }}
-                      className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
-                    >
-                      <div className="flex items-center gap-6">
-                        {/* Book Image */}
-                        <motion.div
-                          className="relative group"
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <div className="w-24 h-32 rounded-xl overflow-hidden shadow-lg">
-                            <img
-                              src={
-                                item.book.coverImage ||
-                                "/placeholder.svg?height=128&width=96"
-                              }
-                              alt={item.book.title}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                            />
-                          </div>
-                          <motion.div className="absolute inset-0 bg-black/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                            <Link
-                              to={`/books/${item.book._id}`}
-                              className="text-white text-sm font-semibold"
-                            >
-                              {t("cart.view_details")}
-                            </Link>
-                          </motion.div>
-                        </motion.div>
-
-                        {/* Book Details */}
-                        <div className="flex-1 min-w-0">
-                          <Link
-                            to={`/books/${item.book._id}`}
-                            className="block group"
-                          >
-                            <h3 className="text-xl font-bold text-gray-900 mb-2 truncate group-hover:text-blue-600 transition-colors duration-200">
-                              {item.book.title}
-                            </h3>
-                          </Link>
-
-                          <div className="flex items-center gap-4 mb-4">
-                            <span className="text-2xl font-bold text-blue-600">
-                              {(item.price * item.quantity).toLocaleString(
-                                "vi-VN"
-                              )}{" "}
-                              đ
-                            </span>
-                            <span className="text-gray-500">
-                              {item.price.toLocaleString("vi-VN")} đ x1
-                            </span>
-                          </div>
-
-                          {/* Low Stock Warning */}
-                          {item.book.quantity < 10 && (
-                            <motion.div
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="text-red-500 text-sm font-medium mb-4"
-                            >
-                              Chỉ còn lại {item.book.quantity} sản phẩm
-                            </motion.div>
-                          )}
-
-                          {/* Quantity Controls */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm font-medium text-gray-600">
-                                {t("cart.quantity")}:
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <motion.button
-                                  onClick={() =>
-                                    handleQuantityChange(
-                                      item.book._id,
-                                      item.quantity,
-                                      -1
-                                    )
-                                  }
-                                  disabled={updatingItems.has(item.book._id)}
-                                  className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors duration-200 disabled:opacity-50"
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                >
-                                  <FaMinus className="w-3 h-3 text-gray-600" />
-                                </motion.button>
-
-                                <motion.span
-                                  key={item.quantity}
-                                  initial={{ scale: 1.2 }}
-                                  animate={{ scale: 1 }}
-                                  className="w-12 text-center font-bold text-lg"
-                                >
-                                  {item.quantity}
-                                </motion.span>
-
-                                <motion.button
-                                  onClick={() =>
-                                    handleQuantityChange(
-                                      item.book._id,
-                                      item.quantity,
-                                      1
-                                    )
-                                  }
-                                  disabled={updatingItems.has(item.book._id)}
-                                  className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors duration-200 disabled:opacity-50"
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                >
-                                  <FaPlus className="w-3 h-3 text-gray-600" />
-                                </motion.button>
-                              </div>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex items-center gap-2">
-                              <motion.button
-                                className="p-2 text-gray-400 hover:text-red-500 transition-colors duration-200"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                              >
-                                <RiHeartLine className="w-5 h-5" />
-                              </motion.button>
-
-                              <motion.button
-                                onClick={() =>
-                                  handleRemoveFromCart(item.book._id, index)
-                                }
-                                disabled={removingItems.has(item.book._id)}
-                                className="p-2 text-gray-400 hover:text-red-500 transition-colors duration-200 disabled:opacity-50"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                              >
-                                {removingItems.has(item.book._id) ? (
-                                  <FaSpinner className="w-5 h-5 animate-spin" />
-                                ) : (
-                                  <FaTrash className="w-5 h-5" />
-                                )}
-                              </motion.button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            </motion.div>
+            <div className="bookeco-accessory-card">
+              <small>{t("bookeco.cart.more_title", { defaultValue: "Khám phá thêm" })}</small>
+              <strong>{t("bookeco.cart.more_copy", { defaultValue: "Sau khi hoàn tất đơn này, bạn có thể quay lại để tìm thêm các đầu sách đồng điệu." })}</strong>
+              <p>{t("bookeco.cart.more_note", { defaultValue: "Giữ bố cục gọn như thiết kế và không chen quá nhiều khối phụ vào màn hình giỏ hàng." })}</p>
+            </div>
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <motion.div
-              className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-6 border border-white/20 sticky top-8"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                {t("cart.order_summary")}
-              </h2>
-
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between text-gray-600">
-                  <span>
-                    {t("cart.subtotal")} ({cartItems.length} {t("cart.items")})
-                  </span>
-                  <span>{totalAmount.toLocaleString("vi-VN")} đ</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>{t("cart.shipping")}</span>
-                  <span className="text-green-600 font-semibold">
-                    {t("cart.free")}
-                  </span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>{t("cart.tax")}</span>
-                  <span>{t("cart.calculated_at_checkout")}</span>
-                </div>
-                <hr className="border-gray-200" />
-                <div className="flex justify-between text-xl font-bold text-gray-900">
-                  <span>{t("cart.total")}</span>
-                  <span className="text-blue-600">
-                    {totalAmount.toLocaleString("vi-VN")} đ
-                  </span>
-                </div>
-              </div>
-
-              <motion.div
-                className="space-y-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                <Link to="/checkout" className="block w-full">
-                  <motion.button
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg flex items-center justify-center gap-3"
-                    whileHover={{
-                      scale: 1.02,
-                      boxShadow: "0 20px 40px -10px rgba(59, 130, 246, 0.4)",
-                    }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <FaShoppingCart />
-                    {t("cart.checkout")}
-                    <FaArrowRight />
-                  </motion.button>
-                </Link>
-
-                <Link to="/" className="block w-full">
-                  <motion.button
-                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {t("cart.continue_shopping")}
-                    <FaArrowRight />
-                  </motion.button>
-                </Link>
-              </motion.div>
-
-              {/* Security Badge */}
-              <motion.div
-                className="mt-6 p-4 bg-green-50 rounded-xl border border-green-200"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm">🔒</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-green-800">
-                      {t("cart.secure_checkout")}
-                    </p>
-                    <p className="text-xs text-green-600">
-                      {t("cart.your_payment_information_is_protected")}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          </div>
+          <aside className="bookeco-summary-card">
+            <small>{t("cart.order_summary", { defaultValue: "Tóm tắt đơn hàng" })}</small>
+            <h2>{t("bookeco.cart.summary_title", { defaultValue: "Order Summary" })}</h2>
+            <div className="bookeco-summary-table">
+              <div><span>{t("cart.subtotal", { defaultValue: "Tạm tính" })}</span><strong>{formatPrice(subtotal)}</strong></div>
+              <div><span>{t("cart.shipping", { defaultValue: "Vận chuyển" })}</span><strong>{shipping === 0 ? t("cart.free", { defaultValue: "Miễn phí" }) : formatPrice(shipping)}</strong></div>
+            </div>
+            <div className="bookeco-summary-total">
+              <span>{t("cart.total", { defaultValue: "Tổng cộng" })}</span>
+              <strong>{formatPrice(total)}</strong>
+            </div>
+            <div className="bookeco-summary-buttons">
+              <Link to="/checkout" className="is-primary">
+                <ShoppingBag size={18} />
+                {t("cart.checkout", { defaultValue: "Thanh toán" })}
+              </Link>
+              <Link to="/product">{t("cart.continue_shopping", { defaultValue: "Tiếp tục mua sắm" })}</Link>
+            </div>
+            <p className="bookeco-summary-note">{t("bookeco.cart.note", { defaultValue: "Đơn từ 500.000đ được áp dụng giao hàng miễn phí toàn quốc." })}</p>
+          </aside>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 
-export default EnhancedCartPage;
+export default CartPage;

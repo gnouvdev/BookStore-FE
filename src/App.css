@@ -5,7 +5,7 @@
 }
 
 .swiper-slide {
-  background: #fff;
+  background: #2F3C7E;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -22,7 +22,7 @@
   display: none !important;
 }
 .swiper-button-next {
-  @apply bg-white p-5 rounded-full z-50 shadow-md;
+  @apply bg-[#FBEAEB] p-5 rounded-full z-50 shadow-md;
 }
 
 .swiper-button-prev:after,

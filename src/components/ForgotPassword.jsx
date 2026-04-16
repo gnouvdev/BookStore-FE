@@ -133,7 +133,7 @@ const ImprovedForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#FBEAEB] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -142,7 +142,7 @@ const ImprovedForgotPassword = () => {
       >
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-8 py-6 text-white">
+          <div className="bg-[#2F3C7E] px-8 py-6 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -205,7 +205,7 @@ const ImprovedForgotPassword = () => {
                       <Button
                         type="submit"
                         disabled={loading || !email}
-                        className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                        className="w-full h-12 bg-[#2F3C7E] hover:opacity-90 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         {loading ? (
                           <div className="flex items-center space-x-2">
@@ -402,7 +402,7 @@ const ImprovedForgotPassword = () => {
                         newPassword !== confirmPassword ||
                         passwordStrength < 50
                       }
-                      className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full h-12 bg-[#2F3C7E] hover:opacity-90 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? (
                         <div className="flex items-center space-x-2">

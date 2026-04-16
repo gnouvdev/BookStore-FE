@@ -6,16 +6,9 @@ export const ordersApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: baseUrl,
     prepareHeaders: (headers) => {
-      // Get token from localStorage
       const token = localStorage.getItem("token");
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
-        console.log(
-          "Setting Authorization header with token:",
-          token.substring(0, 10) + "..."
-        );
-      } else {
-        console.log("No token found in localStorage");
       }
       return headers;
     },
@@ -29,8 +22,6 @@ export const ordersApi = createApi({
     getAllOrders: builder.query({
       query: () => `/orders`,
       transformResponse: (response) => {
-        console.log("API Response:", response);
-        // Handle both possible response structures
         if (response?.data) {
           return response.data;
         }
@@ -39,10 +30,6 @@ export const ordersApi = createApi({
         }
         return [];
       },
-      transformErrorResponse: (response) => {
-        console.error("API Error:", response);
-        return response;
-      },
       providesTags: ["Orders"],
     }),
     getOrderById: builder.query({
@@ -50,29 +37,14 @@ export const ordersApi = createApi({
         url: `/orders/${id}`,
         method: "GET",
       }),
-      transformResponse: (response) => {
-        console.log("Order details response:", response);
-        return response;
-      },
-      transformErrorResponse: (response) => {
-        console.error("Order details error:", response);
-        return response;
-      },
       providesTags: (result, error, id) => [{ type: "Orders", id }],
     }),
     createOrder: builder.mutation({
-      query: (newOrder) => {
-        console.log("Creating order with data:", newOrder);
-        return {
-          url: "/orders",
-          method: "POST",
-          body: newOrder,
-        };
-      },
-      transformErrorResponse: (response) => {
-        console.error("Order creation error:", response);
-        return response;
-      },
+      query: (newOrder) => ({
+        url: "/orders",
+        method: "POST",
+        body: newOrder,
+      }),
       invalidatesTags: ["Orders"],
     }),
     deleteOrder: builder.mutation({

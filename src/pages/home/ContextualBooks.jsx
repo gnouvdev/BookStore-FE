@@ -109,7 +109,7 @@ const ContextualBooks = () => {
   const holidayTitle = getHolidayTitle();
 
   return (
-    <section className="py-12 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 relative overflow-hidden">
+    <section className="py-12 bg-[#FBEAEB] relative overflow-hidden">
       {/* Decorative background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-purple-200/20 rounded-full blur-3xl"></div>
@@ -121,7 +121,7 @@ const ContextualBooks = () => {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
             <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 bg-[#2F3C7E] rounded-2xl flex items-center justify-center shadow-lg">
                 <Gift className="w-8 h-8 text-white" />
               </div>
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center animate-pulse">
@@ -195,7 +195,7 @@ const ContextualBooks = () => {
               <div key={book._id} className="relative">
                 {/* Holiday badge */}
                 {index === 0 && context && (
-                  <div className="absolute -top-2 -right-2 z-10 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                  <div className="absolute -top-2 -right-2 z-10 bg-[#2F3C7E] text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
                     <div className="flex items-center gap-1">
                       <Sparkles className="w-3 h-3" />
                       {t("contextualBooks.special", "Đặc biệt")}

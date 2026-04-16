@@ -416,7 +416,7 @@ const InteractiveBookExplorer = () => {
   // Loading state
   if (booksLoading || categoriesLoading) {
     return (
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="relative min-h-screen bg-[#2F3C7E] flex items-center justify-center">
         <div className="text-center">
           <FaSpinner className="text-6xl text-purple-400 animate-spin mx-auto mb-4" />
           <h2 className="text-2xl text-white font-bold mb-2">
@@ -433,7 +433,7 @@ const InteractiveBookExplorer = () => {
   // Error state
   if (booksError) {
     return (
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="relative min-h-screen bg-[#2F3C7E] flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl text-red-400 mb-4">⚠️</div>
           <h2 className="text-2xl text-white font-bold mb-2">
@@ -456,7 +456,7 @@ const InteractiveBookExplorer = () => {
   return (
     <div
       ref={containerRef}
-      className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden"
+      className="relative min-h-screen bg-[#2F3C7E] overflow-hidden"
     >
       {/* Animated Background Particles */}
       <div ref={particlesRef} className="absolute inset-0 pointer-events-none">
@@ -483,7 +483,7 @@ const InteractiveBookExplorer = () => {
         >
           <div className="flex items-center justify-center gap-4 mb-6">
             <FaCompass className="text-5xl text-purple-400" />
-            <h2 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+            <h2 className="text-5xl md:text-7xl font-bold text-[#FBEAEB]">
               {t("interactiveBook.title")}
             </h2>
           </div>
@@ -550,7 +550,7 @@ const InteractiveBookExplorer = () => {
                   style={{
                     background:
                       selectedMood === mood.id
-                        ? `linear-gradient(135deg, ${mood.color}20, ${mood.color}10)`
+                        ? `rgba(47, 60, 126, 0.2)`
                         : undefined,
                   }}
                 >
@@ -611,7 +611,7 @@ const InteractiveBookExplorer = () => {
                 }`}
                 whileHover={{ scale: 1.05 }}
                 style={{
-                  background: `linear-gradient(135deg, ${genre.color}20, ${genre.color}10)`,
+                  background: 'rgba(47, 60, 126, 0.2)',
                 }}
               >
                 <div className="text-center">
@@ -720,7 +720,7 @@ const InteractiveBookExplorer = () => {
                                     transform: `translateX(-50%)`,
                                   }}
                                 >
-                                  <div className="relative w-52 h-72 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden shadow-2xl">
+                                  <div className="relative w-52 h-72 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden shadow-2xl">
                                     {/* Badges */}
                                     {book.price.discount > 0 && (
                                       <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
@@ -828,7 +828,7 @@ const InteractiveBookExplorer = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                           >
-                            <div className="relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden shadow-xl">
+                            <div className="relative bg-white/10 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden shadow-xl">
                               {/* Discount Badge */}
                               {book.price.discount > 0 && (
                                 <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
@@ -950,7 +950,7 @@ const InteractiveBookExplorer = () => {
                                   className={`w-full font-semibold py-2 rounded-lg transition-all duration-300 ${
                                     book.stock === 0
                                       ? "bg-gray-500 text-gray-300 cursor-not-allowed"
-                                      : "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg hover:shadow-purple-500/25"
+                                      : "bg-[#2F3C7E] text-white hover:opacity-90 hover:shadow-lg"
                                   }`}
                                   title={
                                     book.stock === 0
@@ -1021,7 +1021,7 @@ const InteractiveBookExplorer = () => {
               {currentBook && (
                 <motion.div
                   key={currentBook.id}
-                  className="sticky top-8 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-2xl border border-white/20 p-6 shadow-2xl"
+                  className="sticky top-8 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 shadow-2xl"
                   initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
@@ -1143,7 +1143,7 @@ const InteractiveBookExplorer = () => {
                       className={`w-full font-semibold py-3 rounded-lg transition-all duration-300 ${
                         currentBook.stock === 0
                           ? "bg-gray-500 text-gray-300 cursor-not-allowed"
-                          : "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg hover:shadow-purple-500/25"
+                          : "bg-[#2F3C7E] text-white hover:opacity-90 hover:shadow-lg"
                       }`}
                       title={
                         currentBook.stock === 0
@@ -1207,7 +1207,7 @@ const InteractiveBookExplorer = () => {
                       className={`w-full font-semibold py-3 rounded-lg transition-all duration-300 ${
                         currentBook.stock === 0
                           ? "bg-gray-500 text-gray-300 cursor-not-allowed"
-                          : "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg hover:shadow-green-500/25"
+                          : "bg-[#2F3C7E] text-white hover:opacity-90 hover:shadow-lg"
                       }`}
                       title={
                         currentBook.stock === 0
@@ -1264,7 +1264,7 @@ const InteractiveBookExplorer = () => {
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
-                className="text-center p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl border border-white/20"
+                className="text-center p-6 bg-white/10 backdrop-blur-md rounded-xl border border-white/20"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -1317,7 +1317,7 @@ const InteractiveBookExplorer = () => {
             ].map((benefit, index) => (
               <motion.div
                 key={benefit.title}
-                className="p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl border border-white/20 text-center"
+                className="p-6 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-center"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.2 }}

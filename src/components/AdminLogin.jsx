@@ -121,12 +121,12 @@ const ImprovedAdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-[#FBEAEB] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-indigo-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-purple-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#2F3C7E] opacity-15 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#2F3C7E] opacity-10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#2F3C7E] opacity-5 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
 
       <motion.div
@@ -137,7 +137,7 @@ const ImprovedAdminLogin = () => {
       >
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 px-8 py-8 text-white relative">
+          <div className="bg-[#2F3C7E] px-8 py-8 text-white relative">
             <div className="absolute inset-0 bg-black/10"></div>
             <div className="relative z-10 text-center">
               <motion.div
@@ -312,7 +312,7 @@ const ImprovedAdminLogin = () => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full h-12 bg-[#2F3C7E] hover:bg-[#2F3C7E] text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <div className="flex items-center gap-2">
@@ -338,7 +338,7 @@ const ImprovedAdminLogin = () => {
                   exit={{ opacity: 0, scale: 0.9 }}
                   className="text-center py-12"
                 >
-                  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <div className="w-16 h-16 mx-auto mb-6 bg-[#2F3C7E] rounded-full flex items-center justify-center">
                     <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -381,7 +381,7 @@ const ImprovedAdminLogin = () => {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                    className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center"
+                    className="w-16 h-16 mx-auto mb-6 bg-[#2F3C7E] rounded-full flex items-center justify-center"
                   >
                     <CheckCircle className="w-8 h-8 text-white" />
                   </motion.div>
@@ -393,7 +393,7 @@ const ImprovedAdminLogin = () => {
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <motion.div
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full"
+                      className="bg-[#2F3C7E] h-2 rounded-full"
                       initial={{ width: 0 }}
                       animate={{ width: "100%" }}
                       transition={{ duration: 1.5 }}

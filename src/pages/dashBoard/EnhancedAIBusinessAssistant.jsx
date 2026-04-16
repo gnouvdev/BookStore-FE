@@ -19,7 +19,7 @@ export default function EnhancedAIBusinessAssistant({
   onRefresh,
 }) {
   return (
-    <section className="relative bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 border-2 border-gray-200/60 rounded-2xl shadow-lg overflow-hidden">
+    <section className="relative bg-[#FBEAEB] border-2 border-gray-200/60 rounded-2xl shadow-lg overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
 
@@ -28,8 +28,8 @@ export default function EnhancedAIBusinessAssistant({
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg blur-sm opacity-50 animate-pulse"></div>
-                <Badge className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 px-3 py-1">
+                <div className="absolute inset-0 bg-[#2F3C7E] rounded-lg blur-sm opacity-30 animate-pulse"></div>
+                <Badge className="relative bg-[#2F3C7E] text-white border-0 px-3 py-1">
                   <Brain className="w-3 h-3 mr-1.5" />
                   <span className="font-semibold uppercase tracking-wide text-xs">
                     AI Business Assistant
@@ -38,7 +38,7 @@ export default function EnhancedAIBusinessAssistant({
                 </Badge>
               </div>
             </div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-900 bg-clip-text text-transparent">
+            <h2 className="text-2xl font-bold text-[#2F3C7E]">
               Phân tích nhu cầu & xu hướng khách hàng
             </h2>
             <p className="text-sm text-gray-600 mt-1">
@@ -225,14 +225,13 @@ export default function EnhancedAIBusinessAssistant({
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="relative bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-xl p-[2px] overflow-hidden group hover:shadow-2xl transition-all">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-600 opacity-0 group-hover:opacity-100 blur-xl transition-opacity"></div>
+              <div className="relative bg-[#2F3C7E] rounded-xl p-[2px] overflow-hidden group hover:shadow-2xl transition-all">
                 <div className="relative bg-white rounded-xl p-5 h-full backdrop-blur-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                    <div className="p-2 bg-[#2F3C7E] rounded-lg">
                       <PackagePlus className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    <h3 className="text-lg font-bold text-[#2F3C7E]">
                       Gợi ý nhập hàng & Highlight
                     </h3>
                   </div>
@@ -251,7 +250,7 @@ export default function EnhancedAIBusinessAssistant({
                           (item, idx) => (
                             <div
                               key={`stock-${idx}`}
-                              className="px-4 py-3 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
+                              className="px-4 py-3 bg-[#FBEAEB] border-2 border-[#2F3C7E]/30 rounded-lg hover:shadow-md transition-all"
                             >
                               <div className="flex items-start justify-between mb-2">
                                 <span className="font-bold text-blue-700">{item.title}</span>
@@ -286,7 +285,7 @@ export default function EnhancedAIBusinessAssistant({
                           (item, idx) => (
                             <div
                               key={`highlight-${idx}`}
-                              className="px-4 py-3 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-purple-200 rounded-lg hover:shadow-md transition-all"
+                              className="px-4 py-3 bg-[#FBEAEB] border-2 border-[#2F3C7E]/30 rounded-lg hover:shadow-md transition-all"
                             >
                               <div className="flex items-start justify-between mb-2">
                                 <span className="font-bold text-purple-700">{item.title}</span>
@@ -317,14 +316,13 @@ export default function EnhancedAIBusinessAssistant({
                 </div>
               </div>
 
-              <div className="relative bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600 rounded-xl p-[2px] overflow-hidden group hover:shadow-2xl transition-all">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-600 opacity-0 group-hover:opacity-100 blur-xl transition-opacity"></div>
+              <div className="relative bg-[#2F3C7E] rounded-xl p-[2px] overflow-hidden group hover:shadow-2xl transition-all">
                 <div className="relative bg-white rounded-xl p-5 h-full backdrop-blur-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
+                    <div className="p-2 bg-[#2F3C7E] rounded-lg">
                       <Zap className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                    <h3 className="text-lg font-bold text-[#2F3C7E]">
                       Thời điểm vàng & Cảnh báo giảm
                     </h3>
                   </div>
@@ -343,7 +341,7 @@ export default function EnhancedAIBusinessAssistant({
                           (item, idx) => (
                             <div
                               key={`timing-${idx}`}
-                              className="px-4 py-3 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 rounded-lg hover:shadow-md transition-all"
+                              className="px-4 py-3 bg-[#FBEAEB] border-2 border-[#2F3C7E]/30 rounded-lg hover:shadow-md transition-all"
                             >
                               <div className="flex items-start justify-between mb-2">
                                 <span className="font-bold text-green-700">Khoảng {item.window}</span>
@@ -383,7 +381,7 @@ export default function EnhancedAIBusinessAssistant({
                           (item, idx) => (
                             <div
                               key={`drop-${idx}`}
-                              className="px-4 py-3 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 rounded-lg hover:shadow-md transition-all"
+                              className="px-4 py-3 bg-[#FBEAEB] border-2 border-red-200 rounded-lg hover:shadow-md transition-all"
                             >
                               <div className="flex items-start justify-between mb-2">
                                 <span className="font-bold text-red-700">{item.title}</span>

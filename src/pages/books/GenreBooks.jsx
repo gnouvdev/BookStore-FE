@@ -178,7 +178,7 @@ const EnhancedGenreBooks = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#FBEAEB] flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -203,7 +203,7 @@ const EnhancedGenreBooks = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#FBEAEB] flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -220,7 +220,7 @@ const EnhancedGenreBooks = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-[#FBEAEB]">
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(20)].map((_, i) => (
@@ -262,12 +262,12 @@ const EnhancedGenreBooks = () => {
               <motion.div
                 animate={{ rotate: [0, 10, -10, 0] }}
                 transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg"
+                className="w-16 h-16 bg-[#2F3C7E] rounded-2xl flex items-center justify-center shadow-lg"
               >
                 <RiBookOpenLine className="text-white text-2xl" />
               </motion.div>
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent capitalize">
+                <h1 className="text-4xl font-bold text-[#2F3C7E] capitalize">
                   {genre} {t("filter.books")}
                 </h1>
                 <p className="text-gray-600 mt-1">
@@ -494,7 +494,7 @@ const EnhancedGenreBooks = () => {
                         />
 
                         {/* Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                         {/* Action Buttons */}
                         <motion.div

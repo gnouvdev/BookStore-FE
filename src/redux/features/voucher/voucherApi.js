@@ -1,11 +1,13 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import baseUrl from "../../../utils/baseURL";
 
 export const voucherApi = createApi({
   reducerPath: "voucherApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `${import.meta.env.VITE_API_URL}/api/vouchers`,
+    baseUrl: `${baseUrl}/vouchers`,
     prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.token;
+      const stateToken = getState?.()?.auth?.token;
+      const token = stateToken || localStorage.getItem("token");
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }

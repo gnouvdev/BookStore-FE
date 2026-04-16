@@ -305,14 +305,14 @@ const AboutUs = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-[#FBEAEB]">
       {/* Hero Section */}
       <section
         ref={heroRef}
         className="relative min-h-screen flex items-center justify-center overflow-hidden"
       >
         <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600"
+          className="absolute inset-0 bg-[#2F3C7E]"
           style={{ y }}
         />
         <div className="absolute inset-0 bg-black/20" />
@@ -355,10 +355,10 @@ const AboutUs = () => {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="flex flex-wrap gap-4 justify-center"
           >
-            <button className="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
+            <button className="bg-white text-[#2F3C7E] px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
               Our Story
             </button>
-            <button className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-blue-600 transition-all duration-300 transform hover:scale-105">
+            <button className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-[#2F3C7E] transition-all duration-300 transform hover:scale-105">
               Meet the Team
             </button>
           </motion.div>
@@ -404,7 +404,7 @@ const AboutUs = () => {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                <div className="w-20 h-20 mx-auto mb-4 bg-[#2F3C7E] rounded-full flex items-center justify-center">
                   <stat.icon className="text-3xl text-white" />
                 </div>
                 <div className="text-4xl font-bold text-gray-800 mb-2">
@@ -419,7 +419,7 @@ const AboutUs = () => {
       </section>
 
       {/* Mission, Vision, Values */}
-      <section className="py-20 bg-gradient-to-r from-blue-50 to-purple-50">
+      <section className="py-20 bg-[#FBEAEB]">
         <div className="container mx-auto px-4">
           <motion.div
             className="text-center mb-16"
@@ -446,7 +446,7 @@ const AboutUs = () => {
                   onClick={() => setActiveTab(tab)}
                   className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 ${
                     activeTab === tab
-                      ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg"
+                      ? "bg-[#2F3C7E] text-white shadow-lg"
                       : "text-gray-600 hover:text-gray-800"
                   }`}
                 >
@@ -466,7 +466,7 @@ const AboutUs = () => {
           >
             {activeTab === "mission" && (
               <div className="text-center">
-                <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                <div className="w-24 h-24 mx-auto mb-8 bg-[#2F3C7E] rounded-full flex items-center justify-center">
                   <FaRocket className="text-4xl text-white" />
                 </div>
                 <h3 className="text-3xl font-bold text-gray-800 mb-6">
@@ -484,7 +484,7 @@ const AboutUs = () => {
 
             {activeTab === "vision" && (
               <div className="text-center">
-                <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                <div className="w-24 h-24 mx-auto mb-8 bg-[#2F3C7E] rounded-full flex items-center justify-center">
                   <FaLightbulb className="text-4xl text-white" />
                 </div>
                 <h3 className="text-3xl font-bold text-gray-800 mb-6">
@@ -510,7 +510,7 @@ const AboutUs = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                   >
-                    <div className="w-16 h-16 mb-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                    <div className="w-16 h-16 mb-6 bg-[#2F3C7E] rounded-full flex items-center justify-center">
                       <value.icon className="text-2xl text-white" />
                     </div>
                     <h4 className="text-xl font-bold text-gray-800 mb-4">
@@ -564,7 +564,7 @@ const AboutUs = () => {
                   }`}
                 >
                   <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="text-2xl font-bold text-blue-600 mb-2">
+                    <div className="text-2xl font-bold text-[#2F3C7E] mb-2">
                       {item.year}
                     </div>
                     <h3 className="text-xl font-bold text-gray-800 mb-3">
@@ -574,7 +574,7 @@ const AboutUs = () => {
                   </div>
                 </div>
 
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg z-10">
+                <div className="w-16 h-16 bg-[#2F3C7E] rounded-full flex items-center justify-center shadow-lg z-10">
                   <item.icon className="text-2xl text-white" />
                 </div>
 
@@ -588,7 +588,7 @@ const AboutUs = () => {
       {/* Team Section */}
       <section
         ref={teamRef}
-        className="py-20 bg-gradient-to-r from-gray-50 to-blue-50"
+        className="py-20 bg-[#FBEAEB]"
       >
         <div className="container mx-auto px-4">
           <motion.div
@@ -619,14 +619,14 @@ const AboutUs = () => {
                     alt={member.name}
                     className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
 
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-gray-800 mb-2">
                     {member.name}
                   </h3>
-                  <div className="text-blue-600 font-semibold mb-3">
+                  <div className="text-[#2F3C7E] font-semibold mb-3">
                     {member.role}
                   </div>
                   <p className="text-gray-600 text-sm mb-4">{member.bio}</p>
@@ -635,7 +635,7 @@ const AboutUs = () => {
                     {member.social.linkedin && (
                       <a
                         href={member.social.linkedin}
-                        className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors duration-300"
+                        className="w-8 h-8 bg-[#2F3C7E] rounded-full flex items-center justify-center text-white hover:opacity-90 transition-colors duration-300"
                       >
                         <FaLinkedin className="text-sm" />
                       </a>
@@ -643,7 +643,7 @@ const AboutUs = () => {
                     {member.social.twitter && (
                       <a
                         href={member.social.twitter}
-                        className="w-8 h-8 bg-blue-400 rounded-full flex items-center justify-center text-white hover:bg-blue-500 transition-colors duration-300"
+                        className="w-8 h-8 bg-[#2F3C7E]/80 rounded-full flex items-center justify-center text-white hover:opacity-90 transition-colors duration-300"
                       >
                         <FaTwitter className="text-sm" />
                       </a>
@@ -692,13 +692,13 @@ const AboutUs = () => {
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={index}
-                className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-[#FBEAEB] rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300"
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <FaQuoteLeft className="text-3xl text-blue-500 mb-4" />
+                <FaQuoteLeft className="text-3xl text-[#2F3C7E] mb-4" />
                 <p className="text-gray-700 mb-6 leading-relaxed">
                   "{testimonial.content}"
                 </p>
@@ -725,7 +725,7 @@ const AboutUs = () => {
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+      <section className="py-20 bg-[#2F3C7E] text-white">
         <div className="container mx-auto px-4">
           <motion.div
             className="text-center mb-16"
@@ -780,7 +780,7 @@ const AboutUs = () => {
       </section>
 
       {/* Contact CTA Section */}
-      <section className="py-20 bg-gray-900 text-white">
+      <section className="py-20 bg-[#2F3C7E] text-white">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -798,21 +798,21 @@ const AboutUs = () => {
 
             <div className="flex flex-wrap gap-6 justify-center mb-8">
               <div className="flex items-center gap-3">
-                <FaEnvelope className="text-blue-400" />
+                <FaEnvelope className="text-[#FBEAEB]" />
                 <span>hello@bookstore.com</span>
               </div>
               <div className="flex items-center gap-3">
-                <FaPhone className="text-green-400" />
+                <FaPhone className="text-[#FBEAEB]" />
                 <span>+1 (555) 123-4567</span>
               </div>
               <div className="flex items-center gap-3">
-                <FaMapMarkerAlt className="text-red-400" />
+                <FaMapMarkerAlt className="text-[#FBEAEB]" />
                 <span>123 Book Street, Reading City</span>
               </div>
             </div>
 
             <motion.button
-              className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105"
+              className="bg-[#2F3C7E] text-white px-8 py-4 rounded-full font-semibold text-lg hover:opacity-90 transition-all duration-300 transform hover:scale-105"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

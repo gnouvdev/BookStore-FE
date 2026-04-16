@@ -1,0 +1,133 @@
+﻿@import url("https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --bookeco-bg: #ffffff;
+  --bookeco-bg-soft: #fbfbf9;
+  --bookeco-paper: #ffffff;
+  --bookeco-paper-strong: #ffffff;
+  --bookeco-ink: #420409;
+  --bookeco-ink-soft: #6d5e59;
+  --bookeco-gold: #775a19;
+  --bookeco-gold-soft: #b48c3b;
+  --bookeco-line: rgba(119, 90, 25, 0.16);
+  --bookeco-line-strong: rgba(119, 90, 25, 0.28);
+  --bookeco-shadow: 0 24px 60px rgba(44, 28, 18, 0.08);
+  --bookeco-display-font: "Noto Serif", serif;
+  --bookeco-ui-font: "Work Sans", sans-serif;
+}
+
+html,
+body,
+#root {
+  background: var(--bookeco-bg);
+  color: var(--bookeco-ink);
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--bookeco-ui-font);
+  margin: 0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: var(--bookeco-ui-font);
+}
+
+.bookeco-page-shell {
+  background: var(--bookeco-bg);
+  color: var(--bookeco-ink);
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  width: 100vw;
+}
+
+.bookeco-page-container {
+  margin: 0 auto;
+  width: min(1184px, calc(100% - 48px));
+}
+
+.bookeco-kicker {
+  color: var(--bookeco-gold);
+  display: inline-block;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.bookeco-title,
+.bookeco-display,
+.bookeco-italic-title {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-display-font);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.bookeco-italic-title {
+  font-style: italic;
+}
+
+.bookeco-body-copy,
+.bookeco-body-serif {
+  color: var(--bookeco-ink-soft);
+  font-family: var(--bookeco-ui-font);
+  line-height: 1.72;
+}
+
+.bookeco-link-reset {
+  color: inherit;
+  text-decoration: none;
+}
+
+.bookeco-button-primary,
+.bookeco-button-secondary {
+  align-items: center;
+  border: 0;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 10px;
+  justify-content: center;
+  letter-spacing: 0.22em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: opacity 160ms ease, transform 160ms ease, border-color 160ms ease;
+}
+
+.bookeco-button-primary {
+  background: var(--bookeco-ink);
+  color: #fff4df;
+  padding: 18px 28px;
+}
+
+.bookeco-button-secondary {
+  background: transparent;
+  border: 1px solid var(--bookeco-line-strong);
+  color: var(--bookeco-ink);
+  padding: 17px 28px;
+}
+
+.bookeco-button-primary:hover,
+.bookeco-button-secondary:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .bookeco-page-container {
+    width: min(100%, calc(100% - 28px));
+  }
+}

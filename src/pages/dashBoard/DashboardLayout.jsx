@@ -1,343 +1,212 @@
-/* eslint-disable no-unused-vars */
-"use client";
-
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
+﻿import { useEffect, useMemo, useState } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  BookOpen,
-  Settings,
-  Users,
-  ShoppingCart,
-  MessageCircle,
   Bell,
-  Search,
-  Menu,
-  X,
-  LogOut,
-  User,
-  ChevronDown,
-  Plus,
-  BarChart3,
-  Package,
-  UserCheck,
+  BookOpen,
   Bookmark,
+  ChevronLeft,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  MessageCircle,
+  Plus,
+  Search,
+  ShoppingBag,
   Ticket,
+  UserRound,
+  UserSquare2,
+  Users,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import "@/styles/archivist-admin.css";
 
-const ImprovedDashboardLayout = () => {
+const menuGroups = [
+  [
+    { title: "Tổng quan", path: "/dashboard", icon: LayoutDashboard },
+    { title: "Thêm sách", path: "/dashboard/add-new-book", icon: Plus },
+    { title: "Quản lý sách", path: "/dashboard/manage-books", icon: BookOpen },
+    { title: "Thể loại", path: "/dashboard/manage-categories", icon: Bookmark },
+    { title: "Tác giả", path: "/dashboard/manage-authors", icon: UserSquare2 },
+    { title: "Người dùng", path: "/dashboard/manage-users", icon: Users },
+    { title: "Đơn hàng", path: "/dashboard/manage-orders", icon: ShoppingBag },
+    { title: "Hỗ trợ chat", path: "/dashboard/chat", icon: MessageCircle },
+    { title: "Voucher", path: "/dashboard/manage-voucher", icon: Ticket },
+  ],
+  [{ title: "Về trang bán hàng", path: "/", icon: ChevronLeft }],
+];
+
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function matchesPath(currentPath, itemPath) {
+  if (itemPath === "/dashboard") {
+    return currentPath === "/dashboard";
+  }
+  return currentPath.startsWith(itemPath);
+}
+
+export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [notifications, setNotifications] = useState(3);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Get user data from localStorage
-  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-  const user = {
-    name: storedUser.fullName || storedUser.displayName || storedUser.name || "Admin",
-    role: storedUser.role || "Admin",
-    avatar: storedUser.photoURL || storedUser.avatar || "https://hoathinh4k3.top/wp-content/uploads/2025/01/007xgN06gy1hxj7l2rmqwj31o12yo4Q-1.jpg",
-    email: storedUser.email || "admin@bookstore.com",
-  };
+  const user = useMemo(() => {
+    const storedUser = getStoredUser();
+    return {
+      name: storedUser.fullName || storedUser.displayName || storedUser.name || "Quản trị viên",
+      role: storedUser.role || "admin",
+      avatar: storedUser.photoURL || storedUser.avatar || "",
+    };
+  }, [location.pathname]);
 
-  const menuItems = [
-    {
-      title: "Tổng quan",
-      icon: LayoutDashboard,
-      path: "/dashboard",
-      badge: null,
-    },
-    {
-      title: "Thêm sách",
-      icon: Plus,
-      path: "/dashboard/add-new-book",
-      badge: null,
-    },
-    {
-      title: "Quản lý sách",
-      icon: BookOpen,
-      path: "/dashboard/manage-books",
-      badge: null,
-    },
-    {
-      title: "Quản lý thể loại",
-      icon: Bookmark,
-      path: "/dashboard/manage-categories",
-      badge: null,
-    },
-    {
-      title: "Quản lý tác giả",
-      icon: UserCheck,
-      path: "/dashboard/manage-authors",
-      badge: null,
-    },
-    {
-      title: "Quản lý người dùng",
-      icon: Users,
-      path: "/dashboard/manage-users",
-      badge: null,
-    },
-    {
-      title: "Quản lý đơn hàng",
-      icon: ShoppingCart,
-      path: "/dashboard/manage-orders",
-      badge: "12",
-    },
-    {
-      title: "Chat",
-      icon: MessageCircle,
-      path: "/dashboard/chat",
-      badge: "5",
-    },
-    {
-      title: "Mã giảm giá",
-      icon: Ticket,
-      path: "/dashboard/manage-voucher",
-      badge: null,
-    },
-  ];
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/";
-  };
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  // Check authentication on mount and route change
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const storedUserStr = localStorage.getItem("user");
-    
-    if (!token || !storedUserStr) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      navigate("/admin");
-      return;
-    }
+    const storedUser = getStoredUser();
 
-    try {
-      const user = JSON.parse(storedUserStr);
-      if (user.role !== "admin") {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/admin");
-      }
-    } catch (error) {
-      console.error("Error parsing user data:", error);
+    if (!token || !storedUser?.role || storedUser.role !== "admin") {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       navigate("/admin");
     }
   }, [location.pathname, navigate]);
 
-  // Close sidebar on route change (mobile)
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/admin");
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <AnimatePresence>
-        {(sidebarOpen || window.innerWidth >= 768) && (
-          <>
-            {/* Overlay for mobile */}
-            {sidebarOpen && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 z-40 md:hidden"
-                onClick={() => setSidebarOpen(false)}
-              />
-            )}
+    <div className="archivist-admin-shell">
+      {sidebarOpen ? (
+        <button
+          aria-label="Đóng thanh điều hướng"
+          className="archivist-mobile-overlay md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      ) : null}
 
-            {/* Sidebar */}
-            <motion.aside
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-gray-200 shadow-lg flex flex-col"
-            >
-              {/* Logo */}
-              <div className="flex-none flex items-center justify-between h-16 px-6 border-b border-gray-200">
-                <Link to="/" className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="text-xl font-bold text-gray-900">
-                    BookStore
-                  </span>
+      <aside className={`archivist-sidebar ${sidebarOpen ? "is-open" : ""}`}>
+        <div className="archivist-sidebar__brand">
+          <Link to="/dashboard" className="archivist-brand-link">
+            <h1>The Archivist</h1>
+            <p>Cổng quản trị</p>
+          </Link>
+        </div>
+
+        <nav className="archivist-nav">
+          <div className="archivist-nav__group">
+            {menuGroups[0].map((item) => {
+              const Icon = item.icon;
+              const active = matchesPath(location.pathname, item.path);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`archivist-nav-link ${active ? "is-active" : ""}`}
+                >
+                  <Icon size={17} className="archivist-nav-link__icon" />
+                  <span className="archivist-nav-link__label">{item.title}</span>
                 </Link>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="md:hidden"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
+              );
+            })}
+          </div>
 
-              {/* Navigation */}
-              <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-                {menuItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.path);
+          <div className="archivist-nav__spacer" />
 
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 group bg-white shadow-sm border ${
-                        active
-                          ? "border-blue-500 bg-white text-blue-600 shadow-md"
-                          : "border-gray-200 hover:border-blue-200 hover:bg-blue-50/50 text-gray-600 hover:text-gray-900"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Icon
-                          className={`w-5 h-5 ${
-                            active
-                              ? "text-blue-500"
-                              : "text-gray-400 group-hover:text-blue-500"
-                          }`}
-                        />
-                        <span className="font-medium">{item.title}</span>
-                      </div>
-                      {item.badge && (
-                        <Badge
-                          variant={active ? "secondary" : "default"}
-                          className={`text-xs ${
-                            active
-                              ? "bg-blue-100 text-blue-600 border-blue-200"
-                              : "bg-blue-100 text-blue-600 border-blue-200"
-                          }`}
-                        >
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </Link>
-                  );
-                })}
-              </nav>
+          <div className="archivist-nav__group">
+            {menuGroups[1].map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.path} to={item.path} className="archivist-nav-link">
+                  <Icon size={17} className="archivist-nav-link__icon" />
+                  <span className="archivist-nav-link__label">{item.title}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
 
-              {/* User Profile */}
-              <div className="flex-none p-4 border-t border-gray-200">
-                <div className="flex items-center space-x-3 p-3 rounded-lg bg-white border border-gray-200 shadow-sm">
-                  <Avatar className="w-10 h-10 border-2 border-blue-100">
-                    <AvatarImage
-                      src={user.avatar || "/placeholder.svg"}
-                      alt={user.name}
-                    />
-                    <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                      {user.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-blue-600 font-medium">
-                      {user.role}
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  onClick={handleLogout}
-                  className="w-full mt-3 justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50 bg-white border border-gray-200 shadow-sm"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Đăng xuất
-                </Button>
-              </div>
-            </motion.aside>
-
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0 md:ml-[280px]">
-              {/* Header */}
-              <header className="sticky top-0 right-0 left-0 md:left-[280px] bg-white border-b border-gray-200 shadow-sm z-40">
-                <div className="flex items-center justify-between h-16 px-6">
-                  {/* Left side */}
-                  <div className="flex items-center space-x-4">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="md:hidden"
-                      onClick={() => setSidebarOpen(true)}
-                    >
-                      <Menu className="w-5 h-5" />
-                    </Button>
-
-                    {/* Search */}
-                    {/* <div className="hidden sm:block relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <Input
-                        placeholder="Search..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 w-64 bg-gray-50 border-gray-200 focus:bg-white"
-                      />
-                    </div> */}
-                  </div>
-
-                  {/* Right side */}
-                  <div className="flex items-center space-x-4">
-                    {/* Notifications */}
-                    <Button variant="ghost" size="icon" className="relative">
-                      <Bell className="w-5 h-5" />
-                      {notifications > 0 && (
-                        <Badge className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
-                          {notifications}
-                        </Badge>
-                      )}
-                    </Button>
-
-                    {/* User Menu */}
-                    <div className="flex items-center space-x-3">
-                      <div className="hidden md:block text-right">
-                        <p className="text-sm font-medium text-gray-900">
-                          {user.name}
-                        </p>
-                        <p className="text-xs text-gray-500">{user.role}</p>
-                      </div>
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage
-                          src={user.avatar || "/placeholder.svg"}
-                          alt={user.name}
-                        />
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-                </div>
-              </header>
-
-              {/* Page Content */}
-              <main className="flex-1 overflow-x-auto bg-gray-50">
-                <div className="min-w-full px-6 py-4">
-                  <Outlet />
-                </div>
-              </main>
+        <div className="archivist-sidebar__footer">
+          <div className="archivist-admin-card archivist-user-chip">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarFallback className="bg-[rgba(66,4,9,0.12)] text-[var(--archivist-ink)]">
+                {user.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="archivist-user-chip__copy">
+              <strong>{user.name}</strong>
+              <span>Quản trị viên</span>
             </div>
-          </>
-        )}
-      </AnimatePresence>
+          </div>
+
+          <button type="button" className="archivist-secondary-button" onClick={handleLogout}>
+            <LogOut size={16} />
+            Đăng xuất
+          </button>
+        </div>
+      </aside>
+
+      <div className="archivist-main">
+        <header className="archivist-topbar">
+          <div className="archivist-topbar__left">
+            <button
+              type="button"
+              aria-label="Mở thanh điều hướng"
+              className="archivist-menu-toggle"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu size={18} />
+            </button>
+
+            <div className="archivist-searchbox">
+              <Search size={16} />
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Tìm trong kho quản trị..."
+              />
+            </div>
+          </div>
+
+          <div className="archivist-topbar__right">
+            <button type="button" className="archivist-icon-button" aria-label="Thông báo">
+              <Bell size={16} />
+            </button>
+            <Link to="/dashboard/add-new-book" className="archivist-primary-button">
+              Thêm mới
+            </Link>
+
+            <div className="archivist-topbar__profile">
+              <div className="archivist-topbar__profile-copy">
+                <strong>{user.name}</strong>
+                <span>Khu quản trị</span>
+              </div>
+              <Avatar className="h-11 w-11">
+                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarFallback className="bg-[rgba(66,4,9,0.12)] text-[var(--archivist-ink)]">
+                  <UserRound size={16} />
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
+        </header>
+
+        <main className="archivist-page">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
-};
-
-export default ImprovedDashboardLayout;
+}

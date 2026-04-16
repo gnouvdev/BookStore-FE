@@ -48,10 +48,10 @@ export default function TermsPolicyPage() {
   const lastUpdated = "15 tháng 12, 2024"
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-[#FBEAEB]">
       {/* Hero Section */}
       <motion.section
-        className="relative py-20 px-4 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white overflow-hidden"
+        className="relative py-20 px-4 bg-[#2F3C7E] text-white overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
@@ -66,7 +66,7 @@ export default function TermsPolicyPage() {
               <span className="text-sm font-medium">Điều Khoản & Chính Sách</span>
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white">
               Terms & Privacy Policy
             </h1>
 
@@ -127,7 +127,7 @@ export default function TermsPolicyPage() {
             <TabsContent value="terms">
               <motion.div variants={fadeInUp}>
                 <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                  <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
+                  <CardHeader className="bg-[#2F3C7E] text-white rounded-t-lg">
                     <CardTitle className="flex items-center gap-3 text-2xl">
                       <FileText className="w-6 h-6" />
                       Điều Khoản Sử Dụng
@@ -231,7 +231,7 @@ export default function TermsPolicyPage() {
             <TabsContent value="privacy">
               <motion.div variants={fadeInUp}>
                 <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                  <CardHeader className="bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-t-lg">
+                  <CardHeader className="bg-[#2F3C7E] text-white rounded-t-lg">
                     <CardTitle className="flex items-center gap-3 text-2xl">
                       <Lock className="w-6 h-6" />
                       Chính Sách Bảo Mật
@@ -308,7 +308,7 @@ export default function TermsPolicyPage() {
                           <Shield className="w-5 h-5 text-red-500" />
                           Bảo Mật Dữ Liệu
                         </h3>
-                        <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-lg">
+                        <div className="bg-[#FBEAEB] p-6 rounded-lg">
                           <p className="text-gray-700 mb-4">
                             Chúng tôi sử dụng các biện pháp bảo mật tiên tiến để bảo vệ thông tin của bạn:
                           </p>
@@ -346,7 +346,7 @@ export default function TermsPolicyPage() {
             <TabsContent value="cookies">
               <motion.div variants={fadeInUp}>
                 <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                  <CardHeader className="bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-t-lg">
+                  <CardHeader className="bg-[#2F3C7E] text-white rounded-t-lg">
                     <CardTitle className="flex items-center gap-3 text-2xl">
                       <Cookie className="w-6 h-6" />
                       Chính Sách Cookie
@@ -437,7 +437,7 @@ export default function TermsPolicyPage() {
             <TabsContent value="refund">
               <motion.div variants={fadeInUp}>
                 <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                  <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-t-lg">
+                  <CardHeader className="bg-[#2F3C7E] text-white rounded-t-lg">
                     <CardTitle className="flex items-center gap-3 text-2xl">
                       <RefreshCw className="w-6 h-6" />
                       Chính Sách Hoàn Trả
@@ -549,7 +549,7 @@ export default function TermsPolicyPage() {
 
                       <div>
                         <h3 className="text-xl font-semibold mb-4">Thời Gian Xử Lý</h3>
-                        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg">
+                        <div className="bg-[#FBEAEB] p-6 rounded-lg">
                           <div className="grid md:grid-cols-3 gap-4">
                             <div className="text-center">
                               <div className="text-2xl font-bold text-purple-600 mb-2">24h</div>
@@ -577,7 +577,7 @@ export default function TermsPolicyPage() {
 
       {/* Contact Section */}
       <motion.section
-        className="py-16 px-4 bg-gradient-to-r from-gray-900 to-blue-900 text-white"
+        className="py-16 px-4 bg-[#2F3C7E] text-white"
         variants={fadeInUp}
         initial="initial"
         whileInView="animate"

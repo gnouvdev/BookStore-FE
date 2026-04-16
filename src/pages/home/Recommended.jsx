@@ -79,7 +79,7 @@ const OptimizedRecommended = () => {
 
   if (isLoading) {
     return (
-      <div className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 p-8 sm:p-12 rounded-3xl mx-4 sm:mx-8 lg:mx-16 shadow-2xl">
+      <div className="relative overflow-hidden bg-[#2F3C7E] p-8 sm:p-12 rounded-3xl mx-4 sm:mx-8 lg:mx-16 shadow-2xl">
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-full mb-6">
             <Flame className="w-10 h-10 text-yellow-300 animate-pulse" />
@@ -96,10 +96,10 @@ const OptimizedRecommended = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 p-6 sm:p-8 lg:p-12 rounded-3xl mx-4 sm:mx-8 lg:mx-16 shadow-2xl"
+      className="relative overflow-hidden bg-[#2F3C7E] p-6 sm:p-8 lg:p-12 rounded-3xl mx-4 sm:mx-8 lg:mx-16 shadow-2xl"
     >
       {/* Animated Background Pattern */}
-      <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600">
+      <div className="absolute inset-0 opacity-10 bg-[#2F3C7E]">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_0%,transparent_50%)] animate-pulse"></div>
         <div className="absolute top-1/4 right-1/4 w-32 h-32 bg-white/5 rounded-full blur-xl animate-bounce"></div>
         <div className="absolute bottom-1/4 left-1/4 w-24 h-24 bg-yellow-300/10 rounded-full blur-lg animate-pulse"></div>
@@ -146,7 +146,7 @@ const OptimizedRecommended = () => {
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 bg-[#FBEAEB] rounded-2xl flex items-center justify-center shadow-lg">
                 <Flame className="w-8 h-8 text-white" />
               </div>
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
@@ -270,7 +270,7 @@ const OptimizedRecommended = () => {
       </Button>
 
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-[#FBEAEB]/5 transform -skew-x-12 pointer-events-none"></div>
     </motion.div>
   );
 };

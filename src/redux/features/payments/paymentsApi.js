@@ -28,7 +28,7 @@ const paymentsApi = createApi({
     }),
     addPaymentMethod: builder.mutation({
       query: (data) => ({
-        url: "/api/payments",
+        url: "/payments",
         method: "POST",
         body: data,
       }),
@@ -36,7 +36,7 @@ const paymentsApi = createApi({
     }),
     updatePaymentMethod: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `/api/payments/${id}`,
+        url: `/payments/${id}`,
         method: "PUT",
         body: data,
       }),
@@ -44,7 +44,7 @@ const paymentsApi = createApi({
     }),
     deletePaymentMethod: builder.mutation({
       query: (id) => ({
-        url: `/api/payments/${id}`,
+        url: `/payments/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Payment"],

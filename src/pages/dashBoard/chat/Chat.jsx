@@ -1,428 +1,275 @@
-/* eslint-disable no-unused-vars */
-"use client";
-
-import { useState, useEffect, useRef } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  Send,
-  User,
   MessageCircle,
   Search,
-  MoreVertical,
+  Send,
   Phone,
-  Video,
-  Smile,
+  MoreVertical,
   Paperclip,
-  Circle,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSocket } from "../../../context/SocketContext";
 import {
   useGetChatHistoryQuery,
-  useSendMessageMutation,
   useGetChatUsersQuery,
+  useSendMessageMutation,
 } from "../../../redux/features/chat/chatApi";
 
-const ChatContent = () => {
+export default function Chat() {
   const [selectedUser, setSelectedUser] = useState(null);
-  const [message, setMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [message, setMessage] = useState("");
   const messagesEndRef = useRef(null);
-  const chatContainerRef = useRef(null);
-  const userListRef = useRef(null);
   const socket = useSocket();
-
-  // Lấy thông tin admin từ localStorage
   const adminUser = JSON.parse(localStorage.getItem("user") || "{}");
   const adminToken = localStorage.getItem("token");
 
-  // Debug logs
-  useEffect(() => {
-    console.log("Admin chat - Admin user:", adminUser);
-  }, [adminUser]);
-
-  // Fetch chat users with token
-  const {
-    data: chatUsersData,
-    isLoading: isLoadingUsers,
-    error: chatUsersError,
-  } = useGetChatUsersQuery(undefined, {
+  const { data: chatUsersData, isLoading: isLoadingUsers } = useGetChatUsersQuery(undefined, {
     skip: !adminToken,
     refetchOnMountOrArgChange: true,
   });
+  const users = chatUsersData?.data || [];
 
-  useEffect(() => {
-    if (chatUsersError) {
-      console.error("Error fetching chat users:", chatUsersError);
-    }
-  }, [chatUsersError]);
-
-  const chatUsers = chatUsersData?.data || [];
-
-  // Fetch chat history when a user is selected
   const {
     data: chatHistoryData,
     refetch: refetchChatHistory,
-    error: chatHistoryError,
   } = useGetChatHistoryQuery(selectedUser?._id, {
     skip: !selectedUser || !adminToken,
     refetchOnMountOrArgChange: true,
   });
 
+  const messages = chatHistoryData?.data || [];
+  const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
+
+  const filteredUsers = useMemo(() => {
+    const normalized = searchQuery.trim().toLowerCase();
+    return users.filter((user) => !normalized || (user.fullName || user.email || "").toLowerCase().includes(normalized));
+  }, [searchQuery, users]);
+
   useEffect(() => {
-    if (chatHistoryError) {
-      console.error("Error fetching chat history:", chatHistoryError);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    if (!socket || !selectedUser?._id) {
+      return undefined;
     }
-  }, [chatHistoryError]);
-
-  const chatHistory = chatHistoryData?.data || [];
-
-  // Send message mutation
-  const [sendMessage, { error: sendMessageError }] = useSendMessageMutation();
-
-  useEffect(() => {
-    if (sendMessageError) {
-      console.error("Error sending message:", sendMessageError);
-    }
-  }, [sendMessageError]);
-
-  // Filter users based on search query
-  const filteredUsers = chatUsers.filter((user) =>
-    (user.fullName || user.email || "")
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
-
-  // Handle socket events for real-time messages
-  useEffect(() => {
-    if (!socket || !selectedUser) return;
 
     socket.emit("joinChat", selectedUser._id);
 
-    const handleNewMessage = (data) => {
-      if (
-        data.message.senderId === selectedUser._id ||
-        data.message.receiverId === selectedUser._id
-      ) {
+    const handleNewMessage = (payload) => {
+      const receiverId = payload?.message?.receiverId;
+      const senderId = payload?.message?.senderId;
+      if (receiverId === selectedUser._id || senderId === selectedUser._id) {
         refetchChatHistory();
       }
     };
 
     socket.on("newMessage", handleNewMessage);
-
     return () => {
       socket.emit("leaveChat", selectedUser._id);
       socket.off("newMessage", handleNewMessage);
     };
   }, [socket, selectedUser, refetchChatHistory]);
 
-  // Scroll to bottom when new messages arrive
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [chatHistory]);
-
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!message.trim() || !selectedUser || !adminToken) {
-      console.error("Cannot send message:", {
-        message: message.trim(),
-        selectedUser,
-        adminToken: !!adminToken,
-      });
+  const handleSendMessage = async (event) => {
+    event.preventDefault();
+    if (!message.trim() || !selectedUser?._id) {
       return;
     }
 
     try {
-      const result = await sendMessage({
+      await sendMessage({
         receiverId: selectedUser._id,
         message: message.trim(),
       }).unwrap();
-
-      console.log("Message sent successfully:", result);
       setMessage("");
-      await refetchChatHistory();
-    } catch (error) {
-      console.error("Error sending message:", error);
+      refetchChatHistory();
+    } catch {
+      // handled by mutation layer
     }
-  };
-
-  const handleUserSelect = (user) => {
-    setSelectedUser(user);
   };
 
   if (!adminToken || adminUser.role !== "admin") {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Vui lòng đăng nhập để tiếp tục
-          </h2>
-          <p className="text-gray-500">
-            Bạn cần đăng nhập với tài khoản admin để sử dụng tính năng này
-          </p>
-        </div>
+      <div className="archivist-admin-card archivist-empty" style={{ minHeight: 420 }}>
+        Khu vực này chỉ dành cho quản trị viên đã đăng nhập.
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <motion.div
-          ref={chatContainerRef}
-          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 overflow-hidden"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="flex h-[700px]">
-            {/* User List Sidebar */}
-            <div className="w-80 border-r border-gray-200/50 bg-gray-50/50">
-              {/* Header */}
-              <div className="p-6 border-b border-gray-200/50 bg-white/50">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <MessageCircle className="w-6 h-6 text-blue-500" />
-                    Tin nhắn
-                  </h2>
-                  <Badge
-                    variant="secondary"
-                    className="bg-blue-100 text-blue-700"
-                  >
-                    {filteredUsers.length}
-                  </Badge>
-                </div>
+    <div className="archivist-grid" style={{ gap: 24 }}>
+      <section className="archivist-page-header">
+        <div>
+          <p className="archivist-page-header__eyebrow">Kênh hỗ trợ khách hàng</p>
+          <h2>Hỗ trợ chat</h2>
+          <p>
+            Giao diện chat được đồng bộ với admin mới, ưu tiên cuộc trò chuyện, hồ sơ
+            người gửi và khu vực phản hồi rõ ràng, dễ theo dõi.
+          </p>
+        </div>
+      </section>
 
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    placeholder="Tìm kiếm cuộc trò chuyện..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-white/70 border-gray-200/50 focus:bg-white transition-colors"
-                  />
+      <section className="archivist-admin-card archivist-chat-layout archivist-admin-card--strong">
+        <aside className="archivist-chat-sidebar">
+          <div className="archivist-panel" style={{ borderBottom: "1px solid var(--archivist-line)" }}>
+            <p className="archivist-panel__eyebrow">Phiên đang hoạt động</p>
+            <h3 className="archivist-panel__title">{filteredUsers.length} cuộc trò chuyện</h3>
+            <label className="archivist-searchbox" style={{ marginTop: 16, width: "100%", minWidth: 0 }}>
+              <Search size={16} />
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Tìm cuộc trò chuyện..."
+              />
+            </label>
+          </div>
+
+          <div className="archivist-chat-list">
+            {isLoadingUsers ? (
+              <div className="archivist-empty">Đang tải danh sách hội thoại...</div>
+            ) : filteredUsers.length ? (
+              filteredUsers.map((user) => (
+                <button
+                  key={user._id}
+                  type="button"
+                  className={`archivist-chat-thread ${selectedUser?._id === user._id ? "is-active" : ""}`}
+                  onClick={() => setSelectedUser(user)}
+                >
+                  <div className="archivist-list-row__leading">
+                    <div className="archivist-avatar archivist-avatar--sm">
+                      {(user.fullName || user.email || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <strong className="archivist-list-row__title">
+                        {user.fullName || user.email || "Người dùng"}
+                      </strong>
+                      <span className="archivist-list-row__meta" style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {user.lastMessage?.message || "Chưa có tin nhắn"}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="archivist-empty">Chưa có cuộc trò chuyện nào.</div>
+            )}
+          </div>
+        </aside>
+
+        <section className="archivist-chat-main">
+          {selectedUser ? (
+            <div className="archivist-chat-pane">
+              <div className="archivist-panel" style={{ borderBottom: "1px solid var(--archivist-line)", paddingBottom: 18 }}>
+                <div className="archivist-panel__head" style={{ marginBottom: 0 }}>
+                  <div>
+                    <p className="archivist-panel__eyebrow">Hội thoại hiện tại</p>
+                    <h3 className="archivist-panel__title">{selectedUser.fullName || selectedUser.email || "Người dùng"}</h3>
+                    <p className="archivist-panel__description">{selectedUser.email || "Không có email"}</p>
+                  </div>
+                  <div className="archivist-page-actions">
+                    <button type="button" className="archivist-icon-button" aria-label="Gọi cho người dùng">
+                      <Phone size={15} />
+                    </button>
+                    <button type="button" className="archivist-icon-button" aria-label="Tùy chọn khác">
+                      <MoreVertical size={15} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* User List */}
-              <ScrollArea className="h-[calc(100%-140px)]">
-                <div ref={userListRef} className="p-2">
-                  {isLoadingUsers ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    </div>
-                  ) : filteredUsers.length === 0 ? (
-                    <div className="text-center py-8 px-4">
-                      <User className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                      <p className="text-gray-500 text-sm">
-                        {searchQuery
-                          ? "Không tìm thấy cuộc trò chuyện"
-                          : "Chưa có cuộc trò chuyện nào"}
-                      </p>
-                    </div>
-                  ) : (
-                    filteredUsers.map((chatUser, index) => (
-                      <motion.div
-                        key={chatUser._id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Button
-                          variant="ghost"
-                          onClick={() => handleUserSelect(chatUser)}
-                          className={`w-full p-4 h-auto justify-start mb-2 rounded-xl transition-all duration-200 ${
-                            selectedUser?._id === chatUser._id
-                              ? "bg-blue-50 border-blue-200 shadow-sm"
-                              : "hover:bg-gray-50"
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3 w-full">
-                            <div className="relative">
-                              <Avatar className="w-12 h-12">
-                                <AvatarImage
-                                  src={chatUser.avatar || "/placeholder.svg"}
-                                />
-                                <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white font-semibold">
-                                  {(chatUser.fullName || chatUser.email || "U")
-                                    .charAt(0)
-                                    .toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                            </div>
-                            <div className="flex-1 min-w-0 text-left">
-                              <p className="font-medium text-gray-900 truncate">
-                                {chatUser.fullName ||
-                                  chatUser.email ||
-                                  "Người dùng"}
-                              </p>
-                              <p className="text-sm text-gray-500 truncate">
-                                {chatUser.lastMessage?.message ||
-                                  "Chưa có tin nhắn"}
-                              </p>
-                            </div>
-                          </div>
-                        </Button>
-                      </motion.div>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </div>
-
-            {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-white">
-              {selectedUser ? (
-                <>
-                  {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-200/50 bg-white/80 backdrop-blur-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage
-                            src={selectedUser.avatar || "/placeholder.svg"}
-                          />
-                          <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white">
-                            {(
-                              selectedUser.fullName ||
-                              selectedUser.email ||
-                              "U"
-                            )
-                              .charAt(0)
-                              .toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">
-                            {selectedUser.fullName ||
-                              selectedUser.email ||
-                              "Người dùng"}
-                          </h3>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Messages */}
-                  <ScrollArea className="flex-1 p-4 chat-messages">
-                    <div className="space-y-4">
-                      {chatHistory.length === 0 ? (
-                        <div className="flex items-center justify-center py-8">
-                          <p className="text-gray-500">Chưa có tin nhắn nào</p>
-                        </div>
-                      ) : (
-                        <AnimatePresence>
-                          {chatHistory.map((msg) => (
-                            <motion.div
-                              key={msg._id}
-                              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                              animate={{ opacity: 1, y: 0, scale: 1 }}
-                              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                              transition={{ duration: 0.3 }}
-                              className={`flex ${
-                                msg.senderRole === "admin"
-                                  ? "justify-end"
-                                  : "justify-start"
-                              }`}
-                            >
-                              <div
-                                className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${
-                                  msg.senderRole === "admin"
-                                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-                                    : "bg-gray-100 text-gray-900 border border-gray-200"
-                                }`}
-                              >
-                                <p className="text-sm leading-relaxed">
-                                  {msg.message}
-                                </p>
-                                <p
-                                  className={`text-xs mt-2 ${
-                                    msg.senderRole === "admin"
-                                      ? "text-blue-100"
-                                      : "text-gray-500"
-                                  }`}
-                                >
-                                  {format(new Date(msg.createdAt), "HH:mm", {
-                                    locale: vi,
-                                  })}
-                                </p>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                      )}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  </ScrollArea>
-
-                  {/* Message Input */}
-                  <div className="p-4 border-t border-gray-200/50 bg-white/80 backdrop-blur-sm">
-                    <form
-                      onSubmit={handleSendMessage}
-                      className="flex items-end space-x-3"
+              <div className="archivist-chat-bubbles">
+                {messages.length ? (
+                  messages.map((msg) => (
+                    <div
+                      key={msg._id}
+                      className={`archivist-chat-bubble ${msg.senderRole === "admin" ? "archivist-chat-bubble--admin" : "archivist-chat-bubble--guest"}`}
                     >
-                      <div className="flex-1 relative">
-                        <Input
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
-                          placeholder="Nhập tin nhắn..."
-                          className="pr-20 py-3 rounded-2xl border-gray-200 focus:border-blue-300 focus:ring-blue-200"
-                        />
+                      <p style={{ margin: 0, lineHeight: 1.8 }}>{msg.message}</p>
+                      <div className="archivist-table-meta" style={{ marginTop: 10, color: msg.senderRole === "admin" ? "rgba(255,248,239,0.7)" : undefined }}>
+                        {format(new Date(msg.createdAt), "HH:mm · dd/MM", { locale: vi })}
                       </div>
-                      <Button
-                        type="submit"
-                        disabled={!message.trim()}
-                        className="rounded-full w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all duration-200"
-                      >
-                        <Send className="w-5 h-5" />
-                      </Button>
-                    </form>
-                  </div>
-                </>
-              ) : (
-                <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-center"
-                  >
-                    <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                      <MessageCircle className="w-12 h-12 text-blue-500" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Chọn cuộc trò chuyện
-                    </h3>
-                    <p className="text-gray-500 max-w-sm">
-                      Chọn một cuộc trò chuyện từ danh sách bên trái để bắt đầu
-                      nhắn tin
-                    </p>
-                  </motion.div>
+                  ))
+                ) : (
+                  <div className="archivist-empty">Chọn hội thoại để xem nội dung chi tiết.</div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <form className="archivist-chat-composer" onSubmit={handleSendMessage}>
+                <div className="archivist-page-actions" style={{ gap: 8 }}>
+                  <span className="archivist-status-pill" data-tone="info">Phản hồi trực tiếp</span>
+                  <span className="archivist-status-pill" data-tone="warning">Luồng hỗ trợ</span>
+                </div>
+                <textarea
+                  className="archivist-textarea"
+                  value={message}
+                  onChange={(event) => setMessage(event.target.value)}
+                  placeholder="Nhập phản hồi cho khách hàng..."
+                />
+                <div className="archivist-page-actions" style={{ justifyContent: "space-between" }}>
+                  <button type="button" className="archivist-icon-button" aria-label="Đính kèm tệp">
+                    <Paperclip size={15} />
+                  </button>
+                  <button type="submit" className="archivist-primary-button" disabled={!message.trim() || isSending}>
+                    <Send size={15} />
+                    {isSending ? "Đang gửi..." : "Gửi phản hồi"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <div className="archivist-empty">
+              <div>
+                <MessageCircle size={40} style={{ margin: "0 auto 16px" }} />
+                <strong className="archivist-list-row__title" style={{ display: "block" }}>
+                  Chọn một cuộc trò chuyện
+                </strong>
+                <p className="archivist-panel__description">
+                  Danh sách hội thoại nằm ở cột trái. Khi chọn một người dùng, nội dung,
+                  hồ sơ và khung phản hồi sẽ hiện đầy đủ ở đây.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <aside className="archivist-chat-detail">
+          <div className="archivist-chat-detail-pane">
+            <div className="archivist-panel">
+              <p className="archivist-panel__eyebrow">Hồ sơ người đọc</p>
+              {selectedUser ? (
+                <div className="archivist-stack">
+                  <div className="archivist-avatar" style={{ width: 96, height: 96 }}>
+                    {(selectedUser.fullName || selectedUser.email || "U").charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="archivist-panel__title">{selectedUser.fullName || "Khách ghé thăm"}</h3>
+                    <p className="archivist-panel__description">{selectedUser.email || "Không có email"}</p>
+                  </div>
+                  <div className="archivist-stack">
+                    <div className="archivist-list-row">
+                      <strong className="archivist-list-row__title">Tin nhắn gần nhất</strong>
+                      <span className="archivist-list-row__meta">{selectedUser.lastMessage?.message || "Chưa có dữ liệu"}</span>
+                    </div>
+                    <div className="archivist-list-row">
+                      <strong className="archivist-list-row__title">Trạng thái phiên</strong>
+                      <span className="archivist-list-row__meta">Đang mở hội thoại</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="archivist-empty" style={{ minHeight: 260 }}>
+                  Hồ sơ hội thoại sẽ hiện ở đây khi bạn chọn một người dùng.
                 </div>
               )}
             </div>
           </div>
-        </motion.div>
-      </div>
+        </aside>
+      </section>
     </div>
   );
-};
-
-const Chat = () => {
-  return <ChatContent />;
-};
-
-export default Chat;
+}

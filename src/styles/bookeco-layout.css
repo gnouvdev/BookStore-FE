@@ -1,0 +1,478 @@
+﻿.bookeco-app {
+  background: var(--bookeco-bg);
+  min-height: 100vh;
+}
+
+.bookeco-app-main {
+  min-height: calc(100vh - 220px);
+}
+
+.bookeco-topbar {
+  backdrop-filter: blur(16px);
+  background: rgba(254, 249, 240, 0.94);
+  border-bottom: 1px solid rgba(66, 4, 9, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.bookeco-topbar-inner,
+.bookeco-footer-inner {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 auto;
+  width: min(1280px, calc(100% - 48px));
+}
+
+.bookeco-topbar-inner {
+  gap: 24px;
+  min-height: 88px;
+}
+
+.bookeco-brand {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-display-font);
+  font-size: 1.6rem;
+  font-style: italic;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.bookeco-nav-links {
+  align-items: center;
+  display: flex;
+  gap: 28px;
+}
+
+.bookeco-nav-link {
+  color: rgba(66, 4, 9, 0.78);
+  font-family: var(--bookeco-display-font);
+  font-size: 1rem;
+  text-decoration: none;
+}
+
+.bookeco-nav-link.is-active {
+  border-bottom: 1px solid var(--bookeco-gold);
+  color: var(--bookeco-gold);
+  padding-bottom: 6px;
+}
+
+.bookeco-search-wrap {
+  flex: 1;
+  max-width: 380px;
+  position: relative;
+}
+
+.bookeco-search-box {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(119, 90, 25, 0.16);
+  border-radius: 999px;
+  display: flex;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 16px;
+}
+
+.bookeco-search-box input {
+  background: transparent;
+  border: 0;
+  color: var(--bookeco-ink);
+  flex: 1;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.92rem;
+  outline: none;
+}
+
+.bookeco-search-box button {
+  background: transparent;
+  border: 0;
+  color: var(--bookeco-ink);
+  cursor: pointer;
+}
+
+.bookeco-topbar-actions {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+}
+
+.bookeco-action-link {
+  color: var(--bookeco-ink);
+  position: relative;
+  text-decoration: none;
+}
+
+.bookeco-action-badge {
+  align-items: center;
+  background: var(--bookeco-gold);
+  border-radius: 999px;
+  color: white;
+  display: inline-flex;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.65rem;
+  font-weight: 700;
+  height: 18px;
+  justify-content: center;
+  min-width: 18px;
+  position: absolute;
+  right: -8px;
+  top: -8px;
+}
+
+.bookeco-user-menu {
+  position: relative;
+}
+
+.bookeco-user-trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--bookeco-ink);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.bookeco-user-avatar {
+  border-radius: 999px;
+  height: 34px;
+  object-fit: cover;
+  width: 34px;
+}
+
+.bookeco-user-dropdown {
+  background: var(--bookeco-paper);
+  border: 1px solid var(--bookeco-line);
+  box-shadow: var(--bookeco-shadow);
+  min-width: 210px;
+  padding: 12px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+}
+
+.bookeco-user-dropdown a,
+.bookeco-user-dropdown button {
+  background: transparent;
+  border: 0;
+  color: var(--bookeco-ink);
+  cursor: pointer;
+  display: block;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.92rem;
+  padding: 10px 8px;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+}
+
+.bookeco-search-panel {
+  background: var(--bookeco-paper);
+  border: 1px solid var(--bookeco-line);
+  box-shadow: var(--bookeco-shadow);
+  left: 0;
+  margin-top: 10px;
+  padding: 12px;
+  position: absolute;
+  right: 0;
+  top: 100%;
+}
+
+.bookeco-search-panel h4 {
+  color: var(--bookeco-gold);
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.bookeco-search-item {
+  display: block;
+  padding: 10px 8px;
+  text-decoration: none;
+}
+
+.bookeco-search-item strong {
+  color: var(--bookeco-ink);
+  display: block;
+  font-family: var(--bookeco-display-font);
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.bookeco-search-item span {
+  color: var(--bookeco-ink-soft);
+  display: block;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+.bookeco-mobile-toggle {
+  display: none;
+}
+
+.bookeco-mobile-nav {
+  border-top: 1px solid var(--bookeco-line);
+  display: none;
+  margin: 0 auto;
+  padding: 14px 0 18px;
+  width: min(1280px, calc(100% - 48px));
+}
+
+.bookeco-mobile-nav.is-open {
+  display: block;
+}
+
+.bookeco-mobile-nav-links {
+  display: grid;
+  gap: 12px;
+}
+
+.bookeco-mobile-nav-links a {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-display-font);
+  font-size: 1.05rem;
+  text-decoration: none;
+}
+
+.bookeco-footer {
+  background: var(--bookeco-bg);
+  border-top: 1px solid rgba(66, 4, 9, 0.1);
+  margin-top: 72px;
+  padding: 56px 0 48px;
+}
+
+.bookeco-footer-inner {
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.bookeco-footer-brand {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-display-font);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.bookeco-footer-copy {
+  color: rgba(66, 4, 9, 0.64);
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.bookeco-footer-links {
+  display: flex;
+  gap: 26px;
+}
+
+.bookeco-footer-links a,
+.bookeco-footer-meta {
+  color: rgba(66, 4, 9, 0.62);
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+@media (max-width: 980px) {
+  .bookeco-topbar-inner,
+  .bookeco-footer-inner {
+    width: min(100%, calc(100% - 28px));
+  }
+
+  .bookeco-nav-links,
+  .bookeco-footer-links,
+  .bookeco-search-wrap {
+    display: none;
+  }
+
+  .bookeco-mobile-toggle {
+    display: inline-flex;
+  }
+
+  .bookeco-footer-inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+
+.bookeco-nav-link,
+.bookeco-action-link,
+.bookeco-user-trigger,
+.bookeco-footer-links a,
+.bookeco-mobile-nav-links a,
+.bookeco-search-item,
+.bookeco-user-dropdown a,
+.bookeco-user-dropdown button,
+.bookeco-brand {
+  transition: color 160ms ease, opacity 160ms ease, transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.bookeco-nav-link:hover,
+.bookeco-action-link:hover,
+.bookeco-user-trigger:hover,
+.bookeco-footer-links a:hover,
+.bookeco-mobile-nav-links a:hover,
+.bookeco-brand:hover {
+  color: var(--bookeco-gold);
+}
+
+.bookeco-search-item:hover,
+.bookeco-user-dropdown a:hover,
+.bookeco-user-dropdown button:hover {
+  background: rgba(66, 4, 9, 0.05);
+}
+
+.bookeco-search-item-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.bookeco-search-history-button,
+.bookeco-search-clear-button {
+  background: transparent;
+  border: 0;
+  color: var(--bookeco-ink);
+  cursor: pointer;
+}
+
+.bookeco-search-history-button {
+  flex: 1;
+  padding: 0;
+  text-align: left;
+}
+
+.bookeco-search-history-button strong {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+.bookeco-search-box input::placeholder {
+  color: rgba(66, 4, 9, 0.55);
+  font-family: var(--bookeco-display-font);
+  font-style: italic;
+}
+
+.bookeco-footer {
+  background: linear-gradient(180deg, #f7f0e4 0%, #fef9f0 100%);
+  border-top: 1px solid rgba(119, 90, 25, 0.14);
+  margin-top: 88px;
+  padding: 72px 0 54px;
+}
+
+.bookeco-footer-inner {
+  align-items: start;
+  display: grid;
+  gap: 32px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.9fr) minmax(220px, 0.7fr);
+}
+
+.bookeco-footer-intro,
+.bookeco-footer-column,
+.bookeco-footer-meta-block {
+  min-width: 0;
+}
+
+.bookeco-footer-brand {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-display-font);
+  font-size: clamp(2rem, 3vw, 2.7rem);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.04;
+  margin: 14px 0 16px;
+  max-width: 420px;
+}
+
+.bookeco-footer-copy {
+  color: var(--bookeco-ink-soft);
+  font-family: var(--bookeco-display-font);
+  font-size: 1.05rem;
+  font-style: italic;
+  letter-spacing: 0;
+  line-height: 1.72;
+  margin: 0;
+  max-width: 460px;
+  text-transform: none;
+}
+
+.bookeco-footer-columns {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bookeco-footer-heading {
+  color: var(--bookeco-gold);
+  display: block;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.bookeco-footer-links {
+  display: grid;
+  gap: 12px;
+}
+
+.bookeco-footer-links a,
+.bookeco-footer-note,
+.bookeco-footer-meta {
+  color: rgba(66, 4, 9, 0.72);
+  font-family: var(--bookeco-display-font);
+  font-size: 1rem;
+  font-style: italic;
+  letter-spacing: 0;
+  text-decoration: none;
+  text-transform: none;
+}
+
+.bookeco-footer-note {
+  margin: 0 0 10px;
+}
+
+.bookeco-footer-meta {
+  border-top: 1px solid rgba(119, 90, 25, 0.12);
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.78rem;
+  font-style: normal;
+  letter-spacing: 0.14em;
+  margin-top: 18px;
+  padding-top: 18px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 980px) {
+  .bookeco-footer-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .bookeco-footer-columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .bookeco-footer {
+    padding: 52px 0 34px;
+  }
+
+  .bookeco-footer-columns {
+    grid-template-columns: 1fr;
+  }
+}

@@ -152,10 +152,10 @@ const ContactPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-[#FBEAEB]">
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-indigo-600/10" />
+        <div className="absolute inset-0 bg-[#2F3C7E]/10" />
         <div className="relative max-w-7xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -168,7 +168,7 @@ const ContactPage = () => {
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
               Chúng tôi luôn sẵn sàng
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+              <span className="text-[#2F3C7E]">
                 {" "}
                 hỗ trợ bạn
               </span>
@@ -194,7 +194,7 @@ const ContactPage = () => {
               >
                 <Card className="h-full hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
                   <CardContent className="p-6 text-center">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-12 h-12 bg-[#2F3C7E] rounded-full flex items-center justify-center mx-auto mb-4">
                       <info.icon className="w-6 h-6 text-white" />
                     </div>
                     <h3 className="font-semibold text-gray-900 mb-2">
@@ -325,7 +325,7 @@ const ContactPage = () => {
                       <Button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3"
+                        className="w-full bg-[#2F3C7E] hover:opacity-90 text-white py-3"
                       >
                         {isSubmitting ? (
                           <div className="flex items-center">
@@ -466,7 +466,7 @@ const ContactPage = () => {
           </motion.div>
 
           <Card className="border-0 shadow-xl overflow-hidden">
-            <div className="h-96 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+            <div className="h-96 bg-[#FBEAEB] flex items-center justify-center">
               <div className="text-center">
                 <MapPin className="w-16 h-16 text-blue-600 mx-auto mb-4" />
                 <p className="text-gray-600">Bản đồ sẽ được tích hợp tại đây</p>

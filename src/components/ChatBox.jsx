@@ -15,6 +15,7 @@ import {
   Circle,
   Smile,
   Paperclip,
+  ChevronDown,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -29,8 +30,28 @@ import {
 } from "../redux/features/chat/chatApi";
 import { toast } from "react-hot-toast";
 import { FaPaperPlane, FaUser, FaTimes, FaComments } from "react-icons/fa";
-import { auth } from "../firebase/firebase.config";
 import ChatBookCard from "./ChatBookCard";
+import "../styles/bookeco-chat.css";
+
+const createOptimisticMessage = ({
+  senderId,
+  receiverId,
+  message,
+  senderRole = "user",
+  receiverRole = "bot",
+}) => ({
+  _id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  senderId,
+  receiverId,
+  message,
+  senderRole,
+  receiverRole,
+  isRead: true,
+  books: [],
+  actionButtons: [],
+  createdAt: new Date().toISOString(),
+  __optimistic: true,
+});
 
 // Animation variants
 const buttonVariants = {
@@ -106,25 +127,17 @@ const ChatBox = () => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const messagesEndRef = useRef(null);
+  const scrollAreaRef = useRef(null);
   const chatBoxRef = useRef(null);
   const buttonRef = useRef(null);
   const [adminId, setAdminId] = useState(null);
   const [chatMode, setChatMode] = useState("bot"); // "bot" hoặc "admin"
 
-  console.log("ChatBox render:", {
-    currentUser,
-    isOpen,
-    socket: !!socket,
-  });
-
-  // Debug logs
-  useEffect(() => {
-    console.log("Current user context:", currentUser);
-    console.log("Admin ID state:", adminId);
-  }, [currentUser, adminId]);
 
   // Lấy lịch sử chat với admin hoặc bot
   const chatTargetId = chatMode === "bot" ? "chatbot" : adminId;
@@ -138,17 +151,39 @@ const ChatBox = () => {
     refetchOnMountOrArgChange: true,
   });
 
-  // Reload chat history khi chuyển đổi giữa bot và admin
-  useEffect(() => {
-    if (isOpen && chatTargetId && currentUser?.uid) {
-      refetchChatHistory();
-    }
-  }, [chatMode, isOpen, chatTargetId, currentUser?.uid, refetchChatHistory]);
+  const getScrollViewport = () =>
+    scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]");
 
-  // Debug log cho chat history
+  const scrollToBottom = (behavior = "smooth") => {
+    const viewport = getScrollViewport();
+    if (viewport) {
+      viewport.scrollTo({
+        top: viewport.scrollHeight,
+        behavior,
+      });
+      setShowScrollToBottom(false);
+      return;
+    }
+
+    messagesEndRef.current?.scrollIntoView({ behavior });
+    setShowScrollToBottom(false);
+  };
+
   useEffect(() => {
-    console.log("Chat history data:", chatHistoryData);
+    if (Array.isArray(chatHistoryData?.data)) {
+      setMessages(chatHistoryData.data);
+    }
   }, [chatHistoryData]);
+
+  useEffect(() => {
+    if (!isOpen || !chatTargetId || !currentUser?.uid) {
+      return;
+    }
+
+    refetchChatHistory();
+  }, [isOpen, chatTargetId, currentUser?.uid, refetchChatHistory]);
+
+
 
   // Debug log cho lỗi gửi tin nhắn
   const [sendMessage, { error: sendMessageError, isLoading: isSending }] =
@@ -159,31 +194,17 @@ const ChatBox = () => {
     }
   }, [sendMessageError]);
 
-  // Lấy admin ID khi component mount
   useEffect(() => {
     const fetchAdminId = async () => {
       try {
-        if (!currentUser?.uid) {
-          console.log("No current user, skipping admin fetch");
+        if (chatMode !== "admin" || !currentUser?.uid) {
           return;
         }
 
-        const firebaseUser = auth.currentUser;
-        if (!firebaseUser) {
-          console.error("No Firebase user found");
-          return;
-        }
-
-        const token = await firebaseUser.getIdToken();
+        const token = localStorage.getItem("token");
         if (!token) {
-          console.error("No token available");
           return;
         }
-
-        console.log(
-          "Fetching admin with token:",
-          token.substring(0, 10) + "..."
-        );
 
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/users/admin`,
@@ -199,13 +220,8 @@ const ChatBox = () => {
         }
 
         const data = await response.json();
-        console.log("Admin API response:", data);
-
         if (data.data && data.data.firebaseId) {
-          console.log("Setting admin ID:", data.data.firebaseId);
           setAdminId(data.data.firebaseId);
-        } else {
-          console.error("Admin data missing firebaseId:", data.data);
         }
       } catch (error) {
         console.error("Error fetching admin ID:", error);
@@ -213,18 +229,43 @@ const ChatBox = () => {
     };
 
     fetchAdminId();
-  }, [currentUser]);
-
-  // Scroll to bottom when new messages arrive
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, [chatMode, currentUser]);
 
   useEffect(() => {
-    if (isOpen && chatHistoryData?.data) {
-      scrollToBottom();
+    if (isOpen && messages.length > 0) {
+      scrollToBottom("auto");
     }
-  }, [chatHistoryData, isOpen]);
+  }, [isOpen, chatTargetId]);
+
+  useEffect(() => {
+    if (!isOpen || messages.length === 0) {
+      return;
+    }
+
+    if (!showScrollToBottom) {
+      scrollToBottom("smooth");
+    }
+  }, [messages.length, isOpen, showScrollToBottom]);
+
+  useEffect(() => {
+    const viewport = getScrollViewport();
+    if (!viewport || !isOpen) {
+      return;
+    }
+
+    const handleScroll = () => {
+      const distanceFromBottom =
+        viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+      setShowScrollToBottom(distanceFromBottom > 160);
+    };
+
+    handleScroll();
+    viewport.addEventListener("scroll", handleScroll);
+
+    return () => {
+      viewport.removeEventListener("scroll", handleScroll);
+    };
+  }, [isOpen, messages.length, chatTargetId]);
 
   // Handle socket events
   useEffect(() => {
@@ -284,22 +325,34 @@ const ChatBox = () => {
       }
       console.log("New message received:", data);
       if (data.message) {
+        if (data.message.senderId === "chatbot") {
+          setIsThinking(false);
+        }
+
+        setMessages((prevMessages) => {
+          if (prevMessages.some((msg) => msg._id === data.message._id)) {
+            return prevMessages;
+          }
+
+          const nextMessages = [
+            ...prevMessages.filter(
+              (msg) =>
+                !(
+                  msg.__optimistic &&
+                  msg.senderId === data.message.senderId &&
+                  msg.receiverId === data.message.receiverId &&
+                  msg.message === data.message.message
+                )
+            ),
+            data.message,
+          ];
+
+          return nextMessages;
+        });
+
         // Kiểm tra xem tin nhắn có liên quan đến chat hiện tại không
         const message = data.message;
         console.log("Message books:", message.books);
-        const isRelevant =
-          (chatMode === "bot" &&
-            (message.senderId === "chatbot" ||
-              message.receiverId === "chatbot")) ||
-          (chatMode === "admin" &&
-            (message.senderId === adminId || message.receiverId === adminId));
-
-        if (isRelevant && chatTargetId) {
-          // Sử dụng setTimeout để tránh race condition khi refetch quá nhanh
-          setTimeout(() => {
-            refetchChatHistory();
-          }, 100);
-        }
         if (!isOpen) {
           setIsMinimized(true);
         }
@@ -349,17 +402,6 @@ const ChatBox = () => {
     adminId,
   ]);
 
-  // Simulate typing indicator
-  useEffect(() => {
-    if (isOpen) {
-      const timer = setTimeout(() => {
-        setIsTyping(true);
-        setTimeout(() => setIsTyping(false), 3000);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
-
   const sendMessageToBot = async (messageText) => {
     const receiverId = chatMode === "bot" ? "chatbot" : adminId;
     if (!messageText.trim() || !receiverId || !currentUser?.uid) {
@@ -372,27 +414,48 @@ const ChatBox = () => {
     }
 
     try {
-      const firebaseUser = auth.currentUser;
-      if (!firebaseUser) {
-        throw new Error("No Firebase user found");
+      if (chatMode === "bot") {
+        setIsThinking(true);
       }
 
-      const token = await firebaseUser.getIdToken();
-      if (!token) {
-        throw new Error("No token available");
-      }
+      const optimisticUserMessage = createOptimisticMessage({
+        senderId: currentUser.uid,
+        receiverId,
+        message: messageText.trim(),
+        senderRole: "user",
+        receiverRole: chatMode === "bot" ? "bot" : "admin",
+      });
+
+      setMessages((prevMessages) => [...prevMessages, optimisticUserMessage]);
+      setMessage("");
+      setTimeout(() => scrollToBottom(), 0);
 
       const messageData = {
         receiverId: receiverId,
         message: messageText.trim(),
       };
 
-      console.log(
-        "Sending message with token:",
-        token.substring(0, 10) + "..."
-      );
       const result = await sendMessage(messageData).unwrap();
       console.log("Message sent successfully:", result);
+
+      if (result?.data?.userMessage || result?.data?.botMessage) {
+        setMessages((prevMessages) => {
+          const nextMessages = prevMessages.filter(
+            (msg) => msg._id !== optimisticUserMessage._id
+          );
+
+          [result.data.userMessage, result.data.botMessage]
+            .filter(Boolean)
+            .forEach((newMessage) => {
+              if (!nextMessages.some((msg) => msg._id === newMessage._id)) {
+                nextMessages.push(newMessage);
+              }
+            });
+
+          return nextMessages;
+        });
+      }
+      setIsThinking(false);
 
       // Kiểm tra xem có redirectTo trong response không
       if (result?.data?.botMessage?.redirectTo) {
@@ -402,13 +465,14 @@ const ChatBox = () => {
           window.location.href = redirectPath;
         }, 1500); // Delay 1.5s để user đọc thông báo
       }
-
-      setMessage("");
-      if (chatTargetId) {
-        await refetchChatHistory();
-      }
+      setTimeout(() => scrollToBottom(), 0);
     } catch (error) {
+      setIsThinking(false);
+      setMessages((prevMessages) =>
+        prevMessages.filter((msg) => msg._id !== undefined && !msg.__optimistic)
+      );
       console.error("Error sending message:", error);
+      toast.error("Gui tin nhan that bai. Vui long thu lai.");
     }
   };
 
@@ -429,7 +493,6 @@ const ChatBox = () => {
     if (chatTargetId && currentUser?.uid) {
       try {
         await refetchChatHistory();
-        console.log("Chat history refetched after opening");
       } catch (error) {
         console.error("Error refetching chat history:", error);
       }
@@ -454,7 +517,7 @@ const ChatBox = () => {
       {/* Chat Button */}
       <motion.div
         ref={buttonRef}
-        className="fixed bottom-6 right-6 z-50"
+        className="bookeco-chat-launcher fixed bottom-6 right-6 z-50"
         variants={buttonVariants}
         initial="hidden"
         animate="visible"
@@ -463,7 +526,7 @@ const ChatBox = () => {
       >
         <Button
           onClick={handleOpen}
-          className="relative w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-2xl border-4 border-white"
+          className="relative w-14 h-14 rounded-full bg-[#2F3C7E] hover:opacity-90 shadow-2xl border-4 border-white"
         >
           <FaComments className="w-6 h-6 text-white" />
           {unreadCount > 0 && (
@@ -483,14 +546,14 @@ const ChatBox = () => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className={`fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden backdrop-blur-sm ${
+            className={`bookeco-chat-shell fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden backdrop-blur-sm ${
               isMaximized
                 ? "inset-4 w-auto h-auto"
                 : "bottom-24 right-6 w-96 h-[500px]"
             } ${isMinimized ? "h-16" : ""}`}
           >
             {/* Header */}
-            <div className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <div className="bookeco-chat-header p-4 bg-[#2F3C7E] text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Avatar className="w-8 h-8 border-2 border-white/30">
@@ -500,13 +563,13 @@ const ChatBox = () => {
                   </Avatar>
                   <div>
                     <h3 className="font-semibold text-sm">
-                      {chatMode === "bot" ? "Chatbot AI" : "Admin Support"}
+                      {chatMode === "bot" ? "BookEco Assistant" : "BookEco Support"}
                     </h3>
                     <div className="flex items-center gap-1 text-xs text-blue-100">
                       <Circle className="w-2 h-2 fill-green-400 text-green-400" />
                       {chatMode === "bot"
                         ? "Luôn sẵn sàng"
-                        : isTyping
+                        : isThinking
                         ? "Đang nhập..."
                         : "Trực tuyến"}
                     </div>
@@ -566,12 +629,14 @@ const ChatBox = () => {
             {!isMinimized && (
               <>
                 {/* Messages */}
-                <ScrollArea
-                  className={`bg-gray-50/50 ${
-                    isMaximized ? "h-[calc(100%-140px)]" : "h-80"
-                  }`}
-                >
-                  <div className="p-4 space-y-4">
+                <div className="relative">
+                  <ScrollArea
+                    ref={scrollAreaRef}
+                    className={`bookeco-chat-scroll bg-gray-50/50 ${
+                      isMaximized ? "h-[calc(100%-140px)]" : "h-80"
+                    }`}
+                  >
+                    <div className="p-4 space-y-4">
                     {isLoadingHistory ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -587,21 +652,20 @@ const ChatBox = () => {
                           Thử lại
                         </Button>
                       </div>
-                    ) : !chatHistoryData?.data ||
-                      chatHistoryData.data.length === 0 ? (
+                    ) : messages.length === 0 ? (
                       <motion.div
                         variants={welcomeVariants}
                         initial="hidden"
                         animate="visible"
                         className="text-center py-8"
                       >
-                        <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                        <div className="bookeco-chat-welcome-icon w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
                           <MessageCircle className="w-8 h-8 text-blue-500" />
                         </div>
-                        <h4 className="font-medium text-gray-900 mb-2">
+                        <h4 className="bookeco-chat-welcome-title font-medium text-gray-900 mb-2">
                           Chào mừng!
                         </h4>
-                        <p className="text-sm text-gray-500">
+                        <p className="bookeco-chat-welcome-copy text-sm text-gray-500">
                           {chatMode === "bot"
                             ? "Hãy gửi tin nhắn để bắt đầu trò chuyện với chatbot AI. Tôi có thể giúp bạn tìm sách, tư vấn sách phù hợp, hoặc trả lời các câu hỏi!"
                             : "Hãy gửi tin nhắn để bắt đầu cuộc trò chuyện với admin"}
@@ -609,7 +673,7 @@ const ChatBox = () => {
                       </motion.div>
                     ) : (
                       <AnimatePresence mode="popLayout">
-                        {chatHistoryData.data.map((msg) => {
+                        {messages.map((msg) => {
                           console.log("Rendering message:", {
                             id: msg._id,
                             hasBooks: !!msg.books,
@@ -634,7 +698,7 @@ const ChatBox = () => {
                                   layout
                                   className={`max-w-[85%] rounded-2xl px-4 py-2 shadow-sm ${
                                     msg.senderRole === "user"
-                                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                                      ? "bg-[#2F3C7E] text-white"
                                       : "bg-white text-gray-900 border border-gray-200"
                                   }`}
                                 >
@@ -720,7 +784,7 @@ const ChatBox = () => {
                       </AnimatePresence>
                     )}
 
-                    {isTyping && (
+                    {isThinking && chatMode === "bot" && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -728,26 +792,40 @@ const ChatBox = () => {
                         className="flex justify-start"
                       >
                         <div className="bg-white rounded-2xl px-4 py-2 border border-gray-200">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                          <div className="mb-2 text-xs text-gray-500">
+                            BookEco dang suy nghi...
+                          </div>
+                          <div className="bookeco-chat-thinking-dots flex space-x-1">
+                            <div className="bookeco-chat-thinking-dot w-2 h-2 bg-gray-400 rounded-full"></div>
                             <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0.1s" }}
+                              className="bookeco-chat-thinking-dot w-2 h-2 bg-gray-400 rounded-full"
+                              style={{ animationDelay: "0.16s" }}
                             ></div>
                             <div
-                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                              style={{ animationDelay: "0.2s" }}
+                              className="bookeco-chat-thinking-dot w-2 h-2 bg-gray-400 rounded-full"
+                              style={{ animationDelay: "0.32s" }}
                             ></div>
                           </div>
                         </div>
                       </motion.div>
                     )}
-                    <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </ScrollArea>
+                  {showScrollToBottom && (
+                    <Button
+                      type="button"
+                      onClick={() => scrollToBottom("smooth")}
+                      className="absolute bottom-4 right-4 z-10 h-10 w-10 rounded-full bg-[#2F3C7E] p-0 text-white shadow-lg hover:opacity-90"
+                      aria-label="Scroll to latest messages"
+                    >
+                      <ChevronDown className="h-5 w-5" />
+                    </Button>
+                  )}
+                </div>
 
                 {/* Input */}
-                <div className="p-4 bg-white border-t border-gray-200/50">
+                <div className="bookeco-chat-inputbar p-4 bg-white border-t border-gray-200/50">
                   <form
                     onSubmit={handleSendMessage}
                     className="flex items-end space-x-2"
@@ -757,7 +835,7 @@ const ChatBox = () => {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="Nhập tin nhắn..."
-                        className="pr-16 rounded-2xl border-gray-200 focus:border-blue-300 focus:ring-blue-200"
+                        className="bookeco-chat-input pr-16 rounded-2xl border-gray-200 focus:border-blue-300 focus:ring-blue-200"
                         disabled={isSending}
                       />
                       <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-1">
@@ -782,7 +860,7 @@ const ChatBox = () => {
                     <Button
                       type="submit"
                       disabled={!message.trim() || isSending}
-                      className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 p-0"
+                      className="w-10 h-10 rounded-full bg-[#2F3C7E] hover:opacity-90 p-0"
                     >
                       <Send className="w-4 h-4" />
                     </Button>
@@ -798,3 +876,8 @@ const ChatBox = () => {
 };
 
 export default ChatBox;
+
+
+
+
+

@@ -20,144 +20,204 @@ import { cartApi } from "../redux/features/cart/cartApi";
 import { recommendationsv2Api } from "../redux/features/recommendationv2/recommendationsv2Api";
 
 const AuthContext = createContext(null);
+const API_URL = `${import.meta.env.VITE_API_URL}/api`;
+
+const normalizeUser = (firebaseUser, profileUser, roleOverride) => ({
+  email: profileUser?.email || firebaseUser?.email || null,
+  uid: firebaseUser?.uid || profileUser?.firebaseId || profileUser?._id || null,
+  photoURL:
+    profileUser?.photoURL ||
+    firebaseUser?.photoURL ||
+    "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+  displayName:
+    profileUser?.fullName ||
+    profileUser?.displayName ||
+    firebaseUser?.displayName ||
+    null,
+  fullName: profileUser?.fullName || firebaseUser?.displayName || null,
+  role: roleOverride || profileUser?.role || "user",
+  address: profileUser?.address || null,
+  phone: profileUser?.phone || null,
+});
 
 export const AuthProvider = ({ children }) => {
-  // Initialize currentUser from localStorage on mount
-  const getInitialUser = () => {
+  const [currentUser, setCurrentUser] = useState(() => {
     try {
       const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        return parsedUser;
-      }
+      return storedUser ? JSON.parse(storedUser) : null;
     } catch (error) {
       console.error("Error parsing initial user:", error);
+      return null;
     }
-    return null;
-  };
-
-  const [currentUser, setCurrentUser] = useState(getInitialUser());
-  const [loading, setLoading] = useState(true); // Keep loading state for onAuthStateChanged
-
-  //THÊM STATE TOKEN
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  });
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
 
   const dispatch = useDispatch();
 
-  //LUÔN THEO DÕI TOKEN TRONG localStorage
-  useEffect(() => {
-    const checkToken = () => {
-      const storedToken = localStorage.getItem("token");
-      if (storedToken && storedToken !== token) {
-        setToken(storedToken);
+  const persistSession = (sessionToken, user) => {
+    localStorage.setItem("token", sessionToken);
+    localStorage.setItem("user", JSON.stringify(user));
+    setToken(sessionToken);
+    setCurrentUser(user);
+    dispatch(
+      setCredentials({
+        user,
+        token: sessionToken,
+      })
+    );
+    window.dispatchEvent(new CustomEvent("tokenSet"));
+  };
+
+  const clearSession = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setToken(null);
+    setCurrentUser(null);
+    dispatch(logoutAction());
+  };
+
+  const fetchUserProfile = async (sessionToken) => {
+    if (!sessionToken) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/users/profile`, {
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        return null;
       }
+
+      const data = await response.json();
+      return data.user || null;
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      return null;
+    }
+  };
+
+  const requestBackendSession = async (firebaseUser, overrides = {}) => {
+    const idToken = await firebaseUser.getIdToken();
+    const loginPayload = {
+      idToken,
+      email: firebaseUser.email,
+      uid: firebaseUser.uid,
+      displayName: overrides.fullName || firebaseUser.displayName,
+      photoURL: firebaseUser.photoURL,
     };
 
-    // Check ngay lập tức
-    checkToken();
+    const loginResponse = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify(loginPayload),
+    });
 
-    // Listen for storage changes (khi login từ component khác)
-    const handleStorageChange = (e) => {
-      if (e.key === "token") {
-        checkToken();
+    if (loginResponse.ok) {
+      const loginData = await loginResponse.json();
+      if (loginData?.token) {
+        return loginData;
       }
-    };
+    }
 
-    window.addEventListener("storage", handleStorageChange);
+    if (loginResponse.status !== 401 && loginResponse.status !== 404) {
+      const errorData = await loginResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || "Backend authentication failed");
+    }
 
-    // Custom event để listen khi token được set từ cùng window
-    const handleTokenSet = () => {
-      checkToken();
-    };
+    const registerResponse = await fetch(`${API_URL}/users/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({
+        idToken: firebaseUser.uid,
+        email: firebaseUser.email,
+        fullName:
+          overrides.fullName || firebaseUser.displayName || firebaseUser.email?.split("@")[0],
+      }),
+    });
 
-    window.addEventListener("tokenSet", handleTokenSet);
+    if (!registerResponse.ok) {
+      const errorData = await registerResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || "Backend registration failed");
+    }
 
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("tokenSet", handleTokenSet);
-    };
-  }, [token]);
+    const registerData = await registerResponse.json();
+    if (registerData?.token) {
+      return registerData;
+    }
 
-  // ĐỒNG BỘ CONTEXT → REDUX (CHỖ FIX BUG)
+    const retryResponse = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify(loginPayload),
+    });
+
+    if (!retryResponse.ok) {
+      const errorData = await retryResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || "Backend authentication retry failed");
+    }
+
+    return retryResponse.json();
+  };
+
+  const completeFirebaseAuth = async (firebaseUser, overrides = {}) => {
+    const backendSession = await requestBackendSession(firebaseUser, overrides);
+    if (!backendSession?.token) {
+      throw new Error("No backend token returned");
+    }
+
+    const profileUser = await fetchUserProfile(backendSession.token);
+    const cleanUser = normalizeUser(firebaseUser, profileUser, backendSession.role);
+    persistSession(backendSession.token, cleanUser);
+    return cleanUser;
+  };
+
   useEffect(() => {
     if (currentUser && token) {
-      console.log("Syncing context to Redux:", {
-        uid: currentUser.uid,
-        hasToken: !!token,
-      });
       dispatch(
         setCredentials({
           user: currentUser,
-          token: token,
+          token,
         })
       );
-      console.log("Redux state updated with user:", currentUser.uid);
-    } else if (!currentUser && !token) {
-      // Chỉ clear Redux auth state nếu không có cả currentUser và token
-      // (không clear nếu chỉ thiếu một trong hai)
-      console.log("No currentUser and token, clearing Redux auth state");
-      dispatch(logoutAction());
     }
   }, [currentUser, token, dispatch]);
 
-  // Đăng ký với email/password
   const registerUser = async (email, password) => {
-    try {
-      const result = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      return result;
-    } catch (error) {
-      console.error("Registration error:", error);
-      throw error;
-    }
+    return createUserWithEmailAndPassword(auth, email, password);
   };
 
-  // Đăng nhập với email/password
   const loginUser = async (email, password) => {
-    try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      return result;
-    } catch (error) {
-      console.error("Login error:", error);
-      throw error;
-    }
+    return signInWithEmailAndPassword(auth, email, password);
   };
 
-  // Đăng nhập với Google
   const signInWithGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      return result;
-    } catch (error) {
-      console.error("Google sign-in error:", error);
-      throw error;
-    }
+    const provider = new GoogleAuthProvider();
+    return signInWithPopup(auth, provider);
   };
 
-  // Đăng xuất
   const logout = async () => {
     try {
-      console.log("Logout initiated, clearing all state...");
-      // Clear cart và reset RTK Query cache trước khi logout
       dispatch(clearCart());
       dispatch(cartApi.util.resetApiState());
-      // Clear Redux auth state
-      dispatch(logoutAction());
-      // Clear Firebase auth
+      dispatch(recommendationsv2Api.util.resetApiState());
+      clearSession();
       await signOut(auth);
-      // Clear localStorage
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      // Clear local state
-      setCurrentUser(null);
-      setToken(null);
-      // Dispatch event để các component biết đã logout
       window.dispatchEvent(new CustomEvent("userLoggedOut"));
-      console.log("Logout completed, all state cleared");
     } catch (error) {
       console.error("Logout error:", error);
       throw error;
@@ -171,183 +231,63 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  // Fetch user profile from backend
-  const fetchUserProfile = async (token) => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/users/profile`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.user) {
-          const profileUser = {
-            email: data.user.email,
-            uid: data.user.firebaseId || data.user._id,
-            photoURL: data.user.photoURL || null,
-            displayName: data.user.fullName || data.user.displayName || null,
-            role: data.user.role || "user",
-            fullName: data.user.fullName || null,
-            address: data.user.address || null,
-          };
-          localStorage.setItem("user", JSON.stringify(profileUser));
-          return profileUser;
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-    }
-    return null;
-  };
-
-  // Lắng nghe sự thay đổi trạng thái đăng nhập
   useEffect(() => {
     let previousUserId = null;
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const currentUserId = user.uid;
-        const currentToken = localStorage.getItem("token");
+      setLoading(true);
 
-        // Nếu user đổi (khác user trước đó), clear cart và reset RTK Query cache
-        if (previousUserId && previousUserId !== currentUserId) {
-          console.log("User changed, clearing cart and resetting cache...");
-          dispatch(clearCart());
-          // Reset RTK Query cache để đảm bảo không dùng cache của user cũ
-          dispatch(cartApi.util.resetApiState());
-          // Invalidate recommendations để refetch với user mới
-          dispatch(
-            recommendationsv2Api.util.invalidateTags([
-              "CollaborativeRecommendations",
-              "ContextualRecommendations",
-            ])
-          );
-          // Dispatch event để các component khác biết user đã đổi
-          window.dispatchEvent(
-            new CustomEvent("userChanged", {
-              detail: { userId: currentUserId },
-            })
-          );
-        }
+      try {
+        if (user) {
+          const currentUserId = user.uid;
 
-        previousUserId = currentUserId;
-
-        // Kiểm tra và fetch user profile từ backend nếu cần
-        const storedUser = localStorage.getItem("user");
-        let userToSet = null;
-
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          // Luôn fetch lại profile từ backend nếu có token để đảm bảo data mới nhất
-          if (currentToken) {
-            const profileUser = await fetchUserProfile(currentToken);
-            if (profileUser) {
-              userToSet = profileUser;
-            } else {
-              // Nếu fetch thất bại, dùng data từ localStorage nhưng merge với Firebase user
-              userToSet = {
-                email: parsedUser.email || user.email,
-                uid: parsedUser.uid || user.uid,
-                photoURL:
-                  parsedUser.photoURL ||
-                  user.photoURL ||
-                  "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-                displayName:
-                  parsedUser.displayName ||
-                  parsedUser.fullName ||
-                  user.displayName ||
-                  null,
-                fullName: parsedUser.fullName || parsedUser.displayName || null,
-                role: parsedUser.role || "user",
-                address: parsedUser.address || null,
-              };
-              localStorage.setItem("user", JSON.stringify(userToSet));
-            }
-          } else {
-            // Không có token, dùng data từ localStorage
-            userToSet = {
-              ...parsedUser,
-              displayName:
-                parsedUser.displayName ||
-                parsedUser.fullName ||
-                user.displayName ||
-                null,
-              fullName: parsedUser.fullName || parsedUser.displayName || null,
-            };
+          if (previousUserId && previousUserId !== currentUserId) {
+            dispatch(clearCart());
+            dispatch(cartApi.util.resetApiState());
+            dispatch(
+              recommendationsv2Api.util.invalidateTags([
+                "CollaborativeRecommendations",
+                "ContextualRecommendations",
+              ])
+            );
+            window.dispatchEvent(
+              new CustomEvent("userChanged", {
+                detail: { userId: currentUserId },
+              })
+            );
           }
-        } else {
-          // Chưa có user trong localStorage, fetch từ backend
-          if (currentToken) {
-            const profileUser = await fetchUserProfile(currentToken);
-            if (profileUser) {
-              userToSet = profileUser;
-            } else {
-              // Fallback về Firebase user
-              userToSet = {
-                email: user.email,
-                uid: user.uid,
-                photoURL:
-                  user.photoURL ||
-                  "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-                displayName: user.displayName || null,
-                fullName: user.displayName || null,
-                role: "user",
-              };
-              localStorage.setItem("user", JSON.stringify(userToSet));
-            }
-          } else {
-            // Không có token, tạo từ Firebase
-            userToSet = {
-              email: user.email,
-              uid: user.uid,
-              photoURL:
-                user.photoURL ||
-                "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-              displayName: user.displayName || null,
-              fullName: user.displayName || null,
-              role: "user",
-            };
-            localStorage.setItem("user", JSON.stringify(userToSet));
+
+          previousUserId = currentUserId;
+
+          const storedToken = localStorage.getItem("token");
+          let profileUser = await fetchUserProfile(storedToken);
+          let sessionToken = storedToken;
+
+          if (!profileUser) {
+            const backendSession = await requestBackendSession(user);
+            sessionToken = backendSession.token;
+            profileUser = await fetchUserProfile(sessionToken);
           }
-        }
 
-        setCurrentUser(userToSet);
+          const normalizedUser = normalizeUser(user, profileUser);
+          persistSession(sessionToken, normalizedUser);
 
-        // Đợi một chút để đảm bảo state đã được cập nhật trước khi dispatch event
-        setTimeout(() => {
-          // Dispatch event để refetch cart và recommendations khi user login
           window.dispatchEvent(
             new CustomEvent("userLoggedIn", {
               detail: { userId: currentUserId },
             })
           );
-        }, 100);
-      } else {
-        // User logout - clear cart và reset RTK Query cache
-        if (previousUserId) {
-          console.log(
-            "User logged out (onAuthStateChanged), clearing cart and resetting cache..."
-          );
-          dispatch(clearCart());
-          // Reset RTK Query cache
-          dispatch(cartApi.util.resetApiState());
-          // Clear Redux auth state
-          dispatch(logoutAction());
-          // Clear token
-          setToken(null);
+        } else {
           previousUserId = null;
+          clearSession();
+          window.dispatchEvent(new CustomEvent("userLoggedOut"));
         }
-        setCurrentUser(null);
-        // Dispatch event để các component biết đã logout
-        window.dispatchEvent(new CustomEvent("userLoggedOut"));
+      } catch (error) {
+        console.error("Auth state sync error:", error);
+        clearSession();
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -355,12 +295,15 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
+    loading,
+    token,
     registerUser,
     loginUser,
     signInWithGoogle,
     logout,
     updateUserProfile,
     setCurrentUser,
+    completeFirebaseAuth,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

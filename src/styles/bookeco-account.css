@@ -1,0 +1,9 @@
+﻿
+
+.bookeco-account-shell .bookeco-account-container,
+.bookeco-account-shell .bookeco-empty-state,
+.bookeco-commerce-shell .bookeco-commerce-container,
+.bookeco-commerce-shell .bookeco-empty-state {
+  font-family: var(--bookeco-ui-font);
+}
+

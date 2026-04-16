@@ -1,30 +1,25 @@
-/* eslint-disable react-hooks/rules-of-hooks */
-/* eslint-disable no-unused-vars */
-"use client";
-
-import { useState, useMemo, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  LineChart,
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
 } from "recharts";
-import { TrendingUp, TrendingDown, Calendar } from "lucide-react";
+import { Calendar, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const RevenueChart = ({ data, dateRange, onDateRangeChange }) => {
+export default function RevenueChart({ data, dateRange, onDateRangeChange }) {
   const [chartType, setChartType] = useState("line");
   const [timeRange, setTimeRange] = useState("6months");
   const [localDateRange, setLocalDateRange] = useState({
@@ -32,318 +27,233 @@ const RevenueChart = ({ data, dateRange, onDateRangeChange }) => {
     endDate: dateRange?.endDate || "",
   });
 
-  // Process and filter data based on time range and date range
+  useEffect(() => {
+    setLocalDateRange({
+      startDate: dateRange?.startDate || "",
+      endDate: dateRange?.endDate || "",
+    });
+  }, [dateRange]);
+
   const processedData = useMemo(() => {
-    if (!data || data.length === 0) return [];
+    if (!Array.isArray(data) || data.length === 0) {
+      return [];
+    }
 
     let filtered = [...data];
 
-    // Filter by date range if provided
     if (localDateRange.startDate || localDateRange.endDate) {
       filtered = filtered.filter((item) => {
-        if (!item.month) return false;
-        const itemDate = new Date(item.month);
-        const startDate = localDateRange.startDate ? new Date(localDateRange.startDate) : null;
-        const endDate = localDateRange.endDate ? new Date(localDateRange.endDate) : null;
-        
-        if (startDate && itemDate < startDate) return false;
-        if (endDate) {
-          // Set endDate to end of day for inclusive comparison
-          const endOfDay = new Date(endDate);
-          endOfDay.setHours(23, 59, 59, 999);
-          if (itemDate > endOfDay) return false;
+        if (!item.month) {
+          return false;
         }
+
+        const itemDate = new Date(item.month);
+        const startDate = localDateRange.startDate
+          ? new Date(localDateRange.startDate)
+          : null;
+        const endDate = localDateRange.endDate
+          ? new Date(localDateRange.endDate)
+          : null;
+
+        if (startDate && itemDate < startDate) {
+          return false;
+        }
+
+        if (endDate) {
+          const inclusiveEnd = new Date(endDate);
+          inclusiveEnd.setHours(23, 59, 59, 999);
+          if (itemDate > inclusiveEnd) {
+            return false;
+          }
+        }
+
         return true;
       });
     } else {
-      // If no date range, use time range
-      const months =
-        timeRange === "3months" ? 3 : timeRange === "6months" ? 6 : 12;
+      const months = timeRange === "3months" ? 3 : timeRange === "6months" ? 6 : 12;
       filtered = filtered.slice(-months);
     }
 
     return filtered;
-  }, [data, timeRange, localDateRange]);
+  }, [data, localDateRange, timeRange]);
 
-  // Calculate trends and statistics
-  const stats = useMemo(() => {
-    if (!processedData || processedData.length < 2) return null;
-
-    const current = processedData[processedData.length - 1];
-    const previous = processedData[processedData.length - 2];
-
-    const revenueChange =
-      ((current.totalSales - previous.totalSales) / previous.totalSales) * 100;
-    const ordersChange =
-      ((current.totalOrders - previous.totalOrders) / previous.totalOrders) *
-      100;
-    const avgOrderChange =
-      ((current.averageOrderValue - previous.averageOrderValue) /
-        previous.averageOrderValue) *
-      100;
-
-    return {
-      revenueChange,
-      ordersChange,
-      avgOrderChange,
-      totalRevenue: processedData.reduce(
-        (sum, item) => sum + item.totalSales,
-        0
-      ),
-      totalOrders: processedData.reduce(
-        (sum, item) => sum + item.totalOrders,
-        0
-      ),
-    };
-  }, [processedData]);
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat("vi-VN", {
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
       notation: "compact",
       maximumFractionDigits: 1,
-    }).format(value);
-  };
+    }).format(value || 0);
 
   const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white/95 backdrop-blur-sm p-4 shadow-xl rounded-xl border border-gray-200"
-        >
-          <p className="font-semibold text-gray-800 mb-2">{label}</p>
-          {payload.map((entry, index) => (
-            <div key={index} className="flex items-center gap-2 mb-1">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="text-sm text-gray-600">
-                {entry.name}:{" "}
-                {entry.dataKey === "totalSales" ||
-                entry.dataKey === "averageOrderValue"
-                  ? formatCurrency(entry.value)
-                  : entry.value.toLocaleString()}
-              </span>
-            </div>
-          ))}
-        </motion.div>
-      );
+    if (!active || !payload || !payload.length) {
+      return null;
     }
-    return null;
-  };
 
-  if (!data || data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-4">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-          <TrendingUp className="w-8 h-8" />
-        </div>
-        <div className="text-center">
-          <p className="font-medium">Không có dữ liệu</p>
-          <p className="text-sm">
-            Dữ liệu doanh thu sẽ xuất hiện ở đây khi có dữ liệu
-          </p>
-        </div>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white/95 backdrop-blur-sm p-4 shadow-xl rounded-xl border border-gray-200"
+      >
+        <p className="font-semibold text-gray-800 mb-2">{label}</p>
+        {payload.map((entry, index) => (
+          <div key={`${entry.dataKey}-${index}`} className="flex items-center gap-2 mb-1">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+            <span className="text-sm text-gray-600">
+              {entry.name}:{" "}
+              {entry.dataKey === "totalSales" || entry.dataKey === "averageOrderValue"
+                ? formatCurrency(entry.value)
+                : Number(entry.value || 0).toLocaleString("vi-VN")}
+            </span>
+          </div>
+        ))}
+      </motion.div>
     );
-  }
-
-  const renderChart = () => {
-    const commonProps = {
-      data: processedData,
-      margin: { top: 20, right: 30, left: 20, bottom: 10 },
-    };
-
-    switch (chartType) {
-      case "area":
-        return (
-          <AreaChart {...commonProps}>
-            <defs>
-              <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1} />
-              </linearGradient>
-              <linearGradient id="ordersGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#82ca9d" stopOpacity={0.1} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="monthName" stroke="#666" tick={{ fontSize: 12 }} />
-            <YAxis
-              yAxisId="left"
-              stroke="#8884d8"
-              tickFormatter={formatCurrency}
-              tick={{ fontSize: 12 }}
-            />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              stroke="#82ca9d"
-              tick={{ fontSize: 12 }}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Area
-              yAxisId="left"
-              type="monotone"
-              dataKey="totalSales"
-              name="Revenue"
-              stroke="#8884d8"
-              fillOpacity={1}
-              fill="url(#revenueGradient)"
-            />
-            <Area
-              yAxisId="right"
-              type="monotone"
-              dataKey="totalOrders"
-              name="Orders"
-              stroke="#82ca9d"
-              fillOpacity={1}
-              fill="url(#ordersGradient)"
-            />
-          </AreaChart>
-        );
-
-      case "bar":
-        return (
-          <BarChart {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="monthName" stroke="#666" tick={{ fontSize: 12 }} />
-            <YAxis
-              yAxisId="left"
-              stroke="#8884d8"
-              tickFormatter={formatCurrency}
-              tick={{ fontSize: 12 }}
-            />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              stroke="#82ca9d"
-              tick={{ fontSize: 12 }}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Bar
-              yAxisId="left"
-              dataKey="totalSales"
-              name="Revenue"
-              fill="#8884d8"
-              radius={[4, 4, 0, 0]}
-            />
-            <Bar
-              yAxisId="right"
-              dataKey="totalOrders"
-              name="Orders"
-              fill="#82ca9d"
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
-        );
-
-      default:
-        return (
-          <LineChart {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="monthName" stroke="#666" tick={{ fontSize: 12 }} />
-            <YAxis
-              yAxisId="left"
-              stroke="#8884d8"
-              tickFormatter={formatCurrency}
-              tick={{ fontSize: 12 }}
-            />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              stroke="#82ca9d"
-              tick={{ fontSize: 12 }}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Line
-              yAxisId="left"
-              type="monotone"
-              dataKey="totalSales"
-              name="Revenue"
-              stroke="#8884d8"
-              strokeWidth={3}
-              dot={{ r: 5, fill: "#8884d8" }}
-              activeDot={{ r: 7, fill: "#8884d8" }}
-            />
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey="totalOrders"
-              name="Orders"
-              stroke="#82ca9d"
-              strokeWidth={3}
-              dot={{ r: 5, fill: "#82ca9d" }}
-              activeDot={{ r: 7, fill: "#82ca9d" }}
-            />
-            <Line
-              yAxisId="left"
-              type="monotone"
-              dataKey="averageOrderValue"
-              name="Avg Order"
-              stroke="#ffc658"
-              strokeWidth={3}
-              dot={{ r: 5, fill: "#ffc658" }}
-              activeDot={{ r: 7, fill: "#ffc658" }}
-            />
-          </LineChart>
-        );
-    }
   };
-
-  // Sync local date range with parent
-  useEffect(() => {
-    if (dateRange) {
-      setLocalDateRange({
-        startDate: dateRange.startDate || "",
-        endDate: dateRange.endDate || "",
-      });
-    }
-  }, [dateRange]);
 
   const handleDateChange = (field, value) => {
-    const newRange = {
+    const nextRange = {
       ...localDateRange,
       [field]: value,
     };
-    setLocalDateRange(newRange);
-    if (onDateRangeChange) {
-      onDateRangeChange(newRange);
-    }
+    setLocalDateRange(nextRange);
+    onDateRangeChange?.(nextRange);
   };
 
   const clearDateFilter = () => {
     const clearedRange = { startDate: "", endDate: "" };
     setLocalDateRange(clearedRange);
-    if (onDateRangeChange) {
-      onDateRangeChange(clearedRange);
-    }
+    onDateRangeChange?.(clearedRange);
   };
+
+  const chartCommonProps = {
+    data: processedData,
+    margin: { top: 20, right: 30, left: 20, bottom: 10 },
+  };
+
+  const renderChart = () => {
+    if (chartType === "area") {
+      return (
+        <AreaChart {...chartCommonProps}>
+          <defs>
+            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#5a0a11" stopOpacity={0.82} />
+              <stop offset="95%" stopColor="#5a0a11" stopOpacity={0.08} />
+            </linearGradient>
+            <linearGradient id="ordersGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#775a19" stopOpacity={0.72} />
+              <stop offset="95%" stopColor="#775a19" stopOpacity={0.08} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#eadfce" />
+          <XAxis dataKey="monthName" stroke="#6b5550" tick={{ fontSize: 12 }} />
+          <YAxis
+            yAxisId="left"
+            stroke="#5a0a11"
+            tickFormatter={formatCurrency}
+            tick={{ fontSize: 12 }}
+          />
+          <YAxis yAxisId="right" orientation="right" stroke="#775a19" tick={{ fontSize: 12 }} />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          <Area yAxisId="left" type="monotone" dataKey="totalSales" name="Revenue" stroke="#5a0a11" fill="url(#revenueGradient)" />
+          <Area yAxisId="right" type="monotone" dataKey="totalOrders" name="Orders" stroke="#775a19" fill="url(#ordersGradient)" />
+        </AreaChart>
+      );
+    }
+
+    if (chartType === "bar") {
+      return (
+        <BarChart {...chartCommonProps}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#eadfce" />
+          <XAxis dataKey="monthName" stroke="#6b5550" tick={{ fontSize: 12 }} />
+          <YAxis
+            yAxisId="left"
+            stroke="#5a0a11"
+            tickFormatter={formatCurrency}
+            tick={{ fontSize: 12 }}
+          />
+          <YAxis yAxisId="right" orientation="right" stroke="#775a19" tick={{ fontSize: 12 }} />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          <Bar yAxisId="left" dataKey="totalSales" name="Revenue" fill="#5a0a11" radius={[0, 0, 0, 0]} />
+          <Bar yAxisId="right" dataKey="totalOrders" name="Orders" fill="#775a19" radius={[0, 0, 0, 0]} />
+        </BarChart>
+      );
+    }
+
+    return (
+      <LineChart {...chartCommonProps}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#eadfce" />
+        <XAxis dataKey="monthName" stroke="#6b5550" tick={{ fontSize: 12 }} />
+        <YAxis
+          yAxisId="left"
+          stroke="#5a0a11"
+          tickFormatter={formatCurrency}
+          tick={{ fontSize: 12 }}
+        />
+        <YAxis yAxisId="right" orientation="right" stroke="#775a19" tick={{ fontSize: 12 }} />
+        <Tooltip content={<CustomTooltip />} />
+        <Legend />
+        <Line
+          yAxisId="left"
+          type="monotone"
+          dataKey="totalSales"
+          name="Revenue"
+          stroke="#5a0a11"
+          strokeWidth={3}
+          dot={{ r: 4, fill: "#5a0a11" }}
+          activeDot={{ r: 6, fill: "#5a0a11" }}
+        />
+        <Line
+          yAxisId="right"
+          type="monotone"
+          dataKey="totalOrders"
+          name="Orders"
+          stroke="#775a19"
+          strokeWidth={3}
+          dot={{ r: 4, fill: "#775a19" }}
+          activeDot={{ r: 6, fill: "#775a19" }}
+        />
+        <Line
+          yAxisId="left"
+          type="monotone"
+          dataKey="averageOrderValue"
+          name="Avg Order"
+          stroke="#b48c3b"
+          strokeWidth={2.5}
+          dot={{ r: 4, fill: "#b48c3b" }}
+          activeDot={{ r: 6, fill: "#b48c3b" }}
+        />
+      </LineChart>
+    );
+  };
+
+  if (!processedData.length) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-4 py-16">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+          <TrendingUp className="w-8 h-8" />
+        </div>
+        <div className="text-center">
+          <p className="font-medium text-gray-700">Không có dữ liệu doanh thu</p>
+          <p className="text-sm">Dữ liệu sẽ hiển thị tại đây khi hệ thống có bản ghi hợp lệ.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header with Controls */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Phân tích doanh thu
-            </h3>
-            <p className="text-sm text-gray-500">
-              Theo dõi hiệu suất kinh doanh theo thời gian
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900">Phân tích doanh thu</h3>
+            <p className="text-sm text-gray-500">Theo dõi doanh thu, đơn hàng và giá trị đơn trung bình theo thời gian.</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {/* Time Range Selector */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               {[
                 { key: "3months", label: "3M" },
@@ -362,12 +272,11 @@ const RevenueChart = ({ data, dateRange, onDateRangeChange }) => {
               ))}
             </div>
 
-            {/* Chart Type Selector */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               {[
                 { key: "line", label: "Line" },
-                { key: "area", label: "Area" },
-                { key: "bar", label: "Bar" },
+                { key: "area", label: "Vùng" },
+                { key: "bar", label: "Cột" },
               ].map((type) => (
                 <Button
                   key={type.key}
@@ -383,54 +292,40 @@ const RevenueChart = ({ data, dateRange, onDateRangeChange }) => {
           </div>
         </div>
 
-        {/* Date Range Filter */}
         <div className="flex flex-col sm:flex-row gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">
-              Lọc theo ngày:
-            </span>
+            <span className="text-sm font-medium text-gray-700">Lọc theo ngày:</span>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 flex-1">
             <div className="flex-1">
-              <Label
-                htmlFor="startDate"
-                className="text-xs text-gray-600 mb-1 block"
-              >
+              <Label htmlFor="startDate" className="text-xs text-gray-600 mb-1 block">
                 Từ ngày
               </Label>
               <Input
                 id="startDate"
                 type="date"
                 value={localDateRange.startDate}
-                onChange={(e) => handleDateChange("startDate", e.target.value)}
+                onChange={(event) => handleDateChange("startDate", event.target.value)}
                 className="h-9"
               />
             </div>
             <div className="flex-1">
-              <Label
-                htmlFor="endDate"
-                className="text-xs text-gray-600 mb-1 block"
-              >
+              <Label htmlFor="endDate" className="text-xs text-gray-600 mb-1 block">
                 Đến ngày
               </Label>
               <Input
                 id="endDate"
                 type="date"
                 value={localDateRange.endDate}
-                onChange={(e) => handleDateChange("endDate", e.target.value)}
+                onChange={(event) => handleDateChange("endDate", event.target.value)}
                 className="h-9"
                 min={localDateRange.startDate}
               />
             </div>
             {(localDateRange.startDate || localDateRange.endDate) && (
               <div className="flex items-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearDateFilter}
-                  className="h-9"
-                >
+                <Button variant="outline" size="sm" onClick={clearDateFilter} className="h-9">
                   Xóa bộ lọc
                 </Button>
               </div>
@@ -439,92 +334,9 @@ const RevenueChart = ({ data, dateRange, onDateRangeChange }) => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      {/* {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-medium">Tổng doanh thu</p>
-                <p className="text-2xl font-bold text-blue-900">{formatCurrency(stats.totalRevenue)}</p>
-              </div>
-              <div className="flex items-center gap-1">
-                {stats.revenueChange >= 0 ? (
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                ) : (
-                  <TrendingDown className="w-4 h-4 text-red-500" />
-                )}
-                <Badge variant={stats.revenueChange >= 0 ? "default" : "destructive"} className="text-xs">
-                  {stats.revenueChange >= 0 ? "+" : ""}
-                  {stats.revenueChange.toFixed(1)}%
-                </Badge>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-4 border border-green-200"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600 font-medium">Tổng đơn hàng</p>
-                <p className="text-2xl font-bold text-green-900">{stats.totalOrders.toLocaleString()}</p>
-              </div>
-              <div className="flex items-center gap-1">
-                {stats.ordersChange >= 0 ? (
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                ) : (
-                  <TrendingDown className="w-4 h-4 text-red-500" />
-                )}
-                <Badge variant={stats.ordersChange >= 0 ? "default" : "destructive"} className="text-xs">
-                  {stats.ordersChange >= 0 ? "+" : ""}
-                  {stats.ordersChange.toFixed(1)}%
-                </Badge>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                  <p className="text-sm text-purple-600 font-medium">Giá trung bình đơn hàng</p>
-                <p className="text-2xl font-bold text-purple-900">
-                  {formatCurrency(stats.totalRevenue / stats.totalOrders)}
-                </p>
-              </div>
-              <div className="flex items-center gap-1">
-                {stats.avgOrderChange >= 0 ? (
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                ) : (
-                  <TrendingDown className="w-4 h-4 text-red-500" />
-                )}
-                <Badge variant={stats.avgOrderChange >= 0 ? "default" : "destructive"} className="text-xs">
-                  {stats.avgOrderChange >= 0 ? "+" : ""}
-                  {stats.avgOrderChange.toFixed(1)}%
-                </Badge>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )} */}
-
-      {/* Chart Container */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.3 }}
         className="bg-white rounded-xl border border-gray-200 shadow-sm"
       >
         <div className="p-4">
@@ -535,6 +347,4 @@ const RevenueChart = ({ data, dateRange, onDateRangeChange }) => {
       </motion.div>
     </div>
   );
-};
-
-export default RevenueChart;
+}

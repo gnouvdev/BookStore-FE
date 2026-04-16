@@ -1,0 +1,147 @@
+﻿.bookeco-related-shell {
+  margin-top: 64px;
+}
+
+.bookeco-related-head {
+  align-items: flex-end;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 34px;
+}
+
+.bookeco-related-head h2 {
+  font-family: var(--bookeco-display-font);
+  font-size: clamp(2rem, 3vw, 2.5rem);
+  font-style: italic;
+  font-weight: 400;
+  margin: 10px 0 0;
+}
+
+.bookeco-related-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.bookeco-related-actions button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgba(119, 90, 25, 0.22);
+  cursor: pointer;
+  display: inline-flex;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.bookeco-related-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.bookeco-related-grid {
+  display: grid;
+  gap: 30px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.bookeco-related-card {
+  color: inherit;
+  text-decoration: none;
+}
+
+.bookeco-related-cover-wrap {
+  border: 1px solid rgba(119, 90, 25, 0.2);
+  box-shadow: 0 18px 40px rgba(28, 18, 12, 0.08);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.bookeco-related-cover {
+  aspect-ratio: 2 / 3;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.bookeco-related-card h3 {
+  font-family: var(--bookeco-display-font);
+  font-size: 1.2rem;
+  font-style: italic;
+  font-weight: 400;
+  margin: 0 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookeco-related-card p,
+.bookeco-related-card strong {
+  font-family: var(--bookeco-ui-font);
+}
+
+.bookeco-related-card p {
+  color: rgba(66, 4, 9, 0.7);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.bookeco-related-card strong {
+  color: var(--bookeco-ink);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 1080px) {
+  .bookeco-related-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .bookeco-related-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bookeco-related-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.bookeco-related-card { transition: transform 160ms ease, color 160ms ease; }
+.bookeco-related-card:hover { transform: translateY(-4px); }
+
+.bookeco-related-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bookeco-related-card-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.bookeco-related-add {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgba(119, 90, 25, 0.22);
+  color: var(--bookeco-ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.7rem;
+  font-weight: 700;
+  justify-content: center;
+  letter-spacing: 0.16em;
+  min-height: 42px;
+  text-transform: uppercase;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.bookeco-related-add:hover {
+  background: var(--bookeco-ink);
+  color: #fff4df;
+}

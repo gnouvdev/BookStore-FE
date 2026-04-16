@@ -1,0 +1,541 @@
+﻿.bookeco-commerce-shell,
+.bookeco-account-shell {
+  background: linear-gradient(180deg, #f8f2e8 0%, #fef9f0 100%);
+  min-height: 100vh;
+  padding: 40px 0 96px;
+}
+
+.bookeco-commerce-container,
+.bookeco-account-container {
+  margin: 0 auto;
+  width: min(1240px, calc(100% - 48px));
+}
+
+.bookeco-section-kicker {
+  color: var(--bookeco-gold);
+  display: inline-block;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.bookeco-single-backlink {
+  align-items: center;
+  color: var(--bookeco-gold);
+  display: inline-flex;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 8px;
+  letter-spacing: 0.14em;
+  margin-bottom: 26px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.bookeco-commerce-header,
+.bookeco-account-header {
+  align-items: flex-end;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.bookeco-commerce-header h1,
+.bookeco-account-header h1,
+.bookeco-empty-state h1,
+.bookeco-summary-card h2,
+.bookeco-account-card h2 {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-display-font);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+}
+
+.bookeco-commerce-header h1,
+.bookeco-account-header h1,
+.bookeco-empty-state h1 {
+  font-size: clamp(2.8rem, 5vw, 4.4rem);
+  line-height: 0.95;
+  margin: 0 0 10px;
+}
+
+.bookeco-commerce-header p,
+.bookeco-account-header p,
+.bookeco-empty-state p,
+.bookeco-summary-note,
+.bookeco-account-note,
+.bookeco-cart-copy p,
+.bookeco-checkout-copy,
+.bookeco-checkout-card p,
+.bookeco-field-grid label span,
+.bookeco-summary-table span,
+.bookeco-summary-table strong,
+.bookeco-payment-item span,
+.bookeco-giftwrap-copy p,
+.bookeco-accessory-card p {
+  color: var(--bookeco-ink-soft);
+  font-family: var(--bookeco-ui-font);
+  line-height: 1.65;
+}
+
+.bookeco-commerce-steps {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  margin: 0 0 34px;
+}
+
+.bookeco-commerce-steps span {
+  color: rgba(84, 66, 65, 0.6);
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.bookeco-commerce-steps span.is-active {
+  color: var(--bookeco-ink);
+}
+
+.bookeco-commerce-steps span + span::before {
+  background: rgba(119, 90, 25, 0.18);
+  content: "";
+  display: inline-block;
+  height: 1px;
+  margin: 0 18px 4px 0;
+  vertical-align: middle;
+  width: 48px;
+}
+
+.bookeco-commerce-layout,
+.bookeco-account-layout {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
+}
+
+.bookeco-cart-list,
+.bookeco-checkout-form,
+.bookeco-account-form,
+.bookeco-account-sidebar {
+  display: grid;
+  gap: 18px;
+}
+
+.bookeco-cart-card,
+.bookeco-summary-card,
+.bookeco-account-card,
+.bookeco-empty-state,
+.bookeco-checkout-card,
+.bookeco-giftwrap-card,
+.bookeco-accessory-card {
+  background: rgba(255, 252, 247, 0.9);
+  border: 1px solid var(--bookeco-line);
+  box-shadow: var(--bookeco-shadow);
+}
+
+.bookeco-cart-card {
+  align-items: center;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: 132px minmax(0, 1fr) auto;
+  padding: 20px;
+}
+
+.bookeco-cart-cover-link {
+  display: block;
+}
+
+.bookeco-cart-cover {
+  aspect-ratio: 0.72;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.bookeco-cart-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.bookeco-cart-category,
+.bookeco-checkout-label,
+.bookeco-summary-card small,
+.bookeco-accessory-card small {
+  color: var(--bookeco-gold);
+  display: inline-block;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.bookeco-cart-title,
+.bookeco-summary-card h2,
+.bookeco-checkout-card h2,
+.bookeco-giftwrap-copy strong,
+.bookeco-accessory-card strong {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-display-font);
+  font-weight: 400;
+}
+
+.bookeco-cart-title {
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  line-height: 1.06;
+  text-decoration: none;
+}
+
+.bookeco-cart-price,
+.bookeco-summary-total strong {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-display-font);
+  font-size: 1.4rem;
+  font-weight: 400;
+}
+
+.bookeco-cart-actions {
+  align-items: flex-end;
+  display: grid;
+  gap: 16px;
+  justify-items: end;
+}
+
+.bookeco-quantity-picker {
+  align-items: center;
+  border: 1px solid rgba(119, 90, 25, 0.2);
+  display: inline-flex;
+}
+
+.bookeco-quantity-picker button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--bookeco-ink);
+  cursor: pointer;
+  display: inline-flex;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.bookeco-quantity-picker span {
+  align-items: center;
+  border-left: 1px solid rgba(119, 90, 25, 0.2);
+  border-right: 1px solid rgba(119, 90, 25, 0.2);
+  color: var(--bookeco-ink);
+  display: inline-flex;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.92rem;
+  font-weight: 700;
+  height: 42px;
+  justify-content: center;
+  min-width: 54px;
+}
+
+.bookeco-inline-remove,
+.bookeco-ghost-action,
+.bookeco-inline-link {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgba(119, 90, 25, 0.18);
+  color: var(--bookeco-ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.74rem;
+  font-weight: 700;
+  gap: 8px;
+  letter-spacing: 0.16em;
+  min-height: 44px;
+  padding: 0 16px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.bookeco-giftwrap-card,
+.bookeco-accessory-card,
+.bookeco-checkout-card,
+.bookeco-summary-card,
+.bookeco-account-card {
+  padding: 24px;
+}
+
+.bookeco-giftwrap-card {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+}
+
+.bookeco-giftwrap-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.bookeco-giftwrap-copy strong {
+  font-size: 1.5rem;
+}
+
+.bookeco-accessory-list {
+  display: grid;
+  gap: 14px;
+}
+
+.bookeco-accessory-card {
+  display: grid;
+  gap: 8px;
+}
+
+.bookeco-summary-card {
+  background: linear-gradient(180deg, rgba(255, 214, 165, 0.4) 0%, rgba(123, 223, 219, 0.34) 100%);
+  position: sticky;
+  top: 104px;
+}
+
+.bookeco-summary-card h2 {
+  font-size: 2rem;
+  margin: 10px 0 18px;
+}
+
+.bookeco-summary-table {
+  display: grid;
+  gap: 14px;
+}
+
+.bookeco-summary-table div,
+.bookeco-summary-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.bookeco-summary-total {
+  border-top: 1px solid rgba(119, 90, 25, 0.18);
+  margin-top: 18px;
+  padding-top: 20px;
+}
+
+.bookeco-summary-total span {
+  color: var(--bookeco-ink-soft);
+  display: block;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.bookeco-summary-buttons {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.bookeco-summary-buttons button,
+.bookeco-summary-buttons a,
+.bookeco-primary-link {
+  align-items: center;
+  background: var(--bookeco-ink);
+  border: 1px solid var(--bookeco-ink);
+  color: #fff4df;
+  display: inline-flex;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 10px;
+  justify-content: center;
+  letter-spacing: 0.18em;
+  min-height: 56px;
+  padding: 0 20px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.bookeco-summary-buttons a:not(.is-primary),
+.bookeco-summary-buttons button:not(.is-primary),
+.bookeco-primary-link.is-secondary {
+  background: transparent;
+  color: var(--bookeco-ink);
+}
+
+.bookeco-full-width-link {
+  width: 100%;
+}
+
+.bookeco-empty-state {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
+  margin: 0 auto;
+  min-height: 340px;
+  padding: 40px;
+  text-align: center;
+  width: min(880px, calc(100% - 48px));
+}
+
+.bookeco-field-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bookeco-field-grid label {
+  display: grid;
+  gap: 8px;
+}
+
+.bookeco-field-grid label.is-wide {
+  grid-column: 1 / -1;
+}
+
+.bookeco-field-grid label span {
+  color: var(--bookeco-ink);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.bookeco-field-grid input,
+.bookeco-voucher-row input,
+.bookeco-field-grid textarea {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(119, 90, 25, 0.18);
+  color: var(--bookeco-ink);
+  min-height: 50px;
+  padding: 0 16px;
+}
+
+.bookeco-field-grid textarea {
+  min-height: 120px;
+  padding-top: 14px;
+  resize: vertical;
+}
+
+.bookeco-checkout-form {
+  align-content: start;
+}
+
+.bookeco-checkout-card h2 {
+  font-size: 1.7rem;
+  margin: 8px 0 18px;
+}
+
+.bookeco-payment-list {
+  display: grid;
+  gap: 12px;
+}
+
+.bookeco-payment-item {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(119, 90, 25, 0.18);
+  color: var(--bookeco-ink);
+  cursor: pointer;
+  padding: 16px 18px;
+  text-align: left;
+}
+
+.bookeco-payment-item.is-selected {
+  border-color: var(--bookeco-ink);
+  box-shadow: 0 0 0 1px rgba(66, 4, 9, 0.2) inset;
+}
+
+.bookeco-payment-item strong {
+  display: block;
+  font-family: var(--bookeco-display-font);
+  font-size: 1.32rem;
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+
+.bookeco-voucher-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.bookeco-single-spinner {
+  animation: bookeco-spin 0.8s linear infinite;
+  border: 3px solid rgba(80, 97, 76, 0.18);
+  border-radius: 50%;
+  border-top-color: #50614c;
+  height: 48px;
+  width: 48px;
+}
+
+@keyframes bookeco-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1024px) {
+  .bookeco-commerce-container,
+  .bookeco-account-container {
+    width: min(100%, calc(100% - 28px));
+  }
+
+  .bookeco-commerce-layout,
+  .bookeco-account-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .bookeco-summary-card {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .bookeco-commerce-header,
+  .bookeco-account-header,
+  .bookeco-voucher-row,
+  .bookeco-giftwrap-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bookeco-commerce-steps {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .bookeco-commerce-steps span + span::before {
+    display: none;
+  }
+
+  .bookeco-cart-card,
+  .bookeco-field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bookeco-cart-actions {
+    justify-items: start;
+  }
+}
+.bookeco-commerce-header h1,
+.bookeco-giftwrap-copy strong,
+.bookeco-accessory-card strong,
+.bookeco-summary-card h2,
+.bookeco-checkout-card h2,
+.bookeco-cart-title {
+  font-style: italic;
+}
+
+.bookeco-commerce-header p,
+.bookeco-giftwrap-copy p,
+.bookeco-accessory-card p,
+.bookeco-summary-note,
+.bookeco-checkout-card p {
+  font-family: var(--bookeco-display-font);
+  font-style: italic;
+}

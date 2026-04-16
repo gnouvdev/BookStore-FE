@@ -6,7 +6,6 @@ import Register from "../components/Register";
 import CartPage from "../pages/books/CartPage";
 import Checkout from "../pages/books/Checkout";
 import SingleBook from "../pages/books/SingleBook";
-import GenreBooks from "../components/GenreBooks";
 import GridBooks from "../components/GridBooks";
 import PrivateRoute from "./PrivateRoute";
 import AdminRoute from "./AdminRoute";

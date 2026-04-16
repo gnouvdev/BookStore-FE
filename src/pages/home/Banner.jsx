@@ -214,7 +214,7 @@ const BannerWithParticles = () => {
 
                 {/* Dynamic Gradient Overlay */}
                 <motion.div
-                  className={`absolute inset-0 bg-gradient-to-r ${banner.overlay}`}
+                  className="absolute inset-0 bg-[#2F3C7E]/40"
                   initial={{ opacity: 0.7 }}
                   animate={{ opacity: 0.8 }}
                   transition={{ duration: 0.5 }}
@@ -266,7 +266,7 @@ const BannerWithParticles = () => {
                             className="mb-4"
                           >
                             <RiSparklingFill className="w-8 h-8 text-primary mb-4" />
-                            <h1 className="text-4xl md:text-6xl font-bold font-primary leading-tight bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                            <h1 className="text-4xl md:text-6xl font-bold font-primary leading-tight text-white">
                               {banner.title}
                             </h1>
                           </motion.div>
@@ -302,7 +302,7 @@ const BannerWithParticles = () => {
                               </motion.span>
                             </span>
                             <motion.div
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                              className="absolute inset-0 bg-white/20"
                               initial={{ x: "-100%" }}
                               whileHover={{ x: "100%" }}
                               transition={{ duration: 0.6 }}
@@ -357,7 +357,7 @@ const BannerWithParticles = () => {
         {/* Animated Progress Bar */}
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
           <motion.div
-            className="h-full bg-gradient-to-r from-primary to-secondary"
+            className="h-full bg-[#2F3C7E]"
             initial={{ width: "0%" }}
             animate={{ width: "100%" }}
             transition={{

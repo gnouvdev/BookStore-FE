@@ -1,153 +1,103 @@
-/* eslint-disable no-unused-vars */
-"use client";
-import { motion } from "framer-motion";
-import { useGetRecommendationsQuery } from "../redux/features/recommendations/recommendationsApi";
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FaStar, FaEye } from "react-icons/fa";
-import BookCard from "./../pages/books/BookCart";
-import { t } from "i18next";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import Swal from "sweetalert2";
+import { useAddToCartMutation } from "../redux/features/cart/cartApi";
+import { useGetRecommendationsQuery } from "../redux/features/recommendations/recommendationsApi";
+import "../styles/bookeco-related.css";
+
+const formatPrice = (value) =>
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+
+const RelatedCard = ({ book, t }) => {
+  const [addToCart, { isLoading }] = useAddToCartMutation();
+
+  const handleAddToCart = async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    try {
+      await addToCart({ bookId: book._id, quantity: 1 }).unwrap();
+      Swal.fire({
+        icon: "success",
+        title: t("bookeco.cart.added_title", { defaultValue: "Đã thêm vào giỏ hàng" }),
+        text: `"${book.title}" ${t("bookeco.cart.added_copy", { defaultValue: "đã sẵn sàng trong giỏ của bạn." })}`,
+        timer: 1400,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: t("bookeco.cart.add_error", { defaultValue: "Không thể thêm vào giỏ" }),
+        text: error?.data?.message || t("filter.pleaseTryAgainLater", { defaultValue: "Vui lòng thử lại sau." }),
+      });
+    }
+  };
+
+  return (
+    <article className="bookeco-related-card">
+      <Link to={`/books/${book._id}`} className="bookeco-related-card-link">
+        <div className="bookeco-related-cover-wrap">
+          <img src={book.coverImage} alt={book.title} className="bookeco-related-cover" />
+        </div>
+        <h3 title={book.title}>{book.title}</h3>
+        <p>{book.author?.name || t("books.author", { defaultValue: "Tác giả" })}</p>
+        <strong>{formatPrice(book.price?.newPrice || book.price?.oldPrice || 0)}</strong>
+      </Link>
+      <button type="button" className="bookeco-related-add" onClick={handleAddToCart} disabled={isLoading}>
+        {isLoading ? t("bookeco.cart.adding", { defaultValue: "Đang thêm..." }) : t("books.addToCart", { defaultValue: "Thêm vào giỏ hàng" })}
+      </button>
+    </article>
+  );
+};
 
 const BookRecommendations = ({ bookId }) => {
-  const { data, isLoading, isError, error } = useGetRecommendationsQuery(
-    bookId,
-    {
-      skip: !bookId,
-    }
-  );
+  const { t } = useTranslation();
+  const { data, isLoading, isError } = useGetRecommendationsQuery(bookId, { skip: !bookId });
+  const [startIndex, setStartIndex] = useState(0);
 
   const recommendations = data?.recommendations || [];
-  console.log("Recommendations data:", data);
-  console.log("Recommendations:", recommendations);
-  console.log("First book:", recommendations[0]);
+  const visibleBooks = recommendations.slice(startIndex, startIndex + 5);
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8">
-          <div className="flex items-center justify-center">
-            <motion.div
-              className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
-              animate={{ rotate: 360 }}
-              transition={{
-                duration: 1,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "linear",
-              }}
-            />
-            <span className="ml-4 text-lg font-medium text-gray-700">
-              Loading recommendations...
-            </span>
-          </div>
+      <section className="bookeco-related-shell">
+        <div className="bookeco-single-loading">
+          <div className="bookeco-single-spinner" />
+          <p>{t("bookeco.related.loading", { defaultValue: "Đang tìm sách liên quan..." })}</p>
         </div>
-      </div>
+      </section>
     );
   }
 
-  if (isError) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
-          <div className="text-red-600 text-lg font-medium mb-2">
-            Oops! Something went wrong
-          </div>
-          <div className="text-red-500">
-            {error?.data?.message || "Failed to load recommendations"}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!recommendations.length) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="bg-gray-50 rounded-2xl p-8 text-center">
-          <FaEye className="text-4xl text-gray-400 mx-auto mb-4" />
-          <div className="text-gray-600 text-lg font-medium">
-            {t(`common.No recommendations available`)}
-          </div>
-          <div className="text-gray-500 mt-2">
-            {t(`common.Check back later for personalized book suggestions`)}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (isError || !recommendations.length) return null;
 
   return (
-    <motion.div
-      className="container mx-auto p-6 bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-2xl shadow-lg mt-8"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      {/* Header */}
-      <motion.div
-        className="flex items-center gap-4 mb-8"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-          <FaStar className="text-white text-xl" />
-        </div>
+    <section className="bookeco-related-shell">
+      <div className="bookeco-related-head">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">
-            {t(`common.Recommended Books`)}
-          </h2>
-          <p className="text-gray-600 mt-1">
-            {t(`common.Books you might love based on your interests`)}
-          </p>
+          <span className="bookeco-kicker">{t("bookeco.related.label", { defaultValue: "Gợi ý tương đồng" })}</span>
+          <h2>{t("bookeco.related.title", { defaultValue: "Những cuốn sách có thể bạn sẽ muốn xem tiếp" })}</h2>
         </div>
-      </motion.div>
 
-      {/* Books Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {recommendations.map((book, index) => (
-          <motion.div
-            key={book._id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ y: -5 }}
-            className="group"
-          >
-            <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-              <BookCard
-                book={{
-                  _id: book._id,
-                  title: book.title,
-                  description: book.description,
-                  coverImage: book.coverImage,
-                  price: {
-                    newPrice: book.price?.newPrice || 0,
-                    oldPrice: book.price?.oldPrice || 0,
-                  },
-                  rating: Number(book.rating) || 0,
-                  totalRatings: Number(book.totalRatings) || 0,
-                }}
-              />
-            </div>
-          </motion.div>
-        ))}
+        <div className="bookeco-related-actions">
+          <button type="button" onClick={() => setStartIndex((value) => Math.max(0, value - 1))} disabled={startIndex === 0}>
+            <ChevronLeft size={16} />
+          </button>
+          <button type="button" onClick={() => setStartIndex((value) => (value + 5 < recommendations.length ? value + 1 : value))} disabled={startIndex + 5 >= recommendations.length}>
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
 
-      {/* View More */}
-      <motion.div
-        className="text-center mt-8"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-      >
-        <Link
-          to="/product"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-300 shadow-lg hover:shadow-xl"
-        >
-          <FaEye />
-          {t(`common.Explore More Books`)}
-        </Link>
-      </motion.div>
-    </motion.div>
+      <div className="bookeco-related-grid">
+        {visibleBooks.map((book) => <RelatedCard key={book._id} book={book} t={t} />)}
+      </div>
+    </section>
   );
 };
 

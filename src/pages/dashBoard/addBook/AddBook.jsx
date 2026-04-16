@@ -1,1081 +1,321 @@
-/* eslint-disable no-unused-vars */
-"use client";
-
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import {
-  FaBook,
-  FaUser,
-  FaImage,
-  FaTag,
-  FaDollarSign,
-  FaLanguage,
-  FaChartLine,
-  FaCheck,
-  FaSpinner,
-  FaPlus,
-  FaCloudUploadAlt,
-} from "react-icons/fa";
-import { RiPriceTag3Line } from "react-icons/ri";
-import { useAddBookMutation } from "../../../redux/features/books/booksApi";
-import { useGetCategoriesQuery } from "../../../redux/features/categories/categoriesApi";
-import Swal from "sweetalert2";
-import toast from "react-hot-toast";
-import { uploadToCloudinary } from "../../../utils/uploadService";
-import axios from "axios";
 import AsyncSelect from "react-select/async";
 import debounce from "lodash/debounce";
-import baseUrl from "./../../../utils/baseURL";
+import axios from "axios";
+import Swal from "sweetalert2";
+import toast from "react-hot-toast";
+import { BookOpen, ImagePlus, Save, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import gsap from "gsap";
+import { useAddBookMutation } from "../../../redux/features/books/booksApi";
+import { useGetCategoriesQuery } from "../../../redux/features/categories/categoriesApi";
+import { uploadToCloudinary } from "../../../utils/uploadService";
+import baseUrl from "../../../utils/baseURL";
 
-const EnhancedAddBook = () => {
+const selectStyles = {
+  control: (base) => ({
+    ...base,
+    background: "rgba(255, 253, 248, 0.86)",
+    border: "1px solid rgba(66, 4, 9, 0.14)",
+    borderRadius: 0,
+    boxShadow: "none",
+    minHeight: 48,
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: "rgba(66, 4, 9, 0.34)",
+    fontStyle: "italic",
+    fontFamily: '"Noto Serif", serif',
+  }),
+  menu: (base) => ({
+    ...base,
+    borderRadius: 0,
+    overflow: "hidden",
+  }),
+};
+
+export default function AddBook() {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [coverImage, setCoverImage] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
+  const [selectedAuthor, setSelectedAuthor] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-
-  const formRef = useRef(null);
-  const stepsRef = useRef([]);
-
+  const [language, setLanguage] = useState("Tiếng Việt");
   const {
     register,
     handleSubmit,
-    formState: { errors },
     reset,
-    watch,
-    setValue,
+    formState: { errors },
   } = useForm();
-
   const [addBook, { isLoading }] = useAddBookMutation();
-  const {
-    data: categoriesData,
-    isError: isCategoriesError,
-    error: categoriesError,
-  } = useGetCategoriesQuery(undefined, {
-    skip: !isAuthenticated,
-  });
+  const { data: categoriesData = [] } = useGetCategoriesQuery();
 
-  const [coverImage, setCoverImage] = useState("");
-  const [selectedAuthor, setSelectedAuthor] = useState(null);
-  const [tags, setTags] = useState("");
-  const [language, setLanguage] = useState("Tiếng Anh");
-  const [imagePreview, setImagePreview] = useState("");
-
-  // Watch form values for validation
-  const watchedFields = watch();
-
-  // Enhanced animations
   useEffect(() => {
-    if (formRef.current) {
-      gsap.fromTo(
-        formRef.current,
-        { y: 50, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
-      );
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/admin");
     }
-
-    stepsRef.current.forEach((step, index) => {
-      if (step) {
-        gsap.fromTo(
-          step,
-          { x: -30, opacity: 0 },
-          {
-            x: 0,
-            opacity: 1,
-            duration: 0.6,
-            delay: index * 0.1,
-            ease: "power2.out",
-          }
-        );
-      }
-    });
-  }, []);
-
-  // Check authentication on component mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/admin");
-        return;
-      }
-
-      try {
-        const response = await axios.get(`${baseUrl}/users/verify-token`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.data.valid && response.data.user.role === "admin") {
-          setIsAuthenticated(true);
-        } else {
-          throw new Error("Not authorized");
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        if (error.response?.status === 404) {
-          console.error(
-            "Verify token endpoint not found. Please check the API URL."
-          );
-        }
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/admin");
-      }
-    };
-
-    checkAuth();
   }, [navigate]);
 
-  // Handle authentication errors
-  if (isCategoriesError) {
-    if (categoriesError?.status === 401 || categoriesError?.status === 403) {
-      Swal.fire({
-        title: "Session Expired",
-        text: "Your session has expired. Please log in again.",
-        icon: "error",
-        confirmButtonText: "Go to Login",
-        background: "#fff",
-        customClass: {
-          popup: "rounded-2xl",
-          confirmButton: "bg-blue-500 hover:bg-blue-600 rounded-xl px-6 py-2",
-        },
-      }).then(() => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/admin");
-      });
-      return null;
-    }
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-4"
-        >
-          <div className="text-6xl mb-4">😞</div>
-          <h2 className="text-2xl font-bold text-red-600 mb-2">
-            Lỗi tải danh mục
-          </h2>
-          <p className="text-gray-600">
-            {categoriesError.data?.message || "Lỗi tải danh mục"}
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
+  const categories = useMemo(
+    () =>
+      categoriesData.map((category) => ({
+        value: category._id,
+        label: category.name,
+      })),
+    [categoriesData]
+  );
 
-  if (!isAuthenticated) return null;
-
-  const categories =
-    categoriesData?.map((category) => ({
-      value: category._id,
-      label: category.name,
-    })) || [];
-
-  const debouncedLoadOptions = debounce(async (inputValue) => {
-    if (!inputValue) return [];
-
-    try {
-      const response = await axios.get(
-        `${baseUrl}/authors/search?name=${inputValue}`
-      );
-
-      if (response.data && Array.isArray(response.data)) {
-        return response.data.map((author) => ({
-          value: author._id,
-          label: author.name,
-        }));
-      }
-      console.error("Invalid authors data format:", response.data);
-      return [];
-    } catch (error) {
-      console.error("Error loading author options:", error);
-      toast.error(error.response?.data?.message || "Failed to load authors");
-      return [];
-    }
-  }, 300);
-
-  const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select a valid image file");
+  const loadAuthorOptions = debounce(async (inputValue, callback) => {
+    if (!inputValue) {
+      callback([]);
       return;
     }
+    try {
+      const response = await axios.get(`${baseUrl}/authors/search?name=${inputValue}`);
+      const options = Array.isArray(response.data)
+        ? response.data.map((author) => ({ value: author._id, label: author.name }))
+        : [];
+      callback(options);
+    } catch {
+      callback([]);
+    }
+  }, 250);
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image size should be less than 5MB");
+  const handleImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn đúng file ảnh");
       return;
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
-
     try {
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => setImagePreview(e.target.result);
-      reader.readAsDataURL(file);
-
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + 10;
-        });
-      }, 200);
-
-      const url = await uploadToCloudinary(file);
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      if (url) {
-        setCoverImage(url);
-        toast.success("Image uploaded successfully!", {
-          icon: "🎉",
-          style: {
-            borderRadius: "12px",
-            background: "#10B981",
-            color: "#fff",
-          },
-        });
-      } else {
-        toast.error("Failed to upload image.");
+      const preview = URL.createObjectURL(file);
+      setImagePreview(preview);
+      const uploadedUrl = await uploadToCloudinary(file);
+      if (uploadedUrl) {
+        setCoverImage(uploadedUrl);
+        toast.success("Ảnh bìa đã được tải lên");
       }
-    } catch (error) {
-      console.error("Image upload failed:", error);
-      toast.error("An error occurred while uploading the image.");
+    } catch {
+      toast.error("Không thể tải ảnh bìa lên lúc này");
     } finally {
       setIsUploading(false);
-      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
-  const handleTagsChange = (event) => {
-    setTags(event.target.value);
-  };
-
-  const handleLanguageChange = (event) => {
-    setLanguage(event.target.value);
-  };
-
-  const validateStep = (step) => {
-    switch (step) {
-      case 1:
-        return (
-          watchedFields.title && selectedAuthor && watchedFields.description
-        );
-      case 2:
-        return Boolean(watchedFields.category);
-      case 3:
-        return watchedFields.newPrice && watchedFields.quantity;
-      default:
-        return true;
-    }
-  };
-
-  const nextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep((prev) => Math.min(prev + 1, 4));
-    } else {
-      let errorMessage = "Please fill in all required fields:";
-      if (currentStep === 1) {
-        if (!watchedFields.title) errorMessage += "\n- Title";
-        if (!selectedAuthor) errorMessage += "\n- Author";
-        if (!watchedFields.description) errorMessage += "\n- Description";
-      } else if (currentStep === 2) {
-        if (!watchedFields.category) errorMessage += "\n- Category";
-      } else if (currentStep === 3) {
-        if (!watchedFields.newPrice) errorMessage += "\n- Sale Price";
-        if (!watchedFields.quantity) errorMessage += "\n- Quantity";
-      }
-      toast.error(errorMessage);
-    }
-  };
-
-  const prevStep = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
-  };
-
-  const onSubmit = async (data) => {
-    if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
-      toast.error("Please fill in all required fields before submitting");
+  const onSubmit = async (values) => {
+    if (!selectedAuthor) {
+      toast.error("Vui lòng chọn tác giả");
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error("Authentication required. Please log in again.");
-      navigate("/admin");
+    if (!coverImage) {
+      toast.error("Vui lòng tải ảnh bìa trước khi lưu");
       return;
     }
 
-    const newBookData = {
-      ...data,
-      coverImage: coverImage,
-      author: selectedAuthor ? selectedAuthor.value : null,
-      category: data.category,
-      publish: data.publish,
-      tags: tags
+    const payload = {
+      title: values.title,
+      description: values.description,
+      author: selectedAuthor.value,
+      category: values.category,
+      publish: values.publish,
+      language,
+      coverImage,
+      quantity: Number(values.quantity),
+      trending: Boolean(values.trending),
+      tags: (values.tags || "")
         .split(",")
         .map((tag) => tag.trim())
-        .filter((tag) => tag !== ""),
-      language: language,
+        .filter(Boolean),
       price: {
-        oldPrice: Number.parseFloat(data.oldPrice) || 0,
-        newPrice: Number.parseFloat(data.newPrice),
+        oldPrice: Number(values.oldPrice) || 0,
+        newPrice: Number(values.newPrice),
       },
     };
 
-    console.log("Submitting book data:", newBookData);
-    console.log("Using token:", token);
-
     try {
-      console.log("Calling addBook mutation...");
-      const result = await addBook(newBookData).unwrap();
-      console.log("Mutation result:", result);
-
-      if (result) {
-        Swal.fire({
-          title: "🎉 Book Added Successfully!",
-          text: "Your book has been uploaded and is now available in the store.",
-          icon: "success",
-          confirmButtonText: "Add Another Book",
-          showCancelButton: true,
-          cancelButtonText: "Go to Dashboard",
-          background: "#fff",
-          customClass: {
-            popup: "rounded-2xl",
-            confirmButton:
-              "bg-green-500 hover:bg-green-600 rounded-xl px-6 py-2",
-            cancelButton: "bg-gray-500 hover:bg-gray-600 rounded-xl px-6 py-2",
-          },
-        }).then((result) => {
-          if (result.isConfirmed) {
-            reset();
-            setCoverImage("");
-            setSelectedAuthor(null);
-            setTags("");
-            setLanguage("Tiếng Anh");
-            setImagePreview("");
-            setCurrentStep(1);
-          } else {
-            navigate("/dashboard/manage-books");
-          }
-        });
-      }
-    } catch (error) {
-      console.error("Error details:", {
-        message: error.message,
-        data: error.data,
-        status: error.status,
-        originalError: error,
+      await addBook(payload).unwrap();
+      const result = await Swal.fire({
+        title: "Đã lưu đầu sách mới",
+        text: "Bạn muốn tiếp tục thêm sách hay quay về kho sách?",
+        icon: "success",
+        showCancelButton: true,
+        confirmButtonText: "Thêm cuốn khác",
+        cancelButtonText: "Về danh mục",
       });
 
-      if (error?.status === 401 || error?.status === 403) {
-        Swal.fire({
-          title: "Session Expired",
-          text: "Your session has expired. Please log in again.",
-          icon: "error",
-          confirmButtonText: "Go to Login",
-          background: "#fff",
-          customClass: {
-            popup: "rounded-2xl",
-            confirmButton: "bg-blue-500 hover:bg-blue-600 rounded-xl px-6 py-2",
-          },
-        }).then(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          navigate("/admin");
-        });
-      } else if (error?.status === 404) {
-        toast.error(
-          "API endpoint not found. Please check the server configuration."
-        );
+      if (result.isConfirmed) {
+        reset();
+        setSelectedAuthor(null);
+        setCoverImage("");
+        setImagePreview("");
+        setLanguage("Tiếng Việt");
       } else {
-        toast.error(
-          error?.data?.message || error?.message || "Failed to add book!",
-          {
-            style: {
-              borderRadius: "12px",
-              background: "#EF4444",
-              color: "#fff",
-            },
-          }
-        );
+        navigate("/dashboard/manage-books");
       }
+    } catch (error) {
+      toast.error(error?.data?.message || "Không thể lưu đầu sách mới");
     }
   };
 
-  const steps = [
-    {
-      number: 1,
-      title: "Thông tin cơ bản",
-      description: "Tiêu đề, tác giả & mô tả",
-      icon: FaBook,
-    },
-    {
-      number: 2,
-      title: "Chi tiết",
-      description: "Danh mục, Hình ảnh & Tags",
-      icon: FaImage,
-    },
-    {
-      number: 3,
-      title: "Giá cả",
-      description: "Giá & Số lượng",
-      icon: FaDollarSign,
-    },
-    {
-      number: 4,
-      title: "Đánh giá",
-      description: "Đánh giá cuốn sách",
-      icon: FaCheck,
-    },
-  ];
-
-  const customSelectStyles = {
-    control: (provided, state) => ({
-      ...provided,
-      border: "2px solid #E5E7EB",
-      borderRadius: "12px",
-      padding: "8px",
-      boxShadow: state.isFocused ? "0 0 0 3px rgba(59, 130, 246, 0.1)" : "none",
-      borderColor: state.isFocused ? "#3B82F6" : "#E5E7EB",
-      "&:hover": {
-        borderColor: "#3B82F6",
-      },
-    }),
-    option: (provided, state) => ({
-      ...provided,
-      backgroundColor: state.isSelected
-        ? "#3B82F6"
-        : state.isFocused
-        ? "#EBF4FF"
-        : "white",
-      color: state.isSelected ? "white" : "#374151",
-      padding: "12px",
-      cursor: "pointer",
-    }),
-    placeholder: (provided) => ({
-      ...provided,
-      color: "#9CA3AF",
-    }),
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-2 h-2 bg-blue-400/20 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0, 1, 0],
-              scale: [0, 1, 0],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Number.POSITIVE_INFINITY,
-              delay: Math.random() * 2,
-              ease: "easeInOut",
-            }}
-          />
-        ))}
-      </div>
+    <div className="archivist-grid" style={{ gap: 24 }}>
+      <section className="archivist-page-header">
+        <div>
+          <p className="archivist-page-header__eyebrow">Biên mục đầu sách</p>
+          <h2>Thêm sách mới</h2>
+          <p>
+            Giao diện này được rút về đúng tinh thần mẫu: một form biên mục rõ ràng,
+            chia thành khối thông tin chính, metadata kho và ghi chú quản trị.
+          </p>
+        </div>
+        <div className="archivist-page-actions">
+          <button type="button" className="archivist-secondary-button" onClick={() => navigate("/dashboard/manage-books")}>
+            <Save size={15} />
+            Quay lại kho sách
+          </button>
+          <button type="submit" form="archivist-add-book-form" className="archivist-primary-button" disabled={isLoading}>
+            <Send size={15} />
+            {isLoading ? "Đang lưu..." : "Lưu đầu sách"}
+          </button>
+        </div>
+      </section>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-              className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg"
-            >
-              <FaPlus className="text-white text-2xl" />
-            </motion.div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Thêm sách mới
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Tạo một bản ghi sách mới cho cửa hàng của bạn
-              </p>
-            </div>
-          </div>
-        </motion.div>
+      <form id="archivist-add-book-form" onSubmit={handleSubmit(onSubmit)} className="archivist-form-grid">
+        <div className="archivist-form-stack">
+          <section className="archivist-admin-card archivist-form-section archivist-admin-card--strong">
+            <h3 className="archivist-form-section__title">
+              <BookOpen size={18} />
+              Thông tin chung
+            </h3>
+            <div className="archivist-fields">
+              <div className="archivist-field-group">
+                <label className="archivist-field-label">Tên sách</label>
+                <input className="archivist-field" placeholder="Ví dụ: Đắc Nhân Tâm" {...register("title", { required: true })} />
+                {errors.title ? <span className="archivist-table-meta">Vui lòng nhập tên sách.</span> : null}
+              </div>
 
-        {/* Progress Steps */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-6 mb-8 border border-white/20"
-        >
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => (
-              <div
-                key={step.number}
-                ref={(el) => (stepsRef.current[index] = el)}
-                className="flex items-center flex-1"
-              >
-                <div className="flex flex-col items-center">
-                  <motion.div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold transition-all duration-300 ${
-                      currentStep >= step.number
-                        ? "bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg"
-                        : "bg-gray-300"
-                    }`}
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    {currentStep > step.number ? <FaCheck /> : <step.icon />}
-                  </motion.div>
-                  <div className="text-center mt-2">
-                    <p className="text-sm font-semibold text-gray-800">
-                      {step.title}
-                    </p>
-                    <p className="text-xs text-gray-600">{step.description}</p>
-                  </div>
-                </div>
-                {index < steps.length - 1 && (
-                  <div
-                    className={`flex-1 h-1 mx-4 rounded-full transition-all duration-300 ${
-                      currentStep > step.number
-                        ? "bg-gradient-to-r from-blue-500 to-purple-600"
-                        : "bg-gray-300"
-                    }`}
+              <div className="archivist-fields archivist-fields--two">
+                <div className="archivist-field-group">
+                  <label className="archivist-field-label">Tác giả</label>
+                  <AsyncSelect
+                    cacheOptions
+                    defaultOptions
+                    value={selectedAuthor}
+                    loadOptions={loadAuthorOptions}
+                    onChange={setSelectedAuthor}
+                    placeholder="Tìm và chọn tác giả"
+                    styles={selectStyles}
                   />
-                )}
+                </div>
+
+                <div className="archivist-field-group">
+                  <label className="archivist-field-label">Thể loại</label>
+                  <select className="archivist-field" {...register("category", { required: true })}>
+                    <option value="">Chọn thể loại</option>
+                    {categories.map((category) => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            ))}
-          </div>
-        </motion.div>
 
-        {/* Form */}
-        <motion.div
-          ref={formRef}
-          className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <form onSubmit={handleSubmit(onSubmit)} className="p-8">
-            <AnimatePresence mode="wait">
-              {/* Step 1: Basic Information */}
-              {currentStep === 1 && (
-                <motion.div
-                  key="step1"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  className="space-y-6"
-                >
-                  <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                      Thông tin cơ bản
-                    </h2>
-                    <p className="text-gray-600">
-                      Nhập thông tin cơ bản của cuốn sách
-                    </p>
-                  </div>
-
-                  {/* Title */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FaBook className="inline mr-2" />
-                      Book Title *
-                    </label>
-                    <input
-                      {...register("title", { required: "Title is required" })}
-                      type="text"
-                      placeholder="Nhập tên cuốn sách"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                    />
-                    {errors.title && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.title.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Author */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FaUser className="inline mr-2" />
-                      Author *
-                    </label>
-                    <AsyncSelect
-                      cacheOptions
-                      loadOptions={debouncedLoadOptions}
-                      defaultOptions
-                      onChange={setSelectedAuthor}
-                      value={selectedAuthor}
-                      placeholder="Search or select author"
-                      isClearable
-                      styles={customSelectStyles}
-                    />
-                  </div>
-
-                  {/* Description */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Description *
-                    </label>
-                    <textarea
-                      {...register("description", {
-                        required: "Description is required",
-                      })}
-                      rows={4}
-                      placeholder="Nhập mô tả cuốn sách"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200 resize-none"
-                    />
-                    {errors.description && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.description.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Publisher */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Publisher
-                    </label>
-                    <input
-                      {...register("publish")}
-                      type="text"
-                      placeholder="Nhập tên nhà xuất bản"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                    />
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 2: Details */}
-              {currentStep === 2 && (
-                <motion.div
-                  key="step2"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  className="space-y-6"
-                >
-                  <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                      Book Details
-                    </h2>
-                    <p className="text-gray-600">
-                      Thêm danh mục, hình ảnh và thông tin bổ sung
-                    </p>
-                  </div>
-
-                  {/* Category */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FaTag className="inline mr-2" />
-                      Category *
-                    </label>
-                    <select
-                      {...register("category", {
-                        required: "Category is required",
-                      })}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                    >
-                      <option value="">Chọn danh mục</option>
-                      {categories.length > 0 ? (
-                        categories.map((category) => (
-                          <option key={category.value} value={category.value}>
-                            {category.label}
-                          </option>
-                        ))
-                      ) : (
-                        <option disabled>Đang tải danh mục...</option>
-                      )}
-                    </select>
-                    {errors.category && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.category.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Cover Image - Optional */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FaImage className="inline mr-2" />
-                      Hình ảnh bìa (Tùy chọn)
-                    </label>
-                    <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition-colors duration-200">
-                      {imagePreview ? (
-                        <div className="space-y-4">
-                          <img
-                            src={imagePreview || "/placeholder.svg"}
-                            alt="Cover Preview"
-                            className="max-w-32 h-40 object-cover rounded-lg mx-auto shadow-lg"
-                          />
-                          {isUploading && (
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <motion.div
-                                className="bg-blue-500 h-2 rounded-full"
-                                initial={{ width: 0 }}
-                                animate={{ width: `${uploadProgress}%` }}
-                                transition={{ duration: 0.3 }}
-                              />
-                            </div>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setImagePreview("");
-                              setCoverImage("");
-                            }}
-                            className="text-red-500 hover:text-red-700 text-sm"
-                          >
-                            Xóa ảnh
-                          </button>
-                        </div>
-                      ) : (
-                        <div>
-                          <FaCloudUploadAlt className="text-4xl text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-600 mb-2">
-                            Nhấp để tải lên hoặc kéo và thả
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            PNG, JPG tối đa 5MB (Tùy chọn)
-                          </p>
-                        </div>
-                      )}
-                      <input
-                        type="file"
-                        onChange={handleImageUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        accept="image/*"
-                        disabled={isUploading}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Tags - Optional */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FaTag className="inline mr-2" />
-                      Tags (Tùy chọn)
-                    </label>
-                    <input
-                      type="text"
-                      value={tags}
-                      onChange={handleTagsChange}
-                      placeholder="Nhập thẻ (phân cách bằng dấu phẩy)"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      Phân cách thẻ bằng dấu phẩy (ví dụ: fiction, romance,
-                      bestseller)
-                    </p>
-                  </div>
-
-                  {/* Language - Optional */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FaLanguage className="inline mr-2" />
-                      Ngôn ngữ (Tùy chọn)
-                    </label>
-                    <select
-                      value={language}
-                      onChange={handleLanguageChange}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                    >
-                      <option value="Tiếng Anh">English</option>
-                      <option value="Tiếng Việt">Vietnamese</option>
-                    </select>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 3: Pricing */}
-              {currentStep === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  className="space-y-6"
-                >
-                  <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                      Pricing & Inventory
-                    </h2>
-                    <p className="text-gray-600">
-                      Đặt giá và số lượng cho cuốn sách
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Old Price */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        <RiPriceTag3Line className="inline mr-2" />
-                        Giá gốc
-                      </label>
-                      <input
-                        {...register("oldPrice")}
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                      />
-                    </div>
-
-                    {/* New Price */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        <FaDollarSign className="inline mr-2" />
-                        Giá bán *
-                      </label>
-                      <input
-                        {...register("newPrice", {
-                          required: "Sale price is required",
-                          min: 0,
-                        })}
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                      />
-                      {errors.newPrice && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.newPrice.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Quantity */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Số lượng trong kho *
-                    </label>
-                    <input
-                      {...register("quantity", {
-                        required: "Quantity is required",
-                        min: 1,
-                      })}
-                      type="number"
-                      placeholder="Nhập số lượng"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                    />
-                    {errors.quantity && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.quantity.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Trending */}
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      {...register("trending")}
-                      className="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <label className="ml-3 text-sm font-semibold text-gray-700">
-                      <FaChartLine className="inline mr-2" />
-                      Đánh dấu là cuốn sách trending
-                    </label>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 4: Review */}
-              {currentStep === 4 && (
-                <motion.div
-                  key="step4"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  className="space-y-6"
-                >
-                  <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                      Review & Submit
-                    </h2>
-                    <p className="text-gray-600">
-                      Vui lòng kiểm tra tất cả thông tin trước khi gửi
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-2xl p-6 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="font-semibold text-gray-800 mb-3">
-                          Thông tin cuốn sách
-                        </h3>
-                        <div className="space-y-2 text-sm">
-                          <p>
-                            <span className="font-medium">Tên cuốn sách:</span>{" "}
-                            {watchedFields.title || "Không xác định"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Tác giả:</span>{" "}
-                            {selectedAuthor?.label || "Không xác định"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Danh mục:</span>{" "}
-                            {categories.find(
-                              (c) => c.value === watchedFields.category
-                            )?.label || "Không xác định"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Ngôn ngữ:</span>{" "}
-                            {language}
-                          </p>
-                          <p>
-                            <span className="font-medium">Nhà xuất bản:</span>{" "}
-                            {watchedFields.publish || "Không xác định"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold text-gray-800 mb-3">
-                          Pricing & Inventory
-                        </h3>
-                        <div className="space-y-2 text-sm">
-                          <p>
-                            <span className="font-medium">Giá gốc:</span>{" "}
-                            ${watchedFields.oldPrice || "0.00"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Giá bán:</span> $
-                            {watchedFields.newPrice || "0.00"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Số lượng:</span>{" "}
-                            {watchedFields.quantity || "0"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Trending:</span>{" "}
-                            {watchedFields.trending ? "Có" : "Không"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {coverImage && (
-                      <div className="text-center">
-                        <h3 className="font-semibold text-gray-800 mb-3">
-                          Hình ảnh bìa
-                        </h3>
-                        <img
-                          src={coverImage || "/placeholder.svg"}
-                          alt="Cover Preview"
-                          className="max-w-32 h-40 object-cover rounded-lg mx-auto shadow-lg"
-                        />
-                      </div>
-                    )}
-
-                    {tags && (
-                      <div>
-                        <h3 className="font-semibold text-gray-800 mb-3">
-                          Thẻ
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                          {tags.split(",").map((tag, index) => (
-                            <span
-                              key={index}
-                              className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                            >
-                              {tag.trim()}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Navigation Buttons */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-              <motion.button
-                type="button"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                  currentStep === 1
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-gray-500 text-white hover:bg-gray-600"
-                }`}
-                whileHover={currentStep > 1 ? { scale: 1.05 } : {}}
-                whileTap={currentStep > 1 ? { scale: 0.95 } : {}}
-              >
-                Trang trước
-              </motion.button>
-
-              <div className="flex items-center gap-4">
-                {currentStep < 4 ? (
-                  <motion.button
-                    type="button"
-                    onClick={nextStep}
-                    className="flex items-center gap-2 bg-blue-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-600 transition-colors duration-200"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Trang tiếp
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex items-center gap-2 bg-green-500 text-white px-8 py-3 rounded-xl font-semibold hover:bg-green-600 transition-colors duration-200 disabled:opacity-50"
-                    whileHover={{ scale: isLoading ? 1 : 1.05 }}
-                    whileTap={{ scale: isLoading ? 1 : 0.95 }}
-                  >
-                    {isLoading ? (
-                      <>
-                        <FaSpinner className="animate-spin" />
-                        Đang thêm cuốn sách...
-                      </>
-                    ) : (
-                      <>
-                        <FaCheck />
-                        Thêm cuốn sách
-                      </>
-                    )}
-                  </motion.button>
-                )}
+              <div className="archivist-field-group">
+                <label className="archivist-field-label">Mô tả sách</label>
+                <textarea
+                  className="archivist-textarea"
+                  placeholder="Viết mô tả ngắn gọn, rõ ràng và đúng tinh thần đầu sách..."
+                  {...register("description", { required: true })}
+                />
               </div>
             </div>
-          </form>
-        </motion.div>
-      </div>
+          </section>
+
+          <section className="archivist-admin-card archivist-form-section">
+            <h3 className="archivist-form-section__title">Kho hàng và metadata</h3>
+            <div className="archivist-fields archivist-fields--two">
+              <div className="archivist-field-group">
+                <label className="archivist-field-label">Nhà xuất bản</label>
+                <input className="archivist-field" placeholder="Ví dụ: NXB Trẻ" {...register("publish")} />
+              </div>
+              <div className="archivist-field-group">
+                <label className="archivist-field-label">Ngôn ngữ</label>
+                <select className="archivist-field" value={language} onChange={(event) => setLanguage(event.target.value)}>
+                  <option value="Tiếng Việt">Tiếng Việt</option>
+                  <option value="Tiếng Anh">Tiếng Anh</option>
+                </select>
+              </div>
+              <div className="archivist-field-group">
+                <label className="archivist-field-label">Giá nhập</label>
+                <input className="archivist-field" type="number" min="0" placeholder="0" {...register("oldPrice")} />
+              </div>
+              <div className="archivist-field-group">
+                <label className="archivist-field-label">Giá bán</label>
+                <input className="archivist-field" type="number" min="0" placeholder="0" {...register("newPrice", { required: true })} />
+              </div>
+              <div className="archivist-field-group">
+                <label className="archivist-field-label">Số lượng tồn</label>
+                <input className="archivist-field" type="number" min="0" placeholder="1" {...register("quantity", { required: true })} />
+              </div>
+              <div className="archivist-field-group">
+                <label className="archivist-field-label">Từ khóa</label>
+                <input className="archivist-field" placeholder="tiểu thuyết, kinh điển, bán chạy" {...register("tags")} />
+              </div>
+            </div>
+            <label style={{ display: "inline-flex", marginTop: 18, alignItems: "center", gap: 10 }}>
+              <input type="checkbox" {...register("trending")} />
+              <span className="archivist-table-meta">Đánh dấu đầu sách này là tuyển chọn nổi bật</span>
+            </label>
+          </section>
+        </div>
+
+        <div className="archivist-form-stack">
+          <section className="archivist-admin-card archivist-form-section archivist-admin-card--strong">
+            <div className="archivist-upload-panel">
+              {imagePreview ? (
+                <img src={imagePreview} alt="Xem trước ảnh bìa" />
+              ) : (
+                <>
+                  <ImagePlus size={28} />
+                  <div>
+                    <strong className="archivist-list-row__title" style={{ display: "block", marginBottom: 8 }}>
+                      Tải ảnh bìa
+                    </strong>
+                    <span className="archivist-table-meta">Ưu tiên ảnh bìa dọc tỉ lệ 3:4, rõ nét</span>
+                  </div>
+                </>
+              )}
+              <input type="file" accept="image/*" onChange={handleImageUpload} style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
+              {isUploading ? <span className="archivist-table-meta">Đang tải ảnh lên...</span> : null}
+            </div>
+          </section>
+
+          <section className="archivist-side-note archivist-admin-card--strong">
+            <h4>Ghi chú quản trị</h4>
+            <ul>
+              <li>
+                <span>•</span>
+                <span>Đảm bảo giá bán, số lượng tồn và tác giả khớp với dữ liệu vận hành thực tế.</span>
+              </li>
+              <li>
+                <span>•</span>
+                <span>Phần mô tả nên giữ giọng văn bán sách rõ ràng, không dùng placeholder kỹ thuật.</span>
+              </li>
+              <li>
+                <span>•</span>
+                <span>Ảnh bìa nên rõ nét và đồng bộ với mặt bằng catalogue hiện tại.</span>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </form>
     </div>
   );
-};
-
-export default EnhancedAddBook;
+}

@@ -1,958 +1,325 @@
-/* eslint-disable no-unused-vars */
-"use client";
-
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useParams } from "react-router-dom";
-import { useAddToCartMutation } from "../../redux/features/cart/cartApi";
-import { useGetBookByIdQuery } from "../../redux/features/books/booksApi";
-import { IoMdStar } from "react-icons/io";
-import {
-  FaShoppingCart,
-  FaHeart,
-  FaShare,
-  FaExpand,
-  FaPlus,
-  FaMinus,
-} from "react-icons/fa";
-import {
-  RiTruckFill,
-  RiSecurePaymentFill,
-  RiRefund2Fill,
-} from "react-icons/ri";
-import BookRecommendations from "../../components/BookRecommendations";
+﻿import { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, Minus, Plus, ShoppingBag, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
+import BookRecommendations from "../../components/BookRecommendations";
 import { useAuth } from "../../context/AuthContext";
-import {
-  useCreateReviewMutation,
-  useGetReviewsQuery,
-} from "../../redux/features/reviews/reviewsApi";
-import axios from "axios";
-import baseUrl from "../../utils/baseURL";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { LazyLoadImage } from "react-lazy-load-image-component";
-import "react-lazy-load-image-component/src/effects/blur.css";
-import "../../styles/SingleBook.css";
-gsap.registerPlugin(ScrollTrigger);
+import { useAddToCartMutation } from "../../redux/features/cart/cartApi";
+import { useGetBookByIdQuery } from "../../redux/features/books/booksApi";
+import { useCreateReviewMutation, useGetReviewsQuery } from "../../redux/features/reviews/reviewsApi";
+import "../../styles/bookeco-single-book.css";
 
-// Cấu hình axios
-const api = axios.create({
-  baseURL: baseUrl,
-});
+const formatPrice = (value) =>
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
 
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
+const getCurrentPrice = (book) => Number(book?.price?.newPrice ?? book?.price ?? 0);
+const getOriginalPrice = (book) => Number(book?.price?.oldPrice ?? 0);
+const getReviewerId = (user) => user?._id || user?.id || user?.uid || user?.userId;
+
+const StarRow = ({ value }) => (
+  <div className="bookeco-single-stars">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <Star key={star} size={16} fill={star <= value ? "currentColor" : "none"} />
+    ))}
+  </div>
 );
 
-const EnhancedSingleBook = () => {
+const SingleBook = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { currentUser } = useAuth();
-  const { t } = useTranslation();
+  const [quantity, setQuantity] = useState(1);
+  const [activeTab, setActiveTab] = useState("description");
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [hoverRating, setHoverRating] = useState(0);
-  const [showFullImage, setShowFullImage] = useState(false);
-  const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [activeTab, setActiveTab] = useState("description");
 
-  const imageRef = useRef(null);
-  const detailsRef = useRef(null);
-  const reviewsRef = useRef(null);
-
-  const {
-    data: book,
-    isLoading,
-    error,
-  } = useGetBookByIdQuery(id, {
+  const { data: book, isLoading, error } = useGetBookByIdQuery(id, {
     skip: !id || id === "undefined",
   });
-
-  const { data: reviewsData } = useGetReviewsQuery(id);
-  const [createReview] = useCreateReviewMutation();
+  const { data: reviewsData } = useGetReviewsQuery(id, {
+    skip: !id || id === "undefined",
+  });
+  const [createReview, { isLoading: isSubmittingReview }] = useCreateReviewMutation();
   const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
 
-  // Track book views
   useEffect(() => {
-    const trackBookView = async () => {
-      if (book?._id && currentUser) {
-        try {
-          const userId =
-            currentUser.uid ||
-            currentUser._id ||
-            currentUser.id ||
-            currentUser.userId;
-          if (!userId) {
-            const storedUser = localStorage.getItem("user");
-            if (storedUser) {
-              const parsedUser = JSON.parse(storedUser);
-              const storedUserId =
-                parsedUser.uid ||
-                parsedUser._id ||
-                parsedUser.id ||
-                parsedUser.userId;
-              if (storedUserId) {
-                await api.post("/viewHistory/", {
-                  userId: storedUserId,
-                  bookId: book._id,
-                });
-                return;
-              }
-            }
-            return;
-          }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [id]);
 
-          await api.post("/viewHistory/", {
-            userId: userId,
-            bookId: book._id,
-          });
-        } catch (error) {
-          console.error(
-            "Error tracking book view:",
-            error.response?.data || error.message
-          );
-        }
-      }
-    };
+  const reviews = useMemo(() => {
+    if (Array.isArray(reviewsData?.data)) return reviewsData.data;
+    if (Array.isArray(reviewsData?.reviews)) return reviewsData.reviews;
+    if (Array.isArray(reviewsData)) return reviewsData;
+    if (Array.isArray(book?.reviews)) return book.reviews;
+    return [];
+  }, [book?.reviews, reviewsData]);
 
-    trackBookView();
-  }, [book?._id, currentUser]);
-
-  // Enhanced animations
-  useEffect(() => {
-    if (book) {
-      const tl = gsap.timeline();
-
-      tl.fromTo(
-        imageRef.current,
-        {
-          scale: 0.8,
-          opacity: 0,
-          rotationY: -45,
-        },
-        {
-          scale: 1,
-          opacity: 1,
-          rotationY: 0,
-          duration: 1.2,
-          ease: "power3.out",
-        }
-      ).fromTo(
-        detailsRef.current?.children || [],
-        {
-          x: 50,
-          opacity: 0,
-        },
-        {
-          x: 0,
-          opacity: 1,
-          duration: 0.8,
-          stagger: 0.1,
-          ease: "power2.out",
-        },
-        "-=0.8"
-      );
-
-      gsap.fromTo(
-        reviewsRef.current,
-        {
-          y: 100,
-          opacity: 0,
-        },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 1,
-          scrollTrigger: {
-            trigger: reviewsRef.current,
-            start: "top 80%",
-            toggleActions: "play none none reverse",
-          },
-          ease: "power2.out",
-        }
-      );
+  const stock = Number(book?.quantity || 0);
+  const currentPrice = getCurrentPrice(book);
+  const originalPrice = getOriginalPrice(book);
+  const ratingValue = useMemo(() => {
+    if (reviews.length) {
+      return reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / reviews.length;
     }
-  }, [book]);
+    return Number(book?.rating || book?.averageRating || 0);
+  }, [book?.averageRating, book?.rating, reviews]);
+  const reviewCount = Number(book?.numReviews || book?.reviewCount || reviews.length || 0);
+  const currentUserId = getReviewerId(currentUser);
+  const canReview = currentUserId && !reviews.some((review) => getReviewerId(review.user) === currentUserId);
 
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    if (!currentUser) {
+  const details = [
+    { label: t("bookeco.book.pages", { defaultValue: "Số trang" }), value: book?.pages || t("bookeco.common.updating", { defaultValue: "Đang cập nhật" }) },
+    { label: t("bookeco.book.binding", { defaultValue: "Bìa sách" }), value: book?.binding || t("bookeco.book.hardcover", { defaultValue: "Bìa cứng" }) },
+    { label: t("bookeco.book.publish_date", { defaultValue: "Ngày xuất bản" }), value: book?.publish || t("bookeco.common.updating", { defaultValue: "Đang cập nhật" }) },
+    { label: t("bookeco.book.size", { defaultValue: "Kích thước" }), value: book?.dimensions || "14 x 20.5 cm" },
+  ];
+
+  const handleAddToCart = async () => {
+    if (!book?._id) return;
+    try {
+      await addToCart({ bookId: book._id, quantity }).unwrap();
+      Swal.fire({
+        icon: "success",
+        title: t("bookeco.cart.added_title", { defaultValue: "Đã thêm vào giỏ hàng" }),
+        text: `"${book.title}" ${t("bookeco.cart.added_copy", { defaultValue: "đã sẵn sàng trong giỏ của bạn." })}`,
+        timer: 1600,
+        showConfirmButton: false,
+      });
+    } catch (submitError) {
       Swal.fire({
         icon: "error",
-        title: t("reviews.login_required"),
-        text: t("reviews.please_login"),
+        title: t("bookeco.cart.add_error", { defaultValue: "Không thể thêm vào giỏ" }),
+        text: submitError?.data?.message || t("filter.pleaseTryAgainLater", { defaultValue: "Vui lòng thử lại sau." }),
       });
+    }
+  };
+
+  const handleReviewSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!currentUser) {
+      Swal.fire({ icon: "warning", title: t("bookeco.review.login_required", { defaultValue: "Bạn cần đăng nhập để đánh giá." }) });
       return;
     }
 
     if (!rating) {
-      Swal.fire({
-        icon: "error",
-        title: t("reviews.rating_required"),
-        text: t("reviews.please_select_rating"),
-      });
+      Swal.fire({ icon: "warning", title: t("bookeco.review.pick_rating", { defaultValue: "Hãy chọn số sao trước khi gửi." }) });
       return;
     }
 
     try {
-      const result = await createReview({
-        bookId: id,
-        rating,
-        comment,
-      }).unwrap();
-
-      if (result.success) {
-        Swal.fire({
-          icon: "success",
-          title: t("reviews.success"),
-          text: t("reviews.thank_you"),
-        });
-        setRating(0);
-        setComment("");
-      }
-    } catch (error) {
-      console.error("Review error:", error);
+      await createReview({ bookId: id, rating, comment }).unwrap();
+      setRating(0);
+      setComment("");
+      Swal.fire({
+        icon: "success",
+        title: t("bookeco.review.thanks", { defaultValue: "Cảm ơn bạn đã để lại đánh giá" }),
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (submitError) {
       Swal.fire({
         icon: "error",
-        title: t("reviews.error"),
-        text: error.data?.message || t("reviews.error_message"),
+        title: t("bookeco.review.submit_error", { defaultValue: "Không thể gửi đánh giá" }),
+        text: submitError?.data?.message || t("filter.pleaseTryAgainLater", { defaultValue: "Vui lòng thử lại sau." }),
       });
     }
   };
-
-  const handleAddToCart = async (product) => {
-    if (product && product._id) {
-      try {
-        await addToCart({ bookId: product._id, quantity }).unwrap();
-      } catch (error) {
-        console.error("Error adding to cart:", error);
-        Swal.fire({
-          icon: "error",
-          title: t("cart.error"),
-          text: error?.data?.message || t("cart.add_failed"),
-        });
-      }
-    }
-  };
-
-  const handleIncrease = () => {
-    if (book && book.quantity && quantity < book.quantity) {
-      setQuantity((prev) => prev + 1);
-    } else if (book && quantity >= book.quantity) {
-      Swal.fire({
-        icon: "warning",
-        title: t("cart.error"),
-        text: t("cart.insufficient_stock"),
-      });
-    }
-  };
-
-  const handleDecrease = () => {
-    if (quantity > 1) {
-      setQuantity((prev) => prev - 1);
-    }
-  };
-
-  const canReview =
-    currentUser &&
-    reviewsData?.data &&
-    !reviewsData.data.some((review) => review.user._id === currentUser._id);
 
   if (isLoading) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="container mx-auto p-6 flex justify-center items-center min-h-[400px]"
-      >
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{
-            duration: 1,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "linear",
-          }}
-          className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full"
-        />
-      </motion.div>
-    );
-  }
-
-  if (error || !book || !book._id) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="container mx-auto p-6 text-center"
-      >
-        <div className="bg-red-50 border border-red-200 rounded-lg p-8">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">
-            {t("books.error")}
-          </h2>
-          <p className="text-red-500">
-            {error?.data?.message || t("books.notFound")}
-          </p>
+      <section className="bookeco-single-shell">
+        <div className="bookeco-single-loading">
+          <div className="bookeco-single-spinner" />
+          <p>{t("books.loading", { defaultValue: "Đang tải..." })}</p>
         </div>
-      </motion.div>
+      </section>
     );
   }
 
-  const isOutOfStock = !book.quantity || book.quantity === 0;
+  if (error || !book?._id) {
+    return (
+      <section className="bookeco-single-shell">
+        <div className="bookeco-single-error">
+          <span className="bookeco-kicker">{t("common.books", { defaultValue: "Sách" })}</span>
+          <h1>{t("bookeco.book.not_found", { defaultValue: "Không tìm thấy cuốn sách này" })}</h1>
+          <p>{error?.data?.message || t("bookeco.book.not_found_copy", { defaultValue: "Liên kết có thể đã thay đổi hoặc sản phẩm hiện không còn khả dụng." })}</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      className="w-full container mx-auto px-4 py-8"
-    >
-      {/* Main Product Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="bg-white rounded-3xl shadow-2xl overflow-hidden mb-8"
-      >
-        <div className="flex flex-col lg:flex-row">
-          {/* Enhanced Image Section */}
-          <div className="lg:w-1/3 p-8">
-            <motion.div
-              ref={imageRef}
-              className="relative group"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="relative overflow-hidden rounded-2xl shadow-2xl ">
-                <LazyLoadImage
-                  src={book.coverImage}
-                  alt={book.title}
-                  effect="blur"
-                  className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
-                  wrapperClassName="w-full h-[500px]"
-                />
+    <section className="bookeco-single-shell">
+      <div className="bookeco-single-container">
+        <Link to="/product" className="bookeco-single-backlink">
+          <ArrowLeft size={16} />
+          {t("bookeco.book.back_to_list", { defaultValue: "Quay lại danh sách sách" })}
+        </Link>
 
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 " />
+        <div className="bookeco-single-hero-figma">
+          <div className="bookeco-single-artifact">
+            <div className="bookeco-single-cover-frame">
+              <img src={book.coverImage} alt={book.title} className="bookeco-single-cover" />
+            </div>
+            <div className="bookeco-single-miniatures">
+              {[book.coverImage, book.coverImage, book.coverImage].map((src, index) => (
+                <div className="bookeco-single-miniature" key={`${src}-${index}`}>
+                  <img src={src} alt={`${book.title} ${index + 1}`} />
+                </div>
+              ))}
+            </div>
+            <span className="bookeco-single-note">{t("bookeco.book.archived_note", { defaultValue: "Tựa sách được lưu trữ trong bộ chọn lọc của BookEco." })}</span>
+          </div>
 
-                {/* Action Buttons */}
-                <motion.div
-                  className="absolute bottom-6 left-6 right-6 flex justify-center gap-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileHover={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setIsWishlisted(!isWishlisted)}
-                    className={`p-3 rounded-full backdrop-blur-md border border-white/20 transition-all duration-300 ${
-                      isWishlisted
-                        ? "bg-red-500 text-white"
-                        : "bg-white/20 text-white hover:bg-white hover:text-gray-800"
-                    }`}
-                  >
-                    <FaHeart className="w-5 h-5" />
-                  </motion.button>
+          <div className="bookeco-single-info">
+            <div className="bookeco-single-breadcrumbs">
+              <span>{t("common.home", { defaultValue: "Trang chủ" })}</span>
+              <span />
+              <span>{book.category?.name || t("common.books", { defaultValue: "Sách" })}</span>
+            </div>
 
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-3 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white hover:text-gray-800 transition-all duration-300 border border-white/20"
-                  >
-                    <FaShare className="w-5 h-5" />
-                  </motion.button>
+            <h1>{book.title}</h1>
+            <div className="bookeco-single-author-line">{book.author?.name || t("books.author", { defaultValue: "Tác giả" })}</div>
 
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setShowFullImage(true)}
-                    className="p-3 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white hover:text-gray-800 transition-all duration-300 border border-white/20"
-                  >
-                    <FaExpand className="w-5 h-5" />
-                  </motion.button>
-                </motion.div>
-
-                {/* Discount Badge */}
-                {book.price?.oldPrice && (
-                  <motion.div
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ delay: 0.5, type: "spring" }}
-                    className="absolute top-6 right-6 bg-red-500 text-white px-4 py-2 rounded-full font-bold shadow-lg"
-                  >
-                    -
-                    {Math.round(
-                      ((book.price.oldPrice - book.price.newPrice) /
-                        book.price.oldPrice) *
-                        100
-                    )}
-                    %
-                  </motion.div>
-                )}
+            <div className="bookeco-single-price-row">
+              <div>
+                <strong>{formatPrice(currentPrice)}</strong>
+                {originalPrice > currentPrice ? <span>{formatPrice(originalPrice)}</span> : null}
               </div>
-            </motion.div>
-          </div>
-
-          {/* Enhanced Details Section */}
-          <div
-            ref={detailsRef}
-            className="lg:w-1/2 p-8 flex flex-col justify-between"
-          >
-            <div>
-              <motion.h1
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight"
-              >
-                {book.title}
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                className="text-xl text-gray-600 mb-6"
-              >
-                {t("books.author")}:{" "}
-                <span className="font-semibold text-gray-800">
-                  {book.author?.name || "Unknown"}
-                </span>
-              </motion.p>
-
-              {/* Enhanced Rating */}
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="flex items-center gap-4 mb-6"
-              >
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ delay: 0.5 + index * 0.1, type: "spring" }}
-                    >
-                      <IoMdStar
-                        className={`text-2xl ${
-                          index < Math.floor(book.rating || 0)
-                            ? "text-yellow-400"
-                            : "text-gray-300"
-                        }`}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-                <span className="text-lg font-semibold text-gray-700">
-                  {book.rating ? book.rating.toFixed(1) : "0.0"}
-                </span>
-                <span className="text-gray-500">
-                  ({reviewsData?.data?.length || 0} {t("reviews.review")})
-                </span>
-              </motion.div>
-
-              {/* Enhanced Price */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                className="mb-8"
-              >
-                <div className="flex items-baseline gap-4">
-                  <span className="text-4xl font-bold text-red-500">
-                    {book.price?.newPrice?.toLocaleString("vi-VN")} đ
-                  </span>
-                  {book.price?.oldPrice && (
-                    <span className="text-xl text-gray-400 line-through">
-                      {book.price.oldPrice.toLocaleString("vi-VN")} đ
-                    </span>
-                  )}
-                </div>
-              </motion.div>
-
-              {/* Book Info Grid */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="grid grid-cols-2 gap-4 mb-8"
-              >
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500 mb-1">
-                    {t("books.published")}
-                  </p>
-                  <p className="font-semibold">{book.publish}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500 mb-1">
-                    {t("books.category")}
-                  </p>
-                  <p className="font-semibold capitalize">
-                    {book.category?.name || "Unknown"}
-                  </p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500 mb-1">
-                    {t("books.language")}
-                  </p>
-                  <p className="font-semibold">{book.language || "Unknown"}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500 mb-1">{t("books.tag")}</p>
-                  <p className="font-semibold">
-                    #{book.tags?.join(", ") || "Unknown"}
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* Enhanced Quantity Selector */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.7 }}
-                className="flex items-center gap-6 mb-8"
-              >
-                <span className="text-lg font-semibold">
-                  {t("books.quantity")}:
-                </span>
-                <div className="flex items-center gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleDecrease}
-                    disabled={quantity <= 1}
-                    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center disabled:opacity-50 transition-colors duration-200"
-                  >
-                    <FaMinus className="w-4 h-4" />
-                  </motion.button>
-                  <span className="text-2xl font-bold w-12 text-center">
-                    {quantity}
-                  </span>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleIncrease}
-                    disabled={isOutOfStock}
-                    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center disabled:opacity-50 transition-colors duration-200"
-                  >
-                    <FaPlus className="w-4 h-4" />
-                  </motion.button>
-                </div>
-                {book.quantity && (
-                  <span className="text-sm text-gray-500">
-                    ({book.quantity} {t("books.available")})
-                  </span>
-                )}
-              </motion.div>
+              <div className="bookeco-single-rating-chip">
+                <StarRow value={Math.round(ratingValue)} />
+                <em>{ratingValue.toFixed(1)} · {reviews.length} {t("books.tabs.reviews", { defaultValue: "đánh giá" }).toLowerCase()}</em>
+              </div>
             </div>
 
-            {/* Enhanced Add to Cart Button */}
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              whileHover={{
-                scale: 1.02,
-                boxShadow: "0 20px 40px rgba(59, 130, 246, 0.3)",
-              }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => handleAddToCart(book)}
-              disabled={isAddingToCart || isOutOfStock}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-8 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 shadow-lg"
-            >
-              {isAddingToCart ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{
-                    duration: 1,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "linear",
-                  }}
-                  className="w-6 h-6 border-2 border-white border-t-transparent rounded-full"
-                />
-              ) : (
-                <>
-                  <FaShoppingCart className="w-5 h-5" />
-                  <span>
-                    {isOutOfStock
-                      ? t("books.out_of_stock")
-                      : t("books.Add to Cart")}
-                  </span>
-                </>
-              )}
-            </motion.button>
-          </div>
-        </div>
-      </motion.div>
+            <div className="bookeco-single-buy-row">
+              <div className="bookeco-single-quantity">
+                <button type="button" onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}>
+                  <Minus size={15} />
+                </button>
+                <span>{quantity}</span>
+                <button type="button" disabled={stock > 0 && quantity >= stock} onClick={() => setQuantity((prev) => prev + 1)}>
+                  <Plus size={15} />
+                </button>
+              </div>
 
-      {/* Enhanced Delivery Info */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.3 }}
-        className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-8 border border-blue-100"
-      >
-        <h3 className="text-xl font-bold text-gray-800 mb-4">
-          {t("books.delivery.title")}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <RiTruckFill className="text-blue-600 text-xl" />
+              <button type="button" className="bookeco-button-primary bookeco-single-cta" onClick={handleAddToCart} disabled={isAddingToCart || stock === 0}>
+                <ShoppingBag size={18} />
+                {stock === 0
+                  ? t("books.out_of_stock", { defaultValue: "Tạm hết hàng" })
+                  : isAddingToCart
+                    ? t("bookeco.cart.adding", { defaultValue: "Đang thêm..." })
+                    : t("books.addToCart", { defaultValue: "Thêm vào giỏ hàng" })}
+              </button>
             </div>
-            <div>
-              <p className="font-semibold text-gray-800">
-                {t("books.delivery.free")}
-              </p>
-              <p className="text-sm text-gray-600">
-                {t("books.delivery.city")}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <RiSecurePaymentFill className="text-green-600 text-xl" />
-            </div>
-            <div>
-              <p className="font-semibold text-gray-800">
-                {t("books.delivery.secure")}
-              </p>
-              <p className="text-sm text-gray-600">
-                {t("books.delivery.payment")}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <RiRefund2Fill className="text-purple-600 text-xl" />
-            </div>
-            <div>
-              <p className="font-semibold text-gray-800">
-                {t("books.delivery.return")}
-              </p>
-              <p className="text-sm text-gray-600">
-                {t("books.delivery.policy")}
-              </p>
+
+            <div className="bookeco-single-details-grid">
+              {details.map((item) => (
+                <div key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </motion.div>
 
-      {/* Enhanced Tabs Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.4 }}
-        className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8"
-      >
-        {/* Tab Navigation */}
-        <div className="flex border-b border-gray-200">
+        <div className="bookeco-single-tabs">
           {[
-            { id: "description", label: t("books.tabs.description") },
-            { id: "reviews", label: t("books.tabs.reviews") },
-            { id: "specifications", label: t("books.tabs.specifications") },
+            { id: "description", label: t("books.tabs.description", { defaultValue: "Mô tả" }) },
+            { id: "details", label: t("books.tabs.specifications", { defaultValue: "Thông tin sách" }) },
+            { id: "reviews", label: `${t("books.tabs.reviews", { defaultValue: "Đánh giá" })} (${reviews.length})` },
           ].map((tab) => (
-            <motion.button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-4 px-6 font-semibold transition-all duration-300 ${
-                activeTab === tab.id
-                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                  : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
-              }`}
-              whileHover={{ y: -2 }}
-              whileTap={{ y: 0 }}
-            >
+            <button key={tab.id} type="button" className={activeTab === tab.id ? "is-active" : ""} onClick={() => setActiveTab(tab.id)}>
               {tab.label}
-            </motion.button>
+            </button>
           ))}
         </div>
 
-        {/* Tab Content */}
-        <div className="p-8">
-          <AnimatePresence mode="wait">
-            {activeTab === "description" && (
-              <motion.div
-                key="description"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <h3 className="text-2xl font-bold mb-4">
-                  {t("books.description")}
-                </h3>
-                <p className="text-gray-700 leading-relaxed text-lg">
-                  {book.description}
-                </p>
-              </motion.div>
-            )}
+        <div className="bookeco-single-panel">
+          {activeTab === "description" ? (
+            <div className="bookeco-single-panel-copy">
+              <h2>{t("bookeco.book.story_title", { defaultValue: "Mô tả sách" })}</h2>
+              <p>{book.description || t("bookeco.common.updating", { defaultValue: "Nội dung đang được cập nhật." })}</p>
+            </div>
+          ) : null}
 
-            {activeTab === "reviews" && (
-              <motion.div
-                key="reviews"
-                ref={reviewsRef}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <h3 className="text-2xl font-bold mb-6">
-                  {t("reviews.title")}
-                </h3>
+          {activeTab === "details" ? (
+            <div className="bookeco-single-spec-grid">
+              {details.map((item) => (
+                <article key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </article>
+              ))}
+            </div>
+          ) : null}
 
-                {/* Review Form */}
-                {canReview && (
-                  <motion.form
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    onSubmit={handleReviewSubmit}
-                    className="bg-gray-50 rounded-xl p-6 mb-8"
-                  >
-                    <h4 className="text-lg font-semibold mb-4">
-                      {t("reviews.write_review")}
-                    </h4>
-
-                    <div className="mb-4">
-                      <label className="block text-gray-700 font-semibold mb-2">
-                        {t("reviews.rating")}
-                      </label>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <motion.button
-                            key={star}
-                            type="button"
-                            onClick={() => setRating(star)}
-                            onMouseEnter={() => setHoverRating(star)}
-                            onMouseLeave={() => setHoverRating(0)}
-                            whileHover={{ scale: 1.2 }}
-                            whileTap={{ scale: 0.9 }}
-                            className="text-3xl focus:outline-none transition-transform duration-200"
-                          >
-                            <IoMdStar
-                              className={`${
-                                star <= (hoverRating || rating)
-                                  ? "text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          </motion.button>
-                        ))}
-                      </div>
+          {activeTab === "reviews" ? (
+            <div className="bookeco-single-reviews-layout">
+              <div>
+                {canReview ? (
+                  <form className="bookeco-review-form" onSubmit={handleReviewSubmit}>
+                    <span className="bookeco-kicker">{t("bookeco.review.kicker", { defaultValue: "Gửi nhận xét" })}</span>
+                    <h2>{t("bookeco.review.title", { defaultValue: "Đánh giá cuốn sách này" })}</h2>
+                    <div className="bookeco-review-picker">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button key={star} type="button" onClick={() => setRating(star)} className={star <= rating ? "is-active" : ""}>
+                          <Star size={18} fill={star <= rating ? "currentColor" : "none"} />
+                        </button>
+                      ))}
                     </div>
-
-                    <div className="mb-6">
-                      <label className="block text-gray-700 font-semibold mb-2">
-                        {t("reviews.comment")}
-                      </label>
-                      <textarea
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        rows="4"
-                        placeholder={t("reviews.comment_placeholder")}
-                        required
-                      />
-                    </div>
-
-                    <motion.button
-                      type="submit"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200"
-                    >
-                      {t("reviews.submit")}
-                    </motion.button>
-                  </motion.form>
+                    <textarea value={comment} onChange={(event) => setComment(event.target.value)} rows={5} placeholder={t("bookeco.review.placeholder", { defaultValue: "Cảm nhận của bạn về cuốn sách này" })} required />
+                    <button type="submit" className="bookeco-button-primary" disabled={isSubmittingReview}>
+                      {isSubmittingReview ? t("bookeco.review.sending", { defaultValue: "Đang gửi..." }) : t("bookeco.review.submit", { defaultValue: "Gửi đánh giá" })}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="bookeco-review-form bookeco-review-form-static">
+                    <span className="bookeco-kicker">{t("books.tabs.reviews", { defaultValue: "Đánh giá" })}</span>
+                    <h2>{currentUser ? t("bookeco.review.already_reviewed", { defaultValue: "Bạn đã đánh giá cuốn sách này" }) : t("bookeco.review.login_prompt", { defaultValue: "Đăng nhập để đánh giá" })}</h2>
+                    <p>{currentUser ? t("bookeco.review.already_reviewed_copy", { defaultValue: "Bạn có thể xem lại các nhận xét khác ở cột bên cạnh." }) : t("bookeco.review.login_prompt_copy", { defaultValue: "Đăng nhập để chia sẻ cảm nhận và giúp người đọc khác chọn sách dễ hơn." })}</p>
+                  </div>
                 )}
+              </div>
 
-                {/* Reviews List */}
-                <div className="space-y-6">
-                  {reviewsData?.data?.length > 0 ? (
-                    reviewsData.data.map((review, index) => (
-                      <motion.div
-                        key={review._id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300"
-                      >
-                        <div className="flex items-center gap-4 mb-4">
-                          <img
-                            src={
-                              review.user.photoURL ||
-                              "https://via.placeholder.com/50"
-                            }
-                            alt={review.user.displayName}
-                            className="w-12 h-12 rounded-full object-cover"
-                          />
-                          <div>
-                            <h4 className="font-semibold text-gray-800">
-                              {review.user.displayName}
-                            </h4>
-                            <p className="text-sm text-gray-500">
-                              {review.user.email}
-                            </p>
-                          </div>
+              <div className="bookeco-review-list">
+                {reviews.length ? (
+                  reviews.map((review) => (
+                    <article key={review._id} className="bookeco-review-card">
+                      <div className="bookeco-review-head">
+                        <img src={review.user?.photoURL || "https://via.placeholder.com/56x56?text=U"} alt={review.user?.displayName || "User"} />
+                        <div>
+                          <strong>{review.user?.displayName || t("bookeco.review.reader_name", { defaultValue: "Độc giả BookEco" })}</strong>
+                          <span>{new Date(review.createdAt).toLocaleDateString("vi-VN")}</span>
                         </div>
-
-                        <div className="flex items-center gap-2 mb-3">
-                          {[...Array(5)].map((_, index) => (
-                            <IoMdStar
-                              key={index}
-                              className={`text-lg ${
-                                index < review.rating
-                                  ? "text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          ))}
-                          <span className="text-sm text-gray-500 ml-2">
-                            {new Date(review.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-
-                        <p className="text-gray-700 leading-relaxed">
-                          {review.comment}
-                        </p>
-                      </motion.div>
-                    ))
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="text-6xl mb-4">📝</div>
-                      <p className="text-gray-500 text-lg">
-                        {t("reviews.no_reviews")}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            {activeTab === "specifications" && (
-              <motion.div
-                key="specifications"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <h3 className="text-2xl font-bold mb-6">
-                  {t("books.specifications")}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {[
-                    {
-                      label: t("books.author"),
-                      value: book.author?.name || "Unknown",
-                    },
-                    { label: t("books.published"), value: book.publish },
-                    {
-                      label: t("books.category"),
-                      value: book.category?.name || "Unknown",
-                    },
-                    {
-                      label: t("books.language"),
-                      value: book.language || "Unknown",
-                    },
-                    { label: t("books.pages"), value: book.pages || "N/A" },
-                    { label: t("books.isbn"), value: book.isbn || "N/A" },
-                  ].map((spec, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="bg-gray-50 rounded-lg p-4"
-                    >
-                      <p className="text-sm text-gray-500 mb-1">{spec.label}</p>
-                      <p className="font-semibold text-gray-800">
-                        {spec.value}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                      </div>
+                      <StarRow value={review.rating} />
+                      <p>{review.comment}</p>
+                    </article>
+                  ))
+                ) : (
+                  <div className="bookeco-review-empty">
+                    <span className="bookeco-kicker">{t("books.tabs.reviews", { defaultValue: "Đánh giá" })}</span>
+                    <h2>{t("bookeco.review.empty_title", { defaultValue: "Chưa có nhận xét nào" })}</h2>
+                    <p>{t("bookeco.review.empty_copy", { defaultValue: "Hãy là người đầu tiên để lại cảm nhận cho cuốn sách này." })}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
-      </motion.div>
 
-      {/* Full Image Modal */}
-      <AnimatePresence>
-        {showFullImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowFullImage(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative max-w-4xl max-h-[90vh]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <LazyLoadImage
-                src={book.coverImage}
-                alt={book.title}
-                effect="blur"
-                className="max-w-full max-h-[80vh] object-contain rounded-lg"
-              />
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setShowFullImage(false)}
-                className="absolute top-4 right-4 text-white bg-black/50 p-3 rounded-full hover:bg-black/70 transition-all duration-300"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Book Recommendations */}
-      {book._id && (
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-        >
-          <BookRecommendations bookId={book._id} />
-        </motion.div>
-      )}
-    </motion.div>
+        <BookRecommendations bookId={book._id} />
+      </div>
+    </section>
   );
 };
 
-export default EnhancedSingleBook;
+export default SingleBook;

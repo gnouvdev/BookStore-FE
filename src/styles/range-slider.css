@@ -19,7 +19,7 @@ input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 16px;
   height: 16px;
-  background: #3b82f6;
+  background: #2F3C7E;
   border-radius: 50%;
   cursor: pointer;
   border: 2px solid white;
@@ -30,7 +30,7 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
-  background: #3b82f6;
+  background: #2F3C7E;
   border-radius: 50%;
   cursor: pointer;
   border: 2px solid white;
@@ -72,7 +72,7 @@ input[type="range"]::-moz-range-track {
 .range-slider-active {
   position: absolute;
   height: 2px;
-  background: #3b82f6;
+  background: #2F3C7E;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;

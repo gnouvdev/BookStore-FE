@@ -25,12 +25,7 @@ export const userApi = createApi({
         },
       }),
       transformResponse: (response) => {
-        console.log("API Response:", response);
         return response?.users || [];
-      },
-      transformErrorResponse: (response) => {
-        console.error("API Error:", response);
-        return response;
       },
       providesTags: ["Users"],
     }),

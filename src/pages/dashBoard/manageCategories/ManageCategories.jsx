@@ -1,1051 +1,160 @@
-/* eslint-disable no-unused-vars */
-"use client";
-
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { gsap } from "gsap";
-import {
-  Search,
-  Plus,
-  Edit3,
-  Trash2,
-  RefreshCw,
-  Tag,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
-  Eye,
-  BookOpen,
-  TrendingUp,
-  Hash,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+﻿import { useEffect, useMemo, useState } from "react";
+import { BookOpen, Eye, Pencil, Plus, RefreshCw, Search, Tag, Trash2 } from "lucide-react";
 import axios from "axios";
-import baseUrl from "../../../utils/baseURL";
 import { toast } from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
-import { useGetBooksByCategoryQuery } from "@/redux/features/books/booksApi";
+import baseUrl from "../../../utils/baseURL";
 
-const EnhancedManageCategories = () => {
-  const navigate = useNavigate();
-  const containerRef = useRef(null);
-  const headerRef = useRef(null);
-  const tableRef = useRef(null);
-
-  // State management
+export default function ManageCategories() {
   const [categories, setCategories] = useState([]);
-  const [filteredCategories, setFilteredCategories] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [sortBy, setSortBy] = useState("name");
-  const [sortOrder, setSortOrder] = useState("asc");
   const [isLoading, setIsLoading] = useState(true);
-
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-
-  // Modal states
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showBooksModal, setShowBooksModal] = useState(false);
+  const [editor, setEditor] = useState({ name: "", description: "" });
 
-  // Form state
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-  });
+  const fetchCategories = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${baseUrl}/categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCategories(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Không thể tải danh mục thể loại");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const { data: categoryBooks = [], isLoading: isLoadingBooks } =
-    useGetBooksByCategoryQuery(selectedCategory?._id, {
-      skip: !selectedCategory,
-    });
-
-  const [categoryBookCounts, setCategoryBookCounts] = useState({});
-
-  // Initialize animations
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        headerRef.current,
-        { opacity: 0, y: -30 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }
-      );
-
-      gsap.fromTo(
-        tableRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power3.out" }
-      );
-    }, containerRef);
-
-    return () => ctx.revert();
+    fetchCategories();
   }, []);
 
-  // Fetch categories from API
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          toast.error("Please login to continue");
-          navigate("/admin");
-          return;
-        }
+  const filteredCategories = useMemo(() => {
+    const keyword = searchQuery.trim().toLowerCase();
+    return categories.filter((category) =>
+      !keyword ||
+      (category.name || "").toLowerCase().includes(keyword) ||
+      (category.description || "").toLowerCase().includes(keyword)
+    );
+  }, [categories, searchQuery]);
 
-        const response = await axios.get(`${baseUrl}/categories`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.data) {
-          setCategories(response.data);
-          setFilteredCategories(response.data);
-
-          // Fetch book counts for each category
-          const counts = {};
-          for (const category of response.data) {
-            try {
-              const booksResponse = await axios.get(
-                `${baseUrl}/books/category/${category._id}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
-              );
-              counts[category._id] = booksResponse.data.length;
-            } catch (error) {
-              console.error(
-                `Lỗi khi lấy sách cho thể loại ${category._id}:`,
-                error
-              );
-              counts[category._id] = 0;
-            }
-          }
-          setCategoryBookCounts(counts);
-        }
-      } catch (error) {
-        console.error("Lỗi khi lấy thể loại:", error);
-        toast.error(
-          error.response?.data?.message || "Không thể tải thể loại"
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, [navigate]);
-
-  // Filter and search logic
-  useEffect(() => {
-    let filtered = [...categories];
-
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (category) =>
-          category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          category.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (selectedStatus !== "all") {
-      filtered = filtered.filter(
-        (category) => category.status === selectedStatus
-      );
-    }
-
-    // Sorting
-    filtered.sort((a, b) => {
-      const aValue = a[sortBy];
-      const bValue = b[sortBy];
-
-      if (typeof aValue === "string") {
-        return sortOrder === "asc"
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
-
-      return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
-    });
-
-    setFilteredCategories(filtered);
-    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
-    setCurrentPage(1);
-  }, [
-    categories,
-    searchQuery,
-    selectedStatus,
-    sortBy,
-    sortOrder,
-    itemsPerPage,
-  ]);
-
-  // Get current page items
-  const getCurrentPageItems = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredCategories.slice(startIndex, endIndex);
+  const syncEditor = (category) => {
+    setSelectedCategory(category);
+    setEditor({ name: category?.name || "", description: category?.description || "" });
   };
 
-  // Pagination handlers
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const resetEditor = () => {
+    setSelectedCategory(null);
+    setEditor({ name: "", description: "" });
   };
 
-  const handleItemsPerPageChange = (value) => {
-    setItemsPerPage(Number.parseInt(value));
-    setCurrentPage(1);
-  };
-
-  // Form handlers
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-    });
-  };
-
-  // Format price to VND
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(price);
-  };
-
-  // CRUD handlers
-  const handleAdd = async () => {
+  const handleSave = async () => {
     try {
-      setIsLoading(true);
       const token = localStorage.getItem("token");
-
-      const response = await axios.post(
-        `${baseUrl}/categories/create`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.data) {
-        // Tạo một category mới với cấu trúc đầy đủ
-        const newCategory = {
-          _id: response.data._id,
-          name: response.data.name,
-          description: response.data.description,
-          status: response.data.status || "active",
-          color: response.data.color || "#4CAF50",
-          trending: response.data.trending || false,
-          createdAt: response.data.createdAt || new Date().toISOString(),
-          booksCount: 0, // Khởi tạo số lượng sách là 0
-        };
-
-        // Cập nhật state với category mới
-        setCategories((prev) => [newCategory, ...prev]);
-        setFilteredCategories((prev) => [newCategory, ...prev]);
-        setCategoryBookCounts((prev) => ({
-          ...prev,
-          [newCategory._id]: 0,
-        }));
-
-        setShowAddDialog(false);
-        resetForm();
-        toast.success("Category added successfully");
-      }
-    } catch (error) {
-      console.error("Error adding category:", error);
-      toast.error(error.response?.data?.message || "Failed to add category");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEdit = async () => {
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("Please login to continue");
-        navigate("/admin");
+      if (!editor.name.trim()) {
+        toast.error("Vui lòng nhập tên thể loại");
         return;
       }
-
-      console.log("Updating category:", selectedCategory._id);
-      console.log("With data:", formData);
-
-      const response = await axios.put(
-        `${baseUrl}/categories/edit/${selectedCategory._id}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data) {
-        // Log response data to check structure
-        console.log("Server response:", response.data);
-
-        // Update the categories state with the new data
-        const updatedCategories = categories.map((category) => {
-          if (category._id === selectedCategory._id) {
-            // Preserve existing data and merge with updates
-            return {
-              ...category,
-              name: formData.name,
-              description: formData.description,
-              // Add any other fields that should be updated
-            };
-          }
-          return category;
+      if (selectedCategory?._id) {
+        await axios.put(`${baseUrl}/categories/edit/${selectedCategory._id}`, editor, {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         });
-
-        setCategories(updatedCategories);
-        setFilteredCategories(updatedCategories);
-        setShowEditDialog(false);
-        setSelectedCategory(null);
-        resetForm();
-        toast.success("Thể loại đã được cập nhật thành công");
-      }
-    } catch (error) {
-      console.error("Lỗi khi cập nhật thể loại:", error);
-      if (error.response?.status === 404) {
-          toast.error("Thể loại không tồn tại. Vui lòng cập nhật lại.");
-      } else if (
-        error.response?.status === 401 ||
-        error.response?.status === 403
-      ) {
-        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-        localStorage.removeItem("token");
-        navigate("/admin");
+        toast.success("Đã cập nhật thể loại");
       } else {
-        toast.error(
-          error.response?.data?.message || "Không thể cập nhật thể loại"
-        );
+        await axios.post(`${baseUrl}/categories/create`, editor, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("Đã thêm thể loại mới");
       }
-    } finally {
-      setIsLoading(false);
+      fetchCategories();
+      resetEditor();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Không thể lưu thể loại");
     }
   };
 
   const handleDelete = async (categoryId) => {
+    if (!window.confirm("Bạn có chắc muốn xóa thể loại này không?")) return;
     try {
-      setIsLoading(true);
       const token = localStorage.getItem("token");
-
       await axios.delete(`${baseUrl}/categories/${categoryId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      setCategories(
-        categories.filter((category) => category._id !== categoryId)
-      );
-      setShowDeleteDialog(false);
-      setSelectedCategory(null);
-      toast.success("Thể loại đã được xóa thành công");
+      toast.success("Đã xóa thể loại");
+      fetchCategories();
+      if (selectedCategory?._id === categoryId) resetEditor();
     } catch (error) {
-      console.error("Lỗi khi xóa thể loại:", error);
       toast.error(error.response?.data?.message || "Không thể xóa thể loại");
-    } finally {
-      setIsLoading(false);
     }
-  };
-
-  const handleRefresh = async () => {
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem("token");
-
-      const response = await axios.get(`${baseUrl}/categories`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.data) {
-        setCategories(response.data);
-        setFilteredCategories(response.data);
-        toast.success("Cập nhật thể loại thành công");
-      }
-    } catch (error) {
-      console.error("Error refreshing categories:", error);
-      toast.error(
-        error.response?.data?.message || "Không thể cập nhật thể loại"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Open edit dialog with pre-filled data
-  const openEditDialog = (category) => {
-    setSelectedCategory(category);
-    setFormData({
-      name: category.name,
-      description: category.description,
-    });
-    setShowEditDialog(true);
-  };
-
-  // Pagination component
-  const PaginationControls = () => {
-    const getPageNumbers = () => {
-      const delta = 2;
-      const range = [];
-      const rangeWithDots = [];
-
-      for (
-        let i = Math.max(2, currentPage - delta);
-        i <= Math.min(totalPages - 1, currentPage + delta);
-        i++
-      ) {
-        range.push(i);
-      }
-
-      if (currentPage - delta > 2) {
-        rangeWithDots.push(1, "...");
-      } else {
-        rangeWithDots.push(1);
-      }
-
-      rangeWithDots.push(...range);
-
-      if (currentPage + delta < totalPages - 1) {
-        rangeWithDots.push("...", totalPages);
-      } else {
-        rangeWithDots.push(totalPages);
-      }
-
-      return rangeWithDots;
-    };
-
-    return (
-      <div className="flex items-center justify-between px-6 py-4 border-t bg-white/50 backdrop-blur-sm">
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-            {Math.min(currentPage * itemsPerPage, filteredCategories.length)} of{" "}
-            {filteredCategories.length} results
-          </span>
-          <Select
-            value={itemsPerPage.toString()}
-            onValueChange={handleItemsPerPageChange}
-          >
-            <SelectTrigger className="w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-gray-600">per page</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-
-          {getPageNumbers().map((page, index) => (
-            <Button
-              key={index}
-              variant={page === currentPage ? "default" : "outline"}
-              size="sm"
-              onClick={() => typeof page === "number" && handlePageChange(page)}
-              disabled={page === "..."}
-              className="h-8 w-8 p-0"
-            >
-              {page}
-            </Button>
-          ))}
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-100"
-    >
-      {/* Header Section */}
-      <div
-        ref={headerRef}
-        className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40"
-      >
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white">
-                <Tag className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Quản lý thể loại
-                </h1>
-                <p className="text-gray-600">
-                  Sắp xếp thể loại sách và thể loại
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleRefresh}
-                disabled={isLoading}
-                variant="outline"
-                className="gap-2"
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-                />
-                Cập nhật
-              </Button>
-              <Button
-                onClick={() => {
-                  resetForm();
-                  setShowAddDialog(true);
-                }}
-                className="gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-              >
-                <Plus className="h-4 w-4" />
-                Thêm thể loại
-              </Button>
-            </div>
-          </div>
-
-          {/* Filters and Search */}
-          <div className="mt-6 flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Tìm kiếm thể loại theo tên hoặc mô tả..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/70 backdrop-blur-sm"
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                  <SelectItem value="active">Hoạt động</SelectItem>
-                  <SelectItem value="inactive">Không hoạt động</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Sắp xếp theo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Tên</SelectItem>
-                  <SelectItem value="booksCount">Số sách</SelectItem>
-                  <SelectItem value="createdAt">Ngày tạo</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() =>
-                  setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-                }
-                className="bg-white/70 backdrop-blur-sm"
-              >
-                {sortOrder === "asc" ? "↑" : "↓"}
-              </Button>
-            </div>
-          </div>
+    <div className="archivist-grid" style={{ gap: 24 }}>
+      <section className="archivist-page-header">
+        <div>
+          <p className="archivist-page-header__eyebrow">Danh mục phân loại</p>
+          <h2>Quản lý thể loại</h2>
+          <p>Sắp xếp lại cấu trúc thể loại để việc lọc sách, hiển thị danh mục và điều hướng trên storefront được nhất quán.</p>
         </div>
-      </div>
+        <div className="archivist-page-actions">
+          <button type="button" className="archivist-secondary-button" onClick={fetchCategories}><RefreshCw size={15} />Làm mới</button>
+          <button type="button" className="archivist-primary-button" onClick={resetEditor}><Plus size={15} />Thêm thể loại</button>
+        </div>
+      </section>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div
-          ref={tableRef}
-          className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 overflow-hidden"
-        >
-          {/* Stats Bar */}
-          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Tag className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Tổng số thể loại</p>
-                  <p className="font-semibold">{filteredCategories.length}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <BookOpen className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Tổng số sách</p>
-                  <p className="font-semibold">
-                    {Object.values(categoryBookCounts).reduce(
-                      (acc, count) => acc + count,
-                      0
-                    )}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Hash className="h-4 w-4 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Hoạt động</p>
-                  <p className="font-semibold">
-                    {
-                      filteredCategories.filter((c) => c.status === "active")
-                        .length
-                    }
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+      <section className="archivist-admin-card archivist-filterbar" style={{ gridTemplateColumns: "minmax(240px,1fr) auto" }}>
+        <label className="archivist-searchbox" style={{ width: "100%", minWidth: 0 }}>
+          <Search size={16} />
+          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Tìm theo tên hoặc mô tả thể loại..." />
+        </label>
+        <button type="button" className="archivist-secondary-button" onClick={() => setSearchQuery("")}>Xóa tìm kiếm</button>
+      </section>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50/80">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Thể loại
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Mô tả
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Số sách
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Trạng thái
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Hành động
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                <AnimatePresence mode="wait">
-                  {getCurrentPageItems().map((category, index) => (
-                    <motion.tr
-                      key={category._id || `category-${index}`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="hover:bg-gray-50/50 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-4">
-                          <div
-                            className="w-4 h-4 rounded-full"
-                            style={{
-                              backgroundColor: category.color || "#4CAF50",
-                            }}
-                          />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-gray-900">
-                                {category.name || "Unnamed Category"}
-                              </p>
-                              {category.trending && (
-                                <Badge variant="secondary" className="text-xs">
-                                  <TrendingUp className="h-3 w-3 mr-1" />
-                                  Xu hướng
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-500">
-                              ID: {category._id || "N/A"}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-gray-900 line-clamp-2 max-w-xs">
-                          {category.description || "No description"}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedCategory(category);
-                            setShowBooksModal(true);
-                          }}
-                          className="flex items-center gap-2"
-                        >
-                          <BookOpen className="h-4 w-4" />
-                          <span>
-                            {categoryBookCounts[category._id] || 0} sách
-                          </span>
-                        </Button>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge
-                          variant={
-                            category.status === "active"
-                              ? "default"
-                              : "secondary"
-                          }
-                        >
-                          {category.status || "active"}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedCategory(category);
-                                setShowDetailsDialog(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Xem chi tiết
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => openEditDialog(category)}
-                            >
-                              <Edit3 className="h-4 w-4 mr-2" />
-                              Sửa
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-red-600"
-                              onClick={() => {
-                                setSelectedCategory(category);
-                                setShowDeleteDialog(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                                Xóa
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
+      <section className="archivist-grid" style={{ gridTemplateColumns: "minmax(0,1.35fr) minmax(340px,.85fr)" }}>
+        <article className="archivist-admin-card archivist-table-card">
+          <div className="archivist-panel" style={{ paddingBottom: 0 }}><div className="archivist-panel__head"><div><p className="archivist-panel__eyebrow">Danh sách thể loại</p><h3 className="archivist-panel__title">{filteredCategories.length} thể loại</h3></div></div></div>
+          <div className="archivist-table-scroll">
+            <table className="archivist-table">
+              <thead><tr><th>Thể loại</th><th>Mô tả</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+              <tbody>
+                {isLoading ? <tr><td colSpan={4}><div className="archivist-empty" style={{ minHeight: 220 }}>Đang tải dữ liệu thể loại...</div></td></tr> : filteredCategories.length ? filteredCategories.map((category) => (
+                  <tr key={category._id}>
+                    <td>
+                      <div className="archivist-book-cell" style={{ alignItems: "center" }}>
+                        <div className="archivist-avatar archivist-avatar--sm"><Tag size={16} /></div>
+                        <div className="archivist-book-cell__copy"><strong>{category.name}</strong><p>{category._id}</p></div>
+                      </div>
+                    </td>
+                    <td><div className="archivist-table-meta">{category.description || "Chưa có mô tả"}</div></td>
+                    <td><span className="archivist-status-pill" data-tone={category.status === "inactive" ? "warning" : "success"}>{category.status || "active"}</span></td>
+                    <td><div className="archivist-cta-row"><button type="button" className="archivist-icon-cta" onClick={() => syncEditor(category)}><Eye size={16} /></button><button type="button" className="archivist-icon-cta" onClick={() => syncEditor(category)}><Pencil size={16} /></button><button type="button" className="archivist-icon-cta" onClick={() => handleDelete(category._id)}><Trash2 size={16} /></button></div></td>
+                  </tr>
+                )) : <tr><td colSpan={4}><div className="archivist-empty" style={{ minHeight: 220 }}>Không có thể loại phù hợp.</div></td></tr>}
               </tbody>
             </table>
           </div>
+        </article>
 
-          {/* Pagination */}
-          <PaginationControls />
-        </div>
-      </div>
-
-      {/* Add Category Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Thêm thể loại mới</DialogTitle>
-            <DialogDescription>
-              Tạo một thể loại mới để sắp xếp sách của bạn.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Tên</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                placeholder="Nhập tên thể loại"
-              />
-            </div>
-            <div>
-              <Label htmlFor="description">Mô tả</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  handleInputChange("description", e.target.value)
-                }
-                placeholder="Nhập mô tả thể loại"
-                rows={3}
-              />
+        <aside className="archivist-admin-card archivist-panel archivist-admin-card--strong">
+          <div className="archivist-panel__head"><div><p className="archivist-panel__eyebrow">Biên tập thể loại</p><h3 className="archivist-panel__title">{selectedCategory ? "Cập nhật thể loại" : "Tạo thể loại mới"}</h3></div></div>
+          <div className="archivist-fields">
+            <div className="archivist-field-group"><label className="archivist-field-label">Tên thể loại</label><input className="archivist-field" value={editor.name} onChange={(e) => setEditor((prev) => ({ ...prev, name: e.target.value }))} placeholder="Ví dụ: Văn học Việt Nam" /></div>
+            <div className="archivist-field-group"><label className="archivist-field-label">Mô tả</label><textarea className="archivist-textarea" value={editor.description} onChange={(e) => setEditor((prev) => ({ ...prev, description: e.target.value }))} placeholder="Mô tả ngắn về nhóm sách này" /></div>
+            <div className="archivist-page-actions">
+              <button type="button" className="archivist-secondary-button" onClick={resetEditor}>Hủy chọn</button>
+              <button type="button" className="archivist-primary-button" onClick={handleSave}>Lưu thể loại</button>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-              Hủy bỏ
-            </Button>
-            <Button onClick={handleAdd} disabled={isLoading}>
-              {isLoading ? "Đang thêm..." : "Thêm thể loại"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Category Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Sửa thể loại</DialogTitle>
-            <DialogDescription>
-              Cập nhật thông tin thể loại.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-name">Tên</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                placeholder="Nhập tên thể loại"
-              />
+          {selectedCategory ? (
+            <div className="archivist-admin-card" style={{ padding: 16, marginTop: 18 }}>
+              <p className="archivist-panel__eyebrow">Tóm tắt nhanh</p>
+              <div className="archivist-list-row"><strong className="archivist-list-row__title">Mã thể loại</strong><span className="archivist-list-row__meta">{selectedCategory._id}</span></div>
+              <div className="archivist-list-row"><strong className="archivist-list-row__title">Trạng thái</strong><span className="archivist-list-row__meta">{selectedCategory.status || "active"}</span></div>
             </div>
-            <div>
-              <Label htmlFor="edit-description">Mô tả</Label>
-              <Textarea
-                id="edit-description"
-                value={formData.description}
-                onChange={(e) =>
-                  handleInputChange("description", e.target.value)
-                }
-                placeholder="Nhập mô tả thể loại"
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Hủy bỏ
-            </Button>
-            <Button onClick={handleEdit} disabled={isLoading}>
-              {isLoading ? "Đang cập nhật..." : "Cập nhật thể loại"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xóa thể loại</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xóa "{selectedCategory?.name}"?
-              Hành động này không thể hoàn tác và sẽ ảnh hưởng đến tất cả sách
-              trong thể loại này.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-            >
-              Hủy bỏ
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => handleDelete(selectedCategory?._id)}
-              disabled={isLoading}
-            >
-              {isLoading ? "Đang xóa..." : "Xóa"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Category Details Dialog */}
-      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Chi tiết thể loại</DialogTitle>
-          </DialogHeader>
-          {selectedCategory && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: selectedCategory.color }}
-                >
-                  <Tag className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {selectedCategory.name}
-                  </h3>
-                  <Badge
-                    variant={
-                      selectedCategory.status === "active"
-                        ? "default"
-                        : "secondary"
-                    }
-                    className="mt-1"
-                  >
-                    {selectedCategory.status}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">Số sách:</span>
-                  <p className="font-medium">{selectedCategory.booksCount}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500">Ngày tạo:</span>
-                  <p className="font-medium">
-                    {new Date(selectedCategory.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-gray-500">Xu hướng:</span>
-                  <p className="font-medium">
-                    {selectedCategory.trending ? "Có" : "Không"}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-gray-500">Mô tả:</span>
-                <p className="text-sm mt-1">{selectedCategory.description}</p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Books List Modal */}
-      <Dialog open={showBooksModal} onOpenChange={setShowBooksModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-              <DialogTitle>Sách trong {selectedCategory?.name}</DialogTitle>
-            <DialogDescription>
-                Danh sách sách trong thể loại này
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-            {isLoadingBooks ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              </div>
-            ) : categoryBooks.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                Không tìm thấy sách trong thể loại này
-              </div>
-            ) : (
-              categoryBooks.map((book) => (
-                <div
-                  key={book._id}
-                  className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <img
-                    src={book.coverImage || "/placeholder.svg"}
-                    alt={book.title}
-                    className="w-16 h-20 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-900">{book.title}</h4>
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {book.description}
-                    </p>
-                    <div className="mt-2 flex items-center gap-4">
-                      <span className="text-sm text-gray-500">
-                        Giá: {formatPrice(book.price.newPrice)}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        Số lượng: {book.quantity}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setShowBooksModal(false)}>
-              Đóng
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          ) : null}
+        </aside>
+      </section>
     </div>
   );
-};
-
-export default EnhancedManageCategories;
+}

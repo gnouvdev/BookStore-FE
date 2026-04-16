@@ -31,7 +31,7 @@ export const SocketProvider = ({ children }) => {
       if (user) {
         try {
           // Force refresh token để đảm bảo token mới nhất
-          const token = await user.getIdToken(true);
+          const token = await user.getIdToken();
           const userId = user.uid;
           console.log("Firebase userId:", userId);
           console.log("Firebase token obtained");
@@ -56,7 +56,7 @@ export const SocketProvider = ({ children }) => {
             // Refresh token trước khi register để đảm bảo token còn hiệu lực
             try {
               // eslint-disable-next-line no-unused-vars
-              const freshToken = await user.getIdToken(true);
+              const freshToken = await user.getIdToken();
               newSocket.emit("register", userId);
               console.log("Registered user:", userId);
             } catch (tokenError) {
@@ -74,7 +74,7 @@ export const SocketProvider = ({ children }) => {
               err.message.includes("token")
             ) {
               try {
-                const freshToken = await user.getIdToken(true);
+                const freshToken = await user.getIdToken();
                 newSocket.auth.token = freshToken;
                 newSocket.connect();
               } catch (tokenError) {
@@ -106,7 +106,7 @@ export const SocketProvider = ({ children }) => {
             // Refresh token và register lại sau khi reconnect
             try {
               // eslint-disable-next-line no-unused-vars
-              const freshToken = await user.getIdToken(true);
+              const freshToken = await user.getIdToken();
               newSocket.emit("register", userId);
             } catch (tokenError) {
               console.error("Error refreshing token on reconnect:", tokenError);
@@ -125,7 +125,7 @@ export const SocketProvider = ({ children }) => {
           tokenRefreshIntervalRef.current = setInterval(async () => {
             try {
               // eslint-disable-next-line no-unused-vars
-              const freshToken = await user.getIdToken(true);
+              const freshToken = await user.getIdToken();
               if (newSocket && newSocket.connected) {
                 newSocket.auth.token = freshToken;
                 console.log("Token refreshed for socket");
@@ -169,3 +169,4 @@ export const SocketProvider = ({ children }) => {
 };
 
 export const useSocket = () => useContext(SocketContext);
+

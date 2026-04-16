@@ -41,7 +41,7 @@ const PaymentFailed = () => {
   const isCancelled = errorCode === "24" || errorCode === null || !errorCode;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-[#FBEAEB] flex items-center justify-center py-12 px-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -49,7 +49,7 @@ const PaymentFailed = () => {
         className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-500 to-orange-500 p-8 text-center">
+        <div className="bg-[#2F3C7E] p-8 text-center">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}

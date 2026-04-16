@@ -1,928 +1,376 @@
-/* eslint-disable no-unused-vars */
-"use client";
-
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { gsap } from "gsap";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
-  Search,
-  Plus,
-  Edit3,
-  Trash2,
-  RefreshCw,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
   Eye,
-  Star,
-  TrendingUp,
-  Package,
-  DollarSign,
-  User,
-  Tag,
-  BookOpen,
-  Grid,
-  List,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import axios from "axios";
-import baseUrl from "../../../utils/baseURL";
-import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import baseUrl from "../../../utils/baseURL";
 
-const EnhancedManageBooks = () => {
-  const containerRef = useRef(null);
-  const headerRef = useRef(null);
-  const tableRef = useRef(null);
+function formatCurrency(price) {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(price || 0);
+}
+
+export default function ManageBooks() {
   const navigate = useNavigate();
-
-  // State management
   const [books, setBooks] = useState([]);
-  const [filteredBooks, setFilteredBooks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedStock, setSelectedStock] = useState("all");
   const [sortBy, setSortBy] = useState("title");
-  const [sortOrder, setSortOrder] = useState("asc");
-  const [viewMode, setViewMode] = useState("table");
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-
-  // Modal states
   const [selectedBook, setSelectedBook] = useState(null);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  // Fetch books from API
-  useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          toast.error("Vui lòng đăng nhập để tiếp tục");
-          navigate("/admin");
-          return;
-        }
-
-        const response = await axios.get(`${baseUrl}/books`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.data) {
-          setBooks(response.data);
-          setFilteredBooks(response.data);
-        }
-      } catch (error) {
-        console.error("Lỗi khi lấy sách:", error);
-        toast.error(error.response?.data?.message || "Không thể tải sách");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchBooks();
-  }, [navigate]);
-
-  // Initialize animations
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        headerRef.current,
-        { opacity: 0, y: -30 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }
-      );
-
-      gsap.fromTo(
-        tableRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power3.out" }
-      );
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, []);
-
-  // Filter and search logic
-  useEffect(() => {
-    let filtered = [...books];
-
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (book) =>
-          book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          book.author.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          book.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Category filter
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(
-        (book) => book.category.name === selectedCategory
-      );
-    }
-
-    // Status filter
-    if (selectedStatus !== "all") {
-      if (selectedStatus === "in_stock") {
-        filtered = filtered.filter((book) => book.quantity > 0);
-      } else if (selectedStatus === "out_of_stock") {
-        filtered = filtered.filter((book) => book.quantity === 0);
-      }
-    }
-
-    // Sorting
-    filtered.sort((a, b) => {
-      let aValue = a[sortBy];
-      let bValue = b[sortBy];
-
-      if (sortBy === "author") {
-        aValue = a.author.name;
-        bValue = b.author.name;
-      } else if (sortBy === "category") {
-        aValue = a.category.name;
-        bValue = b.category.name;
-      } else if (sortBy === "price") {
-        aValue = a.price.newPrice;
-        bValue = b.price.newPrice;
-      } else if (sortBy === "publish") {
-        aValue = a.publish.name;
-        bValue = b.publish.name;
-      }
-
-      if (typeof aValue === "string") {
-        return sortOrder === "asc"
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
-
-      return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
-    });
-
-    setFilteredBooks(filtered);
-    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
-    setCurrentPage(1);
-  }, [
-    books,
-    searchQuery,
-    selectedCategory,
-    selectedStatus,
-    sortBy,
-    sortOrder,
-    itemsPerPage,
-  ]);
-
-  // Get current page items
-  const getCurrentPageItems = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredBooks.slice(startIndex, endIndex);
-  };
-
-  // Pagination handlers
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    // Smooth scroll to top of table
-    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const handleItemsPerPageChange = (value) => {
-    setItemsPerPage(Number.parseInt(value));
-    setCurrentPage(1);
-  };
-
-  // CRUD handlers
-  const handleDelete = async (bookId) => {
+  const fetchBooks = async () => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem("token");
-
-      await axios.delete(`${baseUrl}/books/${bookId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      setBooks(books.filter((book) => book._id !== bookId));
-      setShowDeleteDialog(false);
-      setSelectedBook(null);
-      toast.success("Xóa sách thành công");
-    } catch (error) {
-      console.error("Lỗi khi xóa sách:", error);
-      toast.error(error.response?.data?.message || "Không thể xóa sách");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để tiếp tục");
+        navigate("/admin");
+        return;
+      }
 
       const response = await axios.get(`${baseUrl}/books`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.data) {
-        setBooks(response.data);
-        setFilteredBooks(response.data);
-        toast.success("Sách đã được cập nhật thành công");
-      }
+      setBooks(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
-      console.error("Lỗi khi cập nhật sách:", error);
-      toast.error(error.response?.data?.message || "Không thể cập nhật sách");
+      toast.error(error.response?.data?.message || "Không thể tải danh mục sách");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Get unique categories for filter
-  const categories = [...new Set(books.map((book) => book.category.name))];
+  useEffect(() => {
+    fetchBooks();
+  }, []);
 
-  // Pagination component
-  const PaginationControls = () => {
-    const getPageNumbers = () => {
-      const delta = 2;
-      const range = [];
-      const rangeWithDots = [];
+  const categories = useMemo(
+    () => [...new Set(books.map((book) => book?.category?.name).filter(Boolean))],
+    [books]
+  );
 
-      for (
-        let i = Math.max(2, currentPage - delta);
-        i <= Math.min(totalPages - 1, currentPage + delta);
-        i++
-      ) {
-        range.push(i);
+  const filteredBooks = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const nextBooks = books.filter((book) => {
+      const matchesSearch =
+        !normalizedQuery ||
+        book?.title?.toLowerCase().includes(normalizedQuery) ||
+        book?.author?.name?.toLowerCase().includes(normalizedQuery);
+
+      const matchesCategory =
+        selectedCategory === "all" || book?.category?.name === selectedCategory;
+
+      const stock = Number(book?.quantity || 0);
+      const matchesStock =
+        selectedStock === "all" ||
+        (selectedStock === "available" && stock > 0) ||
+        (selectedStock === "low" && stock > 0 && stock < 10) ||
+        (selectedStock === "empty" && stock === 0);
+
+      return matchesSearch && matchesCategory && matchesStock;
+    });
+
+    nextBooks.sort((left, right) => {
+      if (sortBy === "price") {
+        return (right?.price?.newPrice || 0) - (left?.price?.newPrice || 0);
       }
-
-      if (currentPage - delta > 2) {
-        rangeWithDots.push(1, "...");
-      } else {
-        rangeWithDots.push(1);
+      if (sortBy === "stock") {
+        return (right?.quantity || 0) - (left?.quantity || 0);
       }
-
-      rangeWithDots.push(...range);
-
-      if (currentPage + delta < totalPages - 1) {
-        rangeWithDots.push("...", totalPages);
-      } else {
-        rangeWithDots.push(totalPages);
+      if (sortBy === "author") {
+        return (left?.author?.name || "").localeCompare(right?.author?.name || "", "vi");
       }
+      return (left?.title || "").localeCompare(right?.title || "", "vi");
+    });
 
-      return rangeWithDots;
-    };
+    return nextBooks;
+  }, [books, searchQuery, selectedCategory, selectedStock, sortBy]);
 
-    return (
-      <div className="flex items-center justify-between px-6 py-4 border-t bg-white/50 backdrop-blur-sm">
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">
-            Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{" "}
-            {Math.min(currentPage * itemsPerPage, filteredBooks.length)} của{" "}
-            {filteredBooks.length} kết quả
-          </span>
-          <Select
-            value={itemsPerPage.toString()}
-            onValueChange={handleItemsPerPageChange}
-          >
-            <SelectTrigger className="w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-gray-600">trang</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-
-          {getPageNumbers().map((page, index) => (
-            <Button
-              key={index}
-              variant={page === currentPage ? "default" : "outline"}
-              size="sm"
-              onClick={() => typeof page === "number" && handlePageChange(page)}
-              disabled={page === "..."}
-              className="h-8 w-8 p-0"
-            >
-              {page}
-            </Button>
-          ))}
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+  const stats = useMemo(() => {
+    const totalInventoryValue = filteredBooks.reduce(
+      (sum, book) => sum + (book?.price?.newPrice || 0) * (book?.quantity || 0),
+      0
     );
-  };
+    return {
+      total: filteredBooks.length,
+      lowStock: filteredBooks.filter((book) => Number(book?.quantity || 0) < 10).length,
+      outOfStock: filteredBooks.filter((book) => Number(book?.quantity || 0) === 0).length,
+      inventoryValue: totalInventoryValue,
+    };
+  }, [filteredBooks]);
 
-  // Format price to VND
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(price);
+  const handleDelete = async (bookId) => {
+    const confirmed = window.confirm("Bạn có chắc muốn xóa đầu sách này không?");
+    if (!confirmed) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${baseUrl}/books/${bookId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Đã xóa sách khỏi kho");
+      setBooks((current) => current.filter((book) => book._id !== bookId));
+      if (selectedBook?._id === bookId) {
+        setSelectedBook(null);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Không thể xóa đầu sách này");
+    }
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
-    >
-      {/* Header Section */}
-      <div
-        ref={headerRef}
-        className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40"
-      >
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white">
-                <BookOpen className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Quản lý sách
-                </h1>
-                <p className="text-gray-600">Quản lý kho sách và catelog</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleRefresh}
-                disabled={isLoading}
-                variant="outline"
-                className="gap-2"
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-                />
-                Cập nhật
-              </Button>
-              <Button
-                className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-                onClick={() => navigate("/dashboard/add-new-book")}
-              >
-                <Plus className="h-4 w-4" />
-                Thêm sách
-              </Button>
-            </div>
-          </div>
-
-          {/* Filters and Search */}
-          <div className="mt-6 flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Tìm kiếm sách theo tiêu đề hoặc tác giả..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/70 backdrop-blur-sm"
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-              >
-                <SelectTrigger className="w-40 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Thể loại" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả thể loại</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                  <SelectItem value="in_stock">Còn hàng</SelectItem>
-                  <SelectItem value="out_of_stock">Hết hàng</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-32 bg-white/70 backdrop-blur-sm">
-                  <SelectValue placeholder="Sắp xếp theo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="title">Tiêu đề</SelectItem>
-                  <SelectItem value="author">Tác giả</SelectItem>
-                  <SelectItem value="category">Thể loại</SelectItem>
-                  <SelectItem value="price">Giá</SelectItem>
-                  <SelectItem value="quantity">Số lượng</SelectItem>
-                  <SelectItem value="publish">Nhà xuất bản</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() =>
-                  setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-                }
-                className="bg-white/70 backdrop-blur-sm"
-              >
-                {sortOrder === "asc" ? "↑" : "↓"}
-              </Button>
-
-              <div className="flex border rounded-lg bg-white/70 backdrop-blur-sm">
-                <Button
-                  variant={viewMode === "table" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("table")}
-                  className="rounded-r-none"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "grid" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("grid")}
-                  className="rounded-l-none"
-                >
-                  <Grid className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
+    <div className="archivist-grid" style={{ gap: 24 }}>
+      <section className="archivist-page-header">
+        <div>
+          <p className="archivist-page-header__eyebrow">Kho đầu sách</p>
+          <h2>Quản lý sách</h2>
+          <p>
+            Theo dõi toàn bộ đầu sách trong kho, lọc nhanh theo thể loại và tình trạng
+            tồn kho, đồng thời giữ giao diện rõ ràng và dễ thao tác.
+          </p>
         </div>
-      </div>
+        <div className="archivist-page-actions">
+          <button type="button" className="archivist-secondary-button" onClick={fetchBooks}>
+            <RefreshCw size={15} />
+            Làm mới
+          </button>
+          <button
+            type="button"
+            className="archivist-primary-button"
+            onClick={() => navigate("/dashboard/add-new-book")}
+          >
+            <Plus size={15} />
+            Thêm sách
+          </button>
+        </div>
+      </section>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div
-          ref={tableRef}
-          className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+      <section className="archivist-kpi-grid" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
+        <article className="archivist-admin-card archivist-kpi-card">
+          <p className="archivist-kpi-card__eyebrow">Đầu sách hiển thị</p>
+          <h3 className="archivist-kpi-card__value">{stats.total}</h3>
+          <p className="archivist-kpi-card__detail">Khớp với bộ lọc hiện tại</p>
+        </article>
+        <article className="archivist-admin-card archivist-kpi-card">
+          <p className="archivist-kpi-card__eyebrow">Sắp hết hàng</p>
+          <h3 className="archivist-kpi-card__value">{stats.lowStock}</h3>
+          <p className="archivist-kpi-card__detail">Cần ưu tiên nhập thêm</p>
+        </article>
+        <article className="archivist-admin-card archivist-kpi-card">
+          <p className="archivist-kpi-card__eyebrow">Hết hàng</p>
+          <h3 className="archivist-kpi-card__value">{stats.outOfStock}</h3>
+          <p className="archivist-kpi-card__detail">Các tựa sách đang hết hàng</p>
+        </article>
+        <article className="archivist-admin-card archivist-kpi-card">
+          <p className="archivist-kpi-card__eyebrow">Giá trị tồn kho</p>
+          <h3 className="archivist-kpi-card__value">{formatCurrency(stats.inventoryValue)}</h3>
+          <p className="archivist-kpi-card__detail">Ước tính theo giá bán hiện tại</p>
+        </article>
+      </section>
+
+      <section className="archivist-admin-card archivist-filterbar">
+        <label className="archivist-searchbox" style={{ width: "100%", minWidth: 0 }}>
+          <Search size={16} />
+          <input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Tìm theo tên sách, tác giả hoặc mô tả..."
+          />
+        </label>
+
+        <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
+          <option value="all">Tất cả thể loại</option>
+          {categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+
+        <select value={selectedStock} onChange={(event) => setSelectedStock(event.target.value)}>
+          <option value="all">Tất cả trạng thái kho</option>
+          <option value="available">Còn hàng</option>
+          <option value="low">Sắp hết hàng</option>
+          <option value="empty">Hết hàng</option>
+        </select>
+
+        <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+          <option value="title">Sắp theo tên sách</option>
+          <option value="author">Sắp theo tác giả</option>
+          <option value="price">Sắp theo giá bán</option>
+          <option value="stock">Sắp theo tồn kho</option>
+        </select>
+
+        <button
+          type="button"
+          className="archivist-secondary-button"
+          onClick={() => {
+            setSearchQuery("");
+            setSelectedCategory("all");
+            setSelectedStock("all");
+            setSortBy("title");
+          }}
         >
-          {/* Stats Bar */}
-          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <BookOpen className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Tổng số sách</p>
-                  <p className="font-semibold">{filteredBooks.length}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Bán chạy</p>
-                  <p className="font-semibold">
-                    {filteredBooks.filter((b) => b.trending).length}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Package className="h-4 w-4 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Sắp hết hàng</p>
-                  <p className="font-semibold">
-                    {filteredBooks.filter((b) => b.quantity < 10).length}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <DollarSign className="h-4 w-4 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Giá trung bình</p>
-                  <p className="font-semibold">
-                    {formatPrice(
-                      filteredBooks.reduce(
-                        (acc, b) => acc + b.price.newPrice,
-                        0
-                      ) / filteredBooks.length || 0
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          Xóa bộ lọc
+        </button>
+      </section>
 
-          {/* Table View */}
-          {viewMode === "table" && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50/80">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Sách
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tác giả
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Thể loại
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Giá
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Số lượng
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trạng thái
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Hành động
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  <AnimatePresence mode="wait">
-                    {getCurrentPageItems().map((book, index) => (
-                      <motion.tr
-                        key={book._id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="hover:bg-gray-50/50 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-4">
-                            <div className="relative">
-                              <img
-                                src={book.coverImage || "/placeholder.svg"}
-                                alt={book.title}
-                                className="w-12 h-16 object-cover rounded-lg shadow-sm"
-                              />
-                              {book.trending && (
-                                <div className="absolute -top-1 -right-1 p-1 bg-yellow-400 rounded-full">
-                                  <Star className="h-3 w-3 text-white" />
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900 line-clamp-2">
-                                {book.title}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                ID: {book._id}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900">
-                              {book.author.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge variant="secondary" className="gap-1">
-                            <Tag className="h-3 w-3" />
-                            {book.category.name}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">
-                              {formatPrice(book.price.newPrice)}
-                            </span>
-                            {book.price.oldPrice > book.price.newPrice && (
-                              <span className="text-sm text-gray-500 line-through">
-                                {formatPrice(book.price.oldPrice)}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-gray-400" />
-                            <span
-                              className={`font-medium ${
-                                book.quantity < 10
-                                  ? "text-red-600"
-                                  : "text-gray-900"
-                              }`}
-                            >
-                              {book.quantity}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge
-                            variant={
-                              book.quantity > 0 ? "default" : "secondary"
-                            }
-                          >
-                            {book.quantity > 0 ? "Còn hàng" : "Hết hàng"}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedBook(book);
-                                  setShowDetailsDialog(true);
-                                }}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Xem chi tiết
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  navigate(`/dashboard/edit-book/${book._id}`)
-                                }
-                              >
-                                <Edit3 className="h-4 w-4 mr-2" />
-                                Sửa
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={() => {
-                                  setSelectedBook(book);
-                                  setShowDeleteDialog(true);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Xóa
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Grid View */}
-          {viewMode === "grid" && (
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <AnimatePresence mode="wait">
-                  {getCurrentPageItems().map((book, index) => (
-                    <motion.div
-                      key={book._id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-                    >
-                      <div className="relative">
-                        <img
-                          src={book.coverImage || "/placeholder.svg"}
-                          alt={book.title}
-                          className="w-full h-48 object-cover"
-                        />
-                        {book.trending && (
-                          <div className="absolute top-2 right-2 p-1 bg-yellow-400 rounded-full">
-                            <Star className="h-4 w-4 text-white" />
-                          </div>
-                        )}
-                        <Badge
-                          variant={
-                            book.status === "active" ? "default" : "secondary"
-                          }
-                          className="absolute top-2 left-2"
-                        >
-                          {book.status}
-                        </Badge>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-medium text-gray-900 line-clamp-2 mb-2">
-                          {book.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-2">
-                          {book.author.name}
-                        </p>
-                        <div className="flex items-center justify-between mb-3">
-                          <Badge variant="secondary" className="text-xs">
-                            {book.category.name}
-                          </Badge>
-                          <span className="font-medium text-gray-900">
-                            {formatPrice(book.price.newPrice)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-500">
-                            Stock: {book.quantity}
-                          </span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedBook(book);
-                                  setShowDetailsDialog(true);
-                                }}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Xem chi tiết
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  navigate(`/dashboard/edit-book/${book._id}`)
-                                }
-                              >
-                                <Edit3 className="h-4 w-4 mr-2" />
-                                Sửa
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={() => {
-                                  setSelectedBook(book);
-                                  setShowDeleteDialog(true);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Xóa
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            </div>
-          )}
-
-          {/* Pagination */}
-          <PaginationControls />
-        </div>
-      </div>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xóa sách</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xóa "{selectedBook?.title}"? Hành động này
-              không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-            >
-              Hủy bỏ
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => handleDelete(selectedBook?._id)}
-              disabled={isLoading}
-            >
-              {isLoading ? "Đang xóa..." : "Xóa"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Book Details Dialog */}
-      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Chi tiết sách</DialogTitle>
-          </DialogHeader>
-          {selectedBook && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <section className="archivist-grid" style={{ gridTemplateColumns: selectedBook ? "minmax(0, 1.5fr) minmax(300px, 0.7fr)" : "1fr", gap: 24 }}>
+        <article className="archivist-admin-card archivist-table-card">
+          <div className="archivist-panel" style={{ paddingBottom: 0 }}>
+            <div className="archivist-panel__head">
               <div>
-                <img
-                  src={selectedBook.coverImage || "/placeholder.svg"}
-                  alt={selectedBook.title}
-                  className="w-full h-64 object-cover rounded-lg"
-                />
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {selectedBook.title}
-                  </h3>
-                  <p className="text-gray-600">by {selectedBook.author.name}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Thể loại:</span>
-                    <p className="font-medium">{selectedBook.category.name}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Giá:</span>
-                    <p className="font-medium">
-                      {formatPrice(selectedBook.price.newPrice)}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Số lượng:</span>
-                    <p className="font-medium">{selectedBook.quantity}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Trạng thái:</span>
-                    <p className="font-medium">
-                      {selectedBook.quantity > 0 ? "Còn hàng" : "Hết hàng"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Ngôn ngữ:</span>
-                    <p className="font-medium">{selectedBook.language}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Nhà xuất bản:</span>
-                    <p className="font-medium">{selectedBook.publish.name}</p>
-                  </div>
-                </div>
-                {selectedBook.trending && (
-                  <Badge className="gap-1">
-                    <Star className="h-3 w-3" />
-                    Bán chạy
-                  </Badge>
-                )}
+                <p className="archivist-panel__eyebrow">Danh sách đầu sách</p>
+                <h3 className="archivist-panel__title">{filteredBooks.length} sách phù hợp</h3>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+
+          <div className="archivist-table-scroll">
+            <table className="archivist-table">
+              <thead>
+                <tr>
+                  <th>Sách</th>
+                  <th>Tác giả</th>
+                  <th>Thể loại</th>
+                  <th>Giá bán</th>
+                  <th>Tồn kho</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6}>
+                      <div className="archivist-empty" style={{ minHeight: 220 }}>Đang mở hồ sơ kho sách...</div>
+                    </td>
+                  </tr>
+                ) : filteredBooks.length ? (
+                  filteredBooks.map((book) => {
+                    const stock = Number(book?.quantity || 0);
+                    return (
+                      <tr key={book._id}>
+                        <td>
+                          <div className="archivist-book-cell">
+                            <img src={book.coverImage || "/placeholder.svg"} alt={book.title} />
+                            <div className="archivist-book-cell__copy">
+                              <strong>{book.title}</strong>
+                              <p>{book?.publish || book?.language || "Hồ sơ đầu sách"}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="archivist-table-meta">{book?.author?.name || "Chưa rõ tác giả"}</div>
+                        </td>
+                        <td>
+                          <div className="archivist-table-meta">{book?.category?.name || "Chưa gán thể loại"}</div>
+                        </td>
+                        <td>
+                          <div className="archivist-table-meta">{formatCurrency(book?.price?.newPrice || 0)}</div>
+                          {book?.price?.oldPrice ? (
+                            <div className="archivist-table-meta">Giá nhập {formatCurrency(book.price.oldPrice)}</div>
+                          ) : null}
+                        </td>
+                        <td>
+                          <span className="archivist-status-pill" data-tone={stock === 0 ? "danger" : stock < 10 ? "warning" : "success"}>
+                            {stock} bản
+                          </span>
+                        </td>
+                        <td>
+                          <div className="archivist-cta-row">
+                            <button type="button" className="archivist-icon-cta" onClick={() => setSelectedBook(book)}>
+                              <Eye size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className="archivist-icon-cta"
+                              onClick={() => navigate(`/dashboard/edit-book/${book._id}`)}
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button type="button" className="archivist-icon-cta" onClick={() => handleDelete(book._id)}>
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={6}>
+                      <div className="archivist-empty" style={{ minHeight: 220 }}>
+                        Không có đầu sách nào khớp với bộ lọc hiện tại.
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        {selectedBook ? (
+          <aside className="archivist-admin-card archivist-panel archivist-admin-card--strong">
+            <div className="archivist-panel__head">
+              <div>
+                <p className="archivist-panel__eyebrow">Đầu sách đang chọn</p>
+                <h3 className="archivist-panel__title">Hồ sơ chi tiết</h3>
+              </div>
+              <button type="button" className="archivist-secondary-button" onClick={() => setSelectedBook(null)}>
+                Đóng
+              </button>
+            </div>
+
+            <div className="archivist-stack">
+              <img
+                src={selectedBook.coverImage || "/placeholder.svg"}
+                alt={selectedBook.title}
+                style={{ width: "100%", maxHeight: 320, objectFit: "cover", border: "1px solid var(--archivist-line)" }}
+              />
+              <div>
+                <h4 className="archivist-panel__title" style={{ fontSize: "2rem" }}>{selectedBook.title}</h4>
+                <p className="archivist-panel__description">
+                  {selectedBook.description || "Chưa có bản mô tả dành cho cuốn sách này."}
+                </p>
+              </div>
+              <div className="archivist-stack">
+                <div className="archivist-list-row">
+                  <strong className="archivist-list-row__title">Tác giả</strong>
+                  <span className="archivist-list-row__meta">{selectedBook?.author?.name || "Chưa rõ"}</span>
+                </div>
+                <div className="archivist-list-row">
+                  <strong className="archivist-list-row__title">Thể loại</strong>
+                  <span className="archivist-list-row__meta">{selectedBook?.category?.name || "Chưa gán"}</span>
+                </div>
+                <div className="archivist-list-row">
+                  <strong className="archivist-list-row__title">Ngôn ngữ</strong>
+                  <span className="archivist-list-row__meta">{selectedBook?.language || "N/A"}</span>
+                </div>
+                <div className="archivist-list-row">
+                  <strong className="archivist-list-row__title">Tồn kho</strong>
+                  <span className="archivist-list-row__meta">{selectedBook?.quantity || 0} bản</span>
+                </div>
+                <div className="archivist-list-row">
+                  <strong className="archivist-list-row__title">Giá bán</strong>
+                  <span className="archivist-list-row__meta">{formatCurrency(selectedBook?.price?.newPrice || 0)}</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+        ) : null}
+      </section>
     </div>
   );
-};
-
-export default EnhancedManageBooks;
+}

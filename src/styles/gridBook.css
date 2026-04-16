@@ -2,7 +2,7 @@
 .slider {
     -webkit-appearance: none;
     appearance: none;
-    background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+    background: #2F3C7E;
     outline: none;
     border-radius: 15px;
     overflow: hidden;
@@ -17,14 +17,14 @@
     border-radius: 50%;
     background: #ffffff;
     cursor: pointer;
-    border: 2px solid #3b82f6;
+    border: 2px solid #2F3C7E;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
   }
   
   .slider::-webkit-slider-thumb:hover {
     transform: scale(1.2);
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 10px rgba(47, 60, 126, 0.5);
   }
   
   .slider::-moz-range-thumb {
@@ -33,14 +33,14 @@
     border-radius: 50%;
     background: #ffffff;
     cursor: pointer;
-    border: 2px solid #3b82f6;
+    border: 2px solid #2F3C7E;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
   }
   
   .slider::-moz-range-thumb:hover {
     transform: scale(1.2);
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 10px rgba(47, 60, 126, 0.5);
   }
   
   /* Custom scrollbar for sidebar */
@@ -54,12 +54,12 @@
   }
   
   .sidebar-scroll::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+    background: #2F3C7E;
     border-radius: 10px;
   }
   
   .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #2563eb, #7c3aed);
+    background: #253068;
   }
   
   /* Glass morphism effect */
@@ -69,12 +69,9 @@
     border: 1px solid rgba(255, 255, 255, 0.18);
   }
   
-  /* Gradient text */
+  /* Theme text */
   .gradient-text {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #2F3C7E;
   }
   
   /* Hover effects */
@@ -136,7 +133,7 @@
   /* Loading animation */
   .loading-spinner {
     border: 4px solid #f3f4f6;
-    border-top: 4px solid #3b82f6;
+    border-top: 4px solid #2F3C7E;
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -188,7 +185,7 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: rgba(255, 255, 255, 0.2);
     transition: left 0.5s;
   }
   
@@ -198,8 +195,8 @@
   
   /* Search input focus effect */
   .search-input:focus {
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(47, 60, 126, 0.1);
+    border-color: #2F3C7E;
   }
   
   /* View mode buttons */

@@ -1,29 +1,14 @@
 /* Enhanced Navbar Styles */
 .navbar-glass {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(251, 234, 235, 0.95);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(47, 60, 126, 0.2);
   }
   
-  /* Logo Animation */
+  /* Logo - theme color */
   .logo-text {
-    background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899);
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: gradientShift 3s ease infinite;
-  }
-  
-  @keyframes gradientShift {
-    0%,
-    100% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
+    color: #2F3C7E;
   }
   
   /* Search Bar Enhancements */
@@ -34,7 +19,7 @@
   
   .search-container:focus-within {
     transform: scale(1.02);
-    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 10px 25px -5px rgba(47, 60, 126, 0.25);
   }
   
   .search-input {
@@ -42,7 +27,7 @@
   }
   
   .search-input:focus {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(251, 234, 235, 0.95);
     backdrop-filter: blur(10px);
   }
   
@@ -50,8 +35,8 @@
   .category-dropdown {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(251, 234, 235, 0.95);
+    border: 1px solid rgba(47, 60, 126, 0.2);
     box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
   }
   
@@ -61,15 +46,15 @@
   
   .category-item:hover {
     transform: translateX(5px);
-    background: linear-gradient(45deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
+    background: rgba(47, 60, 126, 0.08);
   }
   
   /* User Dropdown */
   .user-dropdown {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(251, 234, 235, 0.95);
+    border: 1px solid rgba(47, 60, 126, 0.2);
     box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
   }
   
@@ -79,7 +64,7 @@
   
   .user-dropdown-item:hover {
     transform: translateX(3px);
-    background: rgba(59, 130, 246, 0.05);
+    background: rgba(47, 60, 126, 0.08);
   }
   
   /* Badge Animations */
@@ -99,23 +84,21 @@
   
   /* Cart Button */
   .cart-button {
-    background: linear-gradient(45deg, #3b82f6, #8b5cf6);
-    background-size: 200% 200%;
-    animation: gradientShift 3s ease infinite;
+    background: #2F3C7E;
     transition: all 0.3s ease;
   }
   
   .cart-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 10px 20px -5px rgba(47, 60, 126, 0.4);
   }
   
   /* Mobile Menu */
   .mobile-menu {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    background: rgba(249, 250, 251, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(251, 234, 235, 0.95);
+    border: 1px solid rgba(47, 60, 126, 0.2);
   }
   
   /* Smooth Transitions */
@@ -125,7 +108,7 @@
   
   /* Focus States */
   .focus-enhanced:focus {
-    outline: 2px solid #3b82f6;
+    outline: 2px solid #2F3C7E;
     outline-offset: 2px;
     border-radius: 8px;
   }
@@ -188,11 +171,11 @@
   }
   
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+    background: #2F3C7E;
     border-radius: 3px;
   }
   
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(45deg, #2563eb, #7c3aed);
+    background: #253068;
   }
   

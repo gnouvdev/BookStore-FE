@@ -1,0 +1,521 @@
+﻿.bookeco-catalog-shell {
+  background: linear-gradient(180deg, #f7f1e6 0%, #fef9f0 100%);
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  min-height: 100vh;
+  padding: 48px 0 112px;
+  width: 100vw;
+}
+
+.bookeco-catalog-container {
+  margin: 0 auto;
+  width: min(1280px, calc(100% - 48px));
+}
+
+.bookeco-catalog-hero {
+  align-items: end;
+  display: grid;
+  gap: 48px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  margin-bottom: 54px;
+}
+
+.bookeco-catalog-label,
+.bookeco-catalog-filter-title,
+.bookeco-catalog-card small,
+.bookeco-catalog-summary span {
+  color: var(--bookeco-gold);
+  display: block;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.bookeco-catalog-hero-copy h1,
+.bookeco-catalog-card h3,
+.bookeco-catalog-results-head h2,
+.bookeco-catalog-featured strong {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-display-font);
+  font-weight: 400;
+}
+
+.bookeco-catalog-hero-copy h1 {
+  font-size: clamp(2.9rem, 5vw, 4.6rem);
+  line-height: 0.95;
+  margin: 14px 0 18px;
+}
+
+.bookeco-catalog-hero-copy p,
+.bookeco-catalog-results-head p,
+.bookeco-catalog-card p,
+.bookeco-catalog-filter-group label,
+.bookeco-catalog-empty,
+.bookeco-catalog-loading,
+.bookeco-catalog-error {
+  color: var(--bookeco-ink-soft);
+  font-family: var(--bookeco-ui-font);
+  line-height: 1.7;
+}
+
+.bookeco-catalog-featured {
+  background: rgba(255, 253, 248, 0.88);
+  border: 1px solid var(--bookeco-line);
+  box-shadow: var(--bookeco-shadow);
+  color: inherit;
+  display: block;
+  padding: 18px;
+  text-decoration: none;
+}
+
+.bookeco-catalog-featured img {
+  aspect-ratio: 4 / 5;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.bookeco-catalog-featured div {
+  display: grid;
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.bookeco-catalog-featured strong {
+  font-size: 1.7rem;
+}
+
+.bookeco-catalog-layout {
+  display: grid;
+  gap: 48px;
+  grid-template-columns: 270px minmax(0, 1fr);
+}
+
+.bookeco-catalog-sidebar {
+  align-content: start;
+  background: rgba(255, 252, 247, 0.82);
+  border: 1px solid var(--bookeco-line);
+  display: grid;
+  gap: 28px;
+  padding: 28px 24px;
+  position: sticky;
+  top: 108px;
+}
+
+.bookeco-catalog-filter-group {
+  border-bottom: 1px solid rgba(119, 90, 25, 0.12);
+  display: grid;
+  gap: 14px;
+  padding-bottom: 24px;
+}
+
+.bookeco-catalog-filter-group:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.bookeco-catalog-filter-title {
+  color: var(--bookeco-ink);
+  margin-bottom: 2px;
+}
+
+.bookeco-catalog-filter-group label {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  font-size: 0.92rem;
+}
+
+.bookeco-catalog-filter-group input[type="radio"],
+.bookeco-catalog-filter-group input[type="checkbox"] {
+  accent-color: var(--bookeco-ink);
+}
+
+.bookeco-catalog-range-value,
+.bookeco-catalog-toolbar label {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.bookeco-catalog-range input {
+  accent-color: var(--bookeco-ink);
+  width: 100%;
+}
+
+.bookeco-catalog-main {
+  min-width: 0;
+}
+
+.bookeco-catalog-toolbar {
+  align-items: center;
+  border-bottom: 1px solid rgba(119, 90, 25, 0.16);
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+}
+
+.bookeco-catalog-select {
+  align-items: center;
+  display: inline-flex;
+  gap: 12px;
+}
+
+.bookeco-catalog-select select {
+  background: rgba(255, 253, 248, 0.88);
+  border: 1px solid var(--bookeco-line);
+  color: var(--bookeco-ink);
+  min-height: 46px;
+  padding: 0 14px;
+}
+
+.bookeco-catalog-results-head {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.bookeco-catalog-results-head h2 {
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  margin: 0;
+}
+
+.bookeco-catalog-grid {
+  display: grid;
+  gap: 38px 28px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.bookeco-catalog-card {
+  background: rgba(255, 253, 248, 0.92);
+  border: 1px solid rgba(119, 90, 25, 0.16);
+  color: inherit;
+  display: block;
+  min-width: 0;
+  padding: 12px;
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.bookeco-catalog-card:hover {
+  border-color: rgba(119, 90, 25, 0.26);
+  box-shadow: 0 18px 36px rgba(44, 28, 18, 0.08);
+  transform: translateY(-4px);
+}
+
+.bookeco-catalog-image-shell {
+  aspect-ratio: 0.72;
+  overflow: hidden;
+}
+
+.bookeco-catalog-image {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.bookeco-catalog-copy {
+  display: grid;
+  gap: 8px;
+  padding-top: 18px;
+}
+
+.bookeco-catalog-meta,
+.bookeco-catalog-price-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.bookeco-catalog-meta {
+  gap: 8px;
+}
+
+.bookeco-catalog-rating {
+  align-items: center;
+  color: var(--bookeco-gold);
+  display: inline-flex;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.78rem;
+  font-weight: 600;
+  gap: 6px;
+}
+
+.bookeco-catalog-card h3 {
+  font-size: 1.28rem;
+  line-height: 1.22;
+  margin: 0;
+}
+
+.bookeco-catalog-card p {
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.bookeco-catalog-price-row {
+  margin-top: 2px;
+}
+
+.bookeco-catalog-price-row strong {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-display-font);
+  font-size: 1.15rem;
+  font-weight: 400;
+}
+
+.bookeco-catalog-price-row span {
+  color: var(--bookeco-gold);
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.bookeco-catalog-empty,
+.bookeco-catalog-loading,
+.bookeco-catalog-error {
+  background: rgba(255, 253, 248, 0.82);
+  border: 1px solid var(--bookeco-line);
+  padding: 34px;
+  text-align: center;
+}
+
+.bookeco-catalog-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 36px;
+}
+
+.bookeco-catalog-more button {
+  background: var(--bookeco-ink);
+  border: 1px solid var(--bookeco-ink);
+  color: #fff4df;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  min-height: 52px;
+  padding: 0 22px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1280px) {
+  .bookeco-catalog-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1040px) {
+  .bookeco-catalog-container {
+    width: min(100%, calc(100% - 28px));
+  }
+
+  .bookeco-catalog-hero,
+  .bookeco-catalog-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .bookeco-catalog-sidebar {
+    position: static;
+  }
+
+  .bookeco-catalog-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .bookeco-catalog-grid {
+    gap: 20px 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bookeco-catalog-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.bookeco-catalog-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bookeco-catalog-card-link {
+  color: inherit;
+  display: block;
+  text-decoration: none;
+}
+
+.bookeco-catalog-copy h3,
+.bookeco-related-card h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.bookeco-catalog-copy p,
+.bookeco-related-card p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookeco-catalog-add {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgba(119, 90, 25, 0.22);
+  color: var(--bookeco-ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  justify-content: center;
+  letter-spacing: 0.16em;
+  min-height: 44px;
+  text-transform: uppercase;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.bookeco-catalog-add:hover {
+  background: var(--bookeco-ink);
+  border-color: var(--bookeco-ink);
+  color: #fff4df;
+}
+
+.bookeco-catalog-container {
+  width: min(1440px, calc(100% - 28px));
+}
+
+.bookeco-catalog-hero {
+  gap: 36px;
+  margin-bottom: 40px;
+}
+
+.bookeco-catalog-layout {
+  gap: 34px;
+  grid-template-columns: 248px minmax(0, 1fr);
+}
+
+.bookeco-catalog-grid {
+  gap: 34px 22px;
+}
+
+.bookeco-catalog-card {
+  background: rgba(255, 255, 252, 0.98);
+  border: 1px solid rgba(119, 90, 25, 0.2);
+  box-shadow: 0 16px 34px rgba(44, 28, 18, 0.06);
+  padding: 10px;
+}
+
+.bookeco-catalog-card:hover {
+  box-shadow: 0 20px 42px rgba(44, 28, 18, 0.1);
+}
+
+.bookeco-catalog-copy {
+  gap: 6px;
+  padding-top: 14px;
+}
+
+.bookeco-catalog-copy h3 {
+  -webkit-line-clamp: 1;
+  font-size: 1.18rem;
+  font-style: italic;
+  line-height: 1.12;
+}
+
+.bookeco-catalog-copy p {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bookeco-catalog-price-row strong {
+  font-size: 1.04rem;
+  font-style: italic;
+}
+
+.bookeco-catalog-featured strong {
+  font-style: italic;
+}
+
+.bookeco-catalog-sidebar {
+  padding: 24px 20px;
+}
+
+.bookeco-catalog-toolbar {
+  margin-bottom: 22px;
+}
+
+@media (max-width: 1040px) {
+  .bookeco-catalog-container {
+    width: min(100%, calc(100% - 18px));
+  }
+}
+
+.bookeco-catalog-filter-title {
+  font-family: var(--bookeco-display-font);
+  font-size: 1.05rem;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.bookeco-catalog-filter-group label,
+.bookeco-catalog-range-value,
+.bookeco-catalog-toolbar label,
+.bookeco-catalog-select select {
+  font-family: var(--bookeco-display-font);
+  font-size: 0.98rem;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.bookeco-catalog-filter-group label {
+  color: rgba(66, 4, 9, 0.78);
+}
+
+.bookeco-catalog-select select {
+  appearance: none;
+}
+
+.bookeco-catalog-hero {
+  grid-template-columns: 1fr !important;
+  margin-bottom: 34px;
+}
+
+.bookeco-catalog-hero-copy {
+  max-width: 760px;
+}
+
+.bookeco-catalog-hero-copy h1 {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.bookeco-catalog-hero-copy p,
+.bookeco-catalog-results-head p {
+  font-family: var(--bookeco-display-font);
+  font-size: 1.06rem;
+  font-style: italic;
+  line-height: 1.72;
+}
+
+.bookeco-catalog-results-head h2 {
+  font-style: italic;
+  font-weight: 400;
+}
