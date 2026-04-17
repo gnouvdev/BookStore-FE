@@ -172,16 +172,91 @@
 .bookeco-search-panel {
   background: var(--bookeco-paper);
   border: 1px solid var(--bookeco-line);
-  box-shadow: var(--bookeco-shadow);
+  box-shadow: 0 24px 48px rgba(44, 28, 18, 0.14);
+  display: grid;
+  gap: 14px;
   left: 0;
   margin-top: 10px;
-  padding: 12px;
+  padding: 14px;
   position: absolute;
   right: 0;
   top: 100%;
+  z-index: 30;
 }
 
-.bookeco-search-panel h4 {
+.bookeco-search-section {
+  display: grid;
+  gap: 6px;
+}
+
+.bookeco-search-book-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.bookeco-search-book-card {
+  align-items: center;
+  background: rgba(255, 252, 247, 0.9);
+  border: 1px solid transparent;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 62px minmax(0, 1fr);
+  padding: 10px;
+  text-align: left;
+}
+
+.bookeco-search-book-cover {
+  background: #f5efe4;
+  border: 1px solid rgba(119, 90, 25, 0.12);
+  display: grid;
+  min-height: 82px;
+  overflow: hidden;
+  place-items: center;
+}
+
+.bookeco-search-book-cover img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.bookeco-search-book-cover-fallback {
+  background: linear-gradient(180deg, #f5efe4 0%, #ede3d3 100%);
+  height: 100%;
+  width: 100%;
+}
+
+.bookeco-search-book-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bookeco-search-book-copy strong {
+  color: var(--bookeco-ink);
+  font-family: var(--bookeco-display-font);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookeco-search-book-copy span {
+  color: var(--bookeco-ink-soft);
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.78rem;
+}
+
+.bookeco-search-section + .bookeco-search-section {
+  border-top: 1px solid rgba(119, 90, 25, 0.12);
+  padding-top: 12px;
+}
+
+.bookeco-search-panel h4,
+.bookeco-search-section-title {
   color: var(--bookeco-gold);
   font-family: var(--bookeco-ui-font);
   font-size: 0.7rem;
@@ -192,8 +267,12 @@
 }
 
 .bookeco-search-item {
+  align-items: start;
+  background: rgba(255, 252, 247, 0.82);
+  border: 1px solid transparent;
   display: block;
-  padding: 10px 8px;
+  padding: 12px 10px;
+  text-align: left;
   text-decoration: none;
 }
 
@@ -329,13 +408,17 @@
 }
 
 .bookeco-search-item:hover,
+.bookeco-search-book-card:hover,
 .bookeco-user-dropdown a:hover,
 .bookeco-user-dropdown button:hover {
   background: rgba(66, 4, 9, 0.05);
+  border-color: rgba(119, 90, 25, 0.12);
+  transform: translateY(-1px);
 }
 
 .bookeco-search-item-row {
   align-items: center;
+  border: 1px solid transparent;
   display: flex;
   justify-content: space-between;
 }
@@ -358,6 +441,14 @@
   align-items: center;
   display: inline-flex;
   gap: 8px;
+}
+
+.bookeco-search-clear-button {
+  border-radius: 999px;
+  display: inline-grid;
+  height: 28px;
+  place-items: center;
+  width: 28px;
 }
 .bookeco-search-box input::placeholder {
   color: rgba(66, 4, 9, 0.55);

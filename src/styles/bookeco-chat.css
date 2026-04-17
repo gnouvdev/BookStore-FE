@@ -9,6 +9,10 @@
   box-shadow: 0 28px 60px rgba(44, 28, 18, 0.16) !important;
 }
 
+.bookeco-chat-body {
+  min-height: 0;
+}
+
 .bookeco-chat-header {
   background: linear-gradient(180deg, #4a161a 0%, #420409 100%) !important;
 }
@@ -34,6 +38,10 @@
 
 .bookeco-chat-scroll {
   background: #f8f3ea !important;
+}
+
+.bookeco-chat-scroll-area {
+  min-height: 0;
 }
 
 .bookeco-chat-welcome-icon {

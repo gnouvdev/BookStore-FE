@@ -51,6 +51,20 @@ const formatPrice = (value) =>
     maximumFractionDigits: 0,
   }).format(value || 0);
 
+const TAG_LABEL_MAP = {
+  bacho: "Bác Hồ",
+  thieunhi: "thiếu nhi",
+  thieunien: "thiếu niên",
+  giaoduc: "giáo dục",
+  lichsu: "lịch sử",
+  truyentranh: "truyện tranh",
+};
+
+const formatSpotlightTag = (tag = "") => {
+  const normalized = normalizeText(tag).replace(/\s+/g, "");
+  return TAG_LABEL_MAP[normalized] || tag;
+};
+
 const getSpotlightNarrative = (book, t) => {
   if (!book) {
     return {
@@ -63,19 +77,29 @@ const getSpotlightNarrative = (book, t) => {
 
   const categoryName = book.category?.name || t("common.books", { defaultValue: "sách" });
   const authorName = book.author?.name || t("books.author", { defaultValue: "tác giả đang cập nhật" });
-  const tags = Array.isArray(book.tags) ? book.tags.filter(Boolean).slice(0, 2) : [];
+  const tags = Array.isArray(book.tags)
+    ? book.tags.map(formatSpotlightTag).filter(Boolean).slice(0, 2)
+    : [];
+  const isRespectfulContext =
+    /hồ chí minh|ho chi minh/i.test(authorName) || tags.includes("Bác Hồ");
 
   const intro = t("bookeco.home.spotlight_intro", {
     defaultValue: `${book.title} là lựa chọn nổi bật cho những ai đang tìm một cuốn ${categoryName.toLowerCase()} có nhịp kể cuốn hút và cá tính rõ ràng trong tủ sách hiện tại.`,
   });
 
   const details = [
-    t("bookeco.home.spotlight_detail_author", {
-      defaultValue: `Tên tuổi ${authorName} giúp cuốn sách giữ được cảm giác có trọng lượng, đủ để trở thành điểm nhấn ngay từ lần chạm đầu tiên.`,
-    }),
+    isRespectfulContext
+      ? t("bookeco.home.spotlight_detail_author_respectful", {
+          defaultValue: `Cuốn sách được giới thiệu ở đây như một lựa chọn trang trọng, phù hợp cho bạn đọc muốn tìm lại những giá trị lịch sử, ký ức và cảm hứng sống đẹp.`,
+        })
+      : t("bookeco.home.spotlight_detail_author", {
+          defaultValue: `Tên tuổi ${authorName} giúp cuốn sách giữ được cảm giác có trọng lượng, đủ để trở thành điểm nhấn ngay từ lần chạm đầu tiên.`,
+        }),
     tags.length
       ? t("bookeco.home.spotlight_detail_tags", {
-          defaultValue: `Không khí gợi mở từ ${tags.join(" và ")} khiến cuốn này hợp để đặt ở vị trí trung tâm của một bộ sưu tập đang cần thêm dấu ấn.`,
+          defaultValue: isRespectfulContext
+            ? `Mạch nội dung xoay quanh ${tags.join(" và ")} khiến cuốn sách này phù hợp để giới thiệu trong dịp đặc biệt, nhưng vẫn giữ được sự chỉn chu và tôn trọng cần có.`
+            : `Không khí gợi mở từ ${tags.join(" và ")} khiến cuốn này hợp để đặt ở vị trí trung tâm của một bộ sưu tập đang cần thêm dấu ấn.`,
         })
       : t("bookeco.home.spotlight_detail_category", {
           defaultValue: `Nếu bạn đang tìm một đầu sách có bản sắc rõ trong nhóm ${categoryName.toLowerCase()}, đây là lựa chọn đáng để mở xem ngay.`,
@@ -311,7 +335,7 @@ const Home = () => {
             <span>{t("bookeco.home.hero_line_one", { defaultValue: "Nơi dành cho" })}</span>
             <span className="bookeco-hero-title-italic">{t("bookeco.home.hero_line_two", { defaultValue: "những cuốn sách đáng giữ lại" })}</span>
           </h1>
-          <p className="bookeco-hero-description">“{t(`bookeco.home.${mood.key}`, { defaultValue: "Một cuốn sách hay không cần ồn ào, chỉ cần đến đúng lúc và ở lại đủ lâu." })}”</p>
+          <p className="bookeco-hero-description">“{t("bookeco.home.hero_slogan", { defaultValue: "Một cuốn sách hay cho ta một điều tốt, một người bạn tốt cho ta một điều hay." })}”</p>
           <p className="bookeco-hero-attribution">BookEco Selection</p>
           <div className="bookeco-hero-actions">
             <Link to={featuredBook ? `/books/${featuredBook._id}` : "/product?sort=newest"} className="bookeco-primary-button">

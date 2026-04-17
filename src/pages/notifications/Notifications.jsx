@@ -61,10 +61,10 @@ const Notifications = () => {
         <div className="bookeco-desk-layout">
           <aside className="bookeco-desk-sidebar">
             <nav className="bookeco-desk-nav">
-              <Link to="/profile">{t("common.profile", { defaultValue: "Hồ sơ" })}</Link>
-              <Link to="/orders">{t("common.orders", { defaultValue: "Đơn hàng" })}</Link>
-              <Link to="/notifications" className="is-active">{t("common.notifications", { defaultValue: "Thông báo" })}</Link>
-              <Link to="/wishlist">{t("common.wishlist", { defaultValue: "Yêu thích" })}</Link>
+              <Link to="/profile">{t("common.profile", { defaultValue: "Hồ sơ" })} <ChevronRight size={14} /></Link>
+              <Link to="/orders">{t("common.orders", { defaultValue: "Đơn hàng" })} <ChevronRight size={14} /></Link>
+              <Link to="/notifications" className="is-active">{t("common.notifications", { defaultValue: "Thông báo" })} <ChevronRight size={14} /></Link>
+              <Link to="/wishlist">{t("common.wishlist", { defaultValue: "Yêu thích" })} <ChevronRight size={14} /></Link>
             </nav>
 
             <div className="bookeco-desk-quote">

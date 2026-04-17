@@ -19,7 +19,7 @@ import Dashboard from "./../pages/dashBoard/Dashboard";
 import AddBook from "./../pages/dashBoard/addBook/AddBook";
 import UpdateBook from "./../pages/dashBoard/EditBook/UpdateBook";
 import ManageBooks from "./../pages/dashBoard/manageBooks/ManageBooks";
-import SearchBook from "../pages/books/SearchBook";
+import SearchBook from "../pages/books/SearchBookModern";
 import ManageCategories from "./../pages/dashBoard/manageCategories/ManageCategories";
 import EditCategory from "./../pages/dashBoard/manageCategories/EditCategory";
 import ManageAuthors from "./../pages/dashBoard/manageAuthors/ManageAuthors";

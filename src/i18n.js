@@ -19,9 +19,10 @@ const runtimeOverrides = {
     },
     bookeco: {
       home: {
-        hero_line_one: "A library for",
-        hero_line_two: "readers who choose carefully",
-        quote_1: "Some books do not need to be rushed, only kept close long enough to make an ordinary day feel deeper.",
+        hero_line_one: "A place for",
+        hero_line_two: "books worth keeping",
+        hero_slogan: "A good book gives us something good, and a good friend gives us something wise.",
+        quote_1: "A good book gives us something good, and a good friend gives us something wise.",
         quote_2: "A beautiful library is not measured by volume alone, but by the desire to return to each book you chose.",
         quote_3: "Each time you open a meaningful book, you learn to see the world with steadier eyes.",
         quote_4: "Read to slow down, to understand more clearly, and to keep what matters on your own shelves.",
@@ -65,9 +66,10 @@ const runtimeOverrides = {
     },
     bookeco: {
       home: {
-        hero_line_one: "Tủ sách dành cho",
-        hero_line_two: "người thích chọn kỹ",
-        quote_1: "Có những cuốn sách không cần đọc thật nhanh, chỉ cần ở lại đủ lâu để khiến một ngày bình thường trở nên sâu hơn.",
+        hero_line_one: "Nơi dành cho",
+        hero_line_two: "những cuốn sách đáng giữ lại",
+        hero_slogan: "Một cuốn sách hay cho ta một điều tốt, một người bạn tốt cho ta một điều hay.",
+        quote_1: "Một cuốn sách hay cho ta một điều tốt, một người bạn tốt cho ta một điều hay.",
         quote_2: "Một tủ sách đẹp không chỉ nằm ở số lượng đầu sách, mà ở cảm giác muốn quay lại với từng cuốn đã chọn.",
         quote_3: "Mỗi lần mở một cuốn sách hay là thêm một lần nhìn thế giới bằng đôi mắt bình tĩnh hơn.",
         quote_4: "Đọc để chậm lại, để hiểu kỹ hơn, và để giữ lại những điều đáng nhớ trên giá sách của riêng mình.",

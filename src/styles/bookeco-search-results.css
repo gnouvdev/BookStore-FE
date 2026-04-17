@@ -1,0 +1,139 @@
+.bookeco-search-shell {
+  background: #fff;
+}
+
+.bookeco-search-hero {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+
+.bookeco-search-backlink {
+  align-items: center;
+  color: var(--bookeco-ink);
+  display: inline-flex;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.8rem;
+  font-weight: 700;
+  gap: 8px;
+  letter-spacing: 0.14em;
+  margin-bottom: 28px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.bookeco-search-hero-card {
+  align-items: center;
+  background: rgba(255, 252, 247, 0.88);
+  border: 1px solid var(--bookeco-line);
+  box-shadow: var(--bookeco-shadow);
+  color: var(--bookeco-ink);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  padding: 22px 20px;
+}
+
+.bookeco-search-hero-card span {
+  color: var(--bookeco-gold);
+  display: block;
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.bookeco-search-hero-card strong {
+  display: block;
+  font-family: var(--bookeco-display-font);
+  font-size: 1.35rem;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.bookeco-search-results-grid .bookeco-catalog-card h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookeco-search-pagination {
+  align-items: center;
+  border-top: 1px solid rgba(119, 90, 25, 0.16);
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-top: 36px;
+  padding-top: 22px;
+}
+
+.bookeco-search-pagination-copy {
+  display: grid;
+  gap: 12px;
+}
+
+.bookeco-search-pagination-copy span,
+.bookeco-search-page-size span {
+  color: var(--bookeco-ink-soft);
+  font-family: var(--bookeco-ui-font);
+  font-size: 0.86rem;
+}
+
+.bookeco-search-page-size {
+  align-items: center;
+  display: inline-flex;
+  gap: 12px;
+}
+
+.bookeco-search-page-size select,
+.bookeco-search-pagination-controls button {
+  background: rgba(255, 253, 248, 0.92);
+  border: 1px solid var(--bookeco-line);
+  color: var(--bookeco-ink);
+  min-height: 42px;
+}
+
+.bookeco-search-page-size select {
+  padding: 0 12px;
+}
+
+.bookeco-search-pagination-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.bookeco-search-pagination-controls button {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  min-width: 42px;
+  padding: 0 12px;
+}
+
+.bookeco-search-pagination-controls button.is-active {
+  background: var(--bookeco-ink);
+  color: #fff7ef;
+}
+
+.bookeco-search-pagination-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (max-width: 980px) {
+  .bookeco-search-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .bookeco-search-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bookeco-search-pagination-controls {
+    justify-content: flex-start;
+  }
+}

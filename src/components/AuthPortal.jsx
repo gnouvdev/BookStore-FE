@@ -267,6 +267,8 @@ export default function AuthPortal({ mode = "login" }) {
         toast.error("Email chưa được đăng ký.");
       } else if (error.code === "auth/wrong-password") {
         toast.error("Mật khẩu không đúng.");
+      } else if (error.code === "auth/invalid-credential" || error.code === "auth/invalid-login-credentials") {
+        toast.error("Email hoặc mật khẩu không đúng.");
       } else if (error.code === "auth/weak-password") {
         toast.error("Mật khẩu còn quá yếu.");
       } else {

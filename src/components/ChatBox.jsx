@@ -546,7 +546,7 @@ const ChatBox = () => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className={`bookeco-chat-shell fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden backdrop-blur-sm ${
+            className={`bookeco-chat-shell fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden backdrop-blur-sm flex flex-col ${
               isMaximized
                 ? "inset-4 w-auto h-auto"
                 : "bottom-24 right-6 w-96 h-[500px]"
@@ -629,12 +629,10 @@ const ChatBox = () => {
             {!isMinimized && (
               <>
                 {/* Messages */}
-                <div className="relative">
+                <div className="bookeco-chat-body relative flex-1 min-h-0">
                   <ScrollArea
                     ref={scrollAreaRef}
-                    className={`bookeco-chat-scroll bg-gray-50/50 ${
-                      isMaximized ? "h-[calc(100%-140px)]" : "h-80"
-                    }`}
+                    className="bookeco-chat-scroll bookeco-chat-scroll-area bg-gray-50/50 h-full"
                   >
                     <div className="p-4 space-y-4">
                     {isLoadingHistory ? (

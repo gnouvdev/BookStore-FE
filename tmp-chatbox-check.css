@@ -1,4 +1,4 @@
-/* fontend/src/styles/bookeco-chat.css */
+/* src/styles/bookeco-chat.css */
 .bookeco-chat-launcher .bg-\[\#2F3C7E\] {
   background: var(--bookeco-ink) !important;
   border: 1px solid rgba(119, 90, 25, 0.16);
@@ -7,6 +7,9 @@
 .bookeco-chat-shell {
   border: 1px solid var(--bookeco-line) !important;
   box-shadow: 0 28px 60px rgba(44, 28, 18, 0.16) !important;
+}
+.bookeco-chat-body {
+  min-height: 0;
 }
 .bookeco-chat-header {
   background:
@@ -33,6 +36,9 @@
 }
 .bookeco-chat-scroll {
   background: #f8f3ea !important;
+}
+.bookeco-chat-scroll-area {
+  min-height: 0;
 }
 .bookeco-chat-welcome-icon {
   background: rgba(66, 4, 9, 0.08) !important;

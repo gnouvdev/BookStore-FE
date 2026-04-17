@@ -53,6 +53,14 @@ const Navbar = () => {
     suggestionCategories.length > 0 ||
     suggestionTags.length > 0;
   const historyItems = historyData?.data || [];
+  const uniqueHistoryItems = historyItems.filter((item, index, array) => {
+    const normalized = item.query?.trim().toLowerCase();
+    return (
+      array.findIndex(
+        (entry) => entry.query?.trim().toLowerCase() === normalized
+      ) === index
+    );
+  });
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -91,6 +99,19 @@ const Navbar = () => {
     setShowPanel(false);
     setIsMobileOpen(false);
     navigate(`/search?query=${encodeURIComponent(cleaned)}`);
+  };
+
+  const handleOpenBookDetail = async (book) => {
+    if (!book?._id) return;
+    if (currentUser && book.title) {
+      try {
+        await addSearchHistory({ query: book.title }).unwrap();
+      } catch {}
+    }
+    setShowPanel(false);
+    setIsMobileOpen(false);
+    setQuery(book.title || "");
+    navigate(`/books/${book._id}`);
   };
 
   const handleLogout = async () => {
@@ -141,14 +162,32 @@ const Navbar = () => {
           {showPanel && (hasSuggestions || historyItems.length > 0) ? (
             <div className="bookeco-search-panel">
               {query.trim().length >= 2 && hasSuggestions ? (
-                <>
-                  <h4>{t("search.suggestions", { defaultValue: "Gợi ý tìm kiếm" })}</h4>
-                  {suggestionBooks.slice(0, 4).map((item) => (
-                    <button key={item._id || item.title} type="button" className="bookeco-search-item" onClick={() => submitSearch(item.title)}>
-                      <strong>{item.title}</strong>
-                      <span>{item.author?.name || t("search.book_match", { defaultValue: "Sách phù hợp" })}</span>
-                    </button>
-                  ))}
+                <section className="bookeco-search-section">
+                  <h4 className="bookeco-search-section-title">{t("search.suggestions", { defaultValue: "Gợi ý tìm kiếm" })}</h4>
+                  {suggestionBooks.length > 0 ? (
+                    <div className="bookeco-search-book-grid">
+                      {suggestionBooks.slice(0, 4).map((item) => (
+                        <button
+                          key={item._id || item.title}
+                          type="button"
+                          className="bookeco-search-book-card"
+                          onClick={() => handleOpenBookDetail(item)}
+                        >
+                          <div className="bookeco-search-book-cover">
+                            {item.coverImage ? (
+                              <img src={item.coverImage} alt={item.title} />
+                            ) : (
+                              <div className="bookeco-search-book-cover-fallback" />
+                            )}
+                          </div>
+                          <div className="bookeco-search-book-copy">
+                            <strong title={item.title}>{item.title}</strong>
+                            <span>{item.author?.name || t("search.book_match", { defaultValue: "Sách phù hợp" })}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                   {suggestionAuthors.slice(0, 3).map((item) => (
                     <button key={item._id || item.name} type="button" className="bookeco-search-item" onClick={() => submitSearch(item.name)}>
                       <strong>{item.name}</strong>
@@ -167,13 +206,13 @@ const Navbar = () => {
                       <span>{t("search.tag_match", { defaultValue: "Từ khóa được gợi ý" })}</span>
                     </button>
                   ))}
-                </>
+                </section>
               ) : null}
 
-              {query.trim().length === 0 && currentUser && historyItems.length > 0 ? (
-                <>
-                  <h4>{t("search.recent", { defaultValue: "Lịch sử gần đây" })}</h4>
-                  {historyItems.slice(0, 4).map((item) => (
+              {query.trim().length === 0 && historyItems.length > 0 ? (
+                <section className="bookeco-search-section">
+                  <h4 className="bookeco-search-section-title">{t("search.recent", { defaultValue: "Lịch sử gần đây" })}</h4>
+                  {uniqueHistoryItems.slice(0, 4).map((item) => (
                     <div key={item._id} className="bookeco-search-item bookeco-search-item-row">
                       <button type="button" onClick={() => submitSearch(item.query)} className="bookeco-search-history-button">
                         <strong><History size={14} /> {item.query}</strong>
@@ -181,7 +220,7 @@ const Navbar = () => {
                       <button type="button" onClick={() => deleteSearchHistory(item._id)} className="bookeco-search-clear-button"><X size={14} /></button>
                     </div>
                   ))}
-                </>
+                </section>
               ) : null}
             </div>
           ) : null}

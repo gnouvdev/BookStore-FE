@@ -1,5 +1,6 @@
 ﻿import { Link, Navigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useGetOrdersQuery, useCancelOrderMutation } from "../../redux/features/orders/ordersApi";
 import { useAuth } from "../../context/AuthContext";
@@ -69,10 +70,10 @@ const OrderPage = () => {
         <div className="bookeco-desk-layout">
           <aside className="bookeco-desk-sidebar">
             <nav className="bookeco-desk-nav">
-              <Link to="/profile">{t("common.profile", { defaultValue: "Hồ sơ" })}</Link>
-              <Link to="/orders" className="is-active">{t("common.orders", { defaultValue: "Đơn hàng" })}</Link>
-              <Link to="/notifications">{t("common.notifications", { defaultValue: "Thông báo" })}</Link>
-              <Link to="/wishlist">{t("common.wishlist", { defaultValue: "Yêu thích" })}</Link>
+              <Link to="/profile">{t("common.profile", { defaultValue: "Hồ sơ" })} <ChevronRight size={14} /></Link>
+              <Link to="/orders" className="is-active">{t("common.orders", { defaultValue: "Đơn hàng" })} <ChevronRight size={14} /></Link>
+              <Link to="/notifications">{t("common.notifications", { defaultValue: "Thông báo" })} <ChevronRight size={14} /></Link>
+              <Link to="/wishlist">{t("common.wishlist", { defaultValue: "Yêu thích" })} <ChevronRight size={14} /></Link>
             </nav>
 
             <div className="bookeco-desk-quote">
