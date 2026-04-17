@@ -12,7 +12,7 @@ import "../../styles/bookeco-commerce.css";
 
 const Profile = () => {
   const { t } = useTranslation();
-  const { currentUser, setCurrentUser, loading, token } = useAuth();
+  const { currentUser, setCurrentUser, loading, token, updateUserProfile } = useAuth();
   const { data: profileResponse, isLoading: isLoadingProfile } = useGetUserProfileQuery(undefined, {
     skip: !token,
   });
@@ -77,13 +77,22 @@ const Profile = () => {
       let nextPhotoURL = formData.photoURL;
       if (selectedFile) {
         nextPhotoURL = await uploadToCloudinary(selectedFile);
+        if (!nextPhotoURL) {
+          throw new Error(t("bookeco.profile.upload_error", { defaultValue: "Không thể tải ảnh đại diện lên lúc này." }));
+        }
       }
       const response = await updateProfile({ ...formData, photoURL: nextPhotoURL }).unwrap();
+      await updateUserProfile(
+        response.user.fullName || formData.fullName || currentUser?.displayName || "",
+        nextPhotoURL || response.user.photoURL || currentUser?.photoURL || ""
+      );
       const updatedUser = {
         ...currentUser,
         ...response.user,
         displayName: response.user.fullName || currentUser?.displayName,
       };
+      setFormData((prev) => ({ ...prev, photoURL: nextPhotoURL || response.user.photoURL || prev.photoURL }));
+      setSelectedFile(null);
       setCurrentUser(updatedUser);
       localStorage.setItem("user", JSON.stringify({ ...updatedUser, token: localStorage.getItem("token") }));
       setIsEditing(false);
@@ -132,6 +141,12 @@ const Profile = () => {
             <section className="bookeco-desk-profile-hero">
               <div className="bookeco-desk-portrait-frame">
                 <img src={formData.photoURL || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"} alt={formData.fullName || "User"} />
+                {isEditing ? (
+                  <label className="bookeco-desk-avatar-trigger">
+                    <Camera size={14} /> {t("bookeco.profile.choose_image", { defaultValue: "Đổi ảnh đại diện" })}
+                    <input type="file" accept="image/*" hidden onChange={handleFileChange} />
+                  </label>
+                ) : null}
               </div>
 
               <div className="bookeco-desk-profile-copy">
@@ -139,6 +154,11 @@ const Profile = () => {
                 <div className="bookeco-desk-profile-name">{formData.fullName || t("bookeco.profile.fallback_name", { defaultValue: "Độc giả BookEco" })}</div>
                 <div className="bookeco-desk-profile-role">{formData.phone ? `${t("cart.phone_number", { defaultValue: "Số điện thoại" })}: ${formData.phone}` : t("bookeco.profile.role", { defaultValue: "Độc giả đang xây dựng tủ sách cá nhân" })}</div>
                 <div className="bookeco-desk-profile-sub">{t("bookeco.profile.subline", { defaultValue: "Thông tin tài khoản được đồng bộ cho các đơn hàng tiếp theo" })}</div>
+                <div className="bookeco-desk-avatar-note">
+                  {isEditing
+                    ? t("bookeco.profile.avatar_editing", { defaultValue: "Khung chân dung đang mở để bạn chọn ảnh đại diện mới." })
+                    : t("bookeco.profile.avatar_note", { defaultValue: "Bật chỉnh sửa hồ sơ để cập nhật ảnh đại diện và thông tin cá nhân." })}
+                </div>
 
                 <div className="bookeco-desk-badges">
                   <div>
@@ -195,15 +215,10 @@ const Profile = () => {
                     <label><span>{t("cart.city", { defaultValue: "Thành phố" })}</span><input name="address.city" value={formData.address.city} onChange={handleChange} disabled={!isEditing} /></label>
                     <label><span>{t("cart.country", { defaultValue: "Quốc gia" })}</span><input name="address.country" value={formData.address.country} onChange={handleChange} disabled={!isEditing} /></label>
                     <label><span>{t("cart.zipcode", { defaultValue: "Mã bưu chính" })}</span><input name="address.zip" value={formData.address.zip} onChange={handleChange} disabled={!isEditing} /></label>
-                    {isEditing ? (
-                      <label>
-                        <span>{t("bookeco.profile.avatar", { defaultValue: "Ảnh đại diện" })}</span>
-                        <label className="bookeco-button-secondary" style={{ cursor: "pointer" }}>
-                          <Camera size={14} /> {t("bookeco.profile.choose_image", { defaultValue: "Chọn ảnh" })}
-                          <input type="file" accept="image/*" hidden onChange={handleFileChange} />
-                        </label>
-                      </label>
-                    ) : null}
+                    <label>
+                      <span>{t("bookeco.profile.avatar", { defaultValue: "Ảnh đại diện" })}</span>
+                      <input value={selectedFile?.name || t("bookeco.profile.avatar_hint", { defaultValue: "Chọn ảnh ở khung chân dung bên trên khi bật chỉnh sửa." })} disabled readOnly />
+                    </label>
                   </div>
                 </div>
 

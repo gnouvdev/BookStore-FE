@@ -41,9 +41,13 @@ const SingleBook = () => {
 
   const { data: book, isLoading, error } = useGetBookByIdQuery(id, {
     skip: !id || id === "undefined",
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
   });
   const { data: reviewsData } = useGetReviewsQuery(id, {
     skip: !id || id === "undefined",
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
   });
   const [createReview, { isLoading: isSubmittingReview }] = useCreateReviewMutation();
   const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
@@ -69,7 +73,13 @@ const SingleBook = () => {
     }
     return Number(book?.rating || book?.averageRating || 0);
   }, [book?.averageRating, book?.rating, reviews]);
-  const reviewCount = Number(book?.numReviews || book?.reviewCount || reviews.length || 0);
+  const reviewCount = Number(
+    Math.max(
+      Number(book?.numReviews || 0),
+      Number(book?.reviewCount || 0),
+      Number(reviews.length || 0)
+    )
+  );
   const currentUserId = getReviewerId(currentUser);
   const canReview = currentUserId && !reviews.some((review) => getReviewerId(review.user) === currentUserId);
 
@@ -195,7 +205,7 @@ const SingleBook = () => {
               </div>
               <div className="bookeco-single-rating-chip">
                 <StarRow value={Math.round(ratingValue)} />
-                <em>{ratingValue.toFixed(1)} · {reviews.length} {t("books.tabs.reviews", { defaultValue: "đánh giá" }).toLowerCase()}</em>
+                <em>{ratingValue.toFixed(1)} · {reviewCount} {t("books.tabs.reviews", { defaultValue: "đánh giá" }).toLowerCase()}</em>
               </div>
             </div>
 
@@ -235,7 +245,7 @@ const SingleBook = () => {
           {[
             { id: "description", label: t("books.tabs.description", { defaultValue: "Mô tả" }) },
             { id: "details", label: t("books.tabs.specifications", { defaultValue: "Thông tin sách" }) },
-            { id: "reviews", label: `${t("books.tabs.reviews", { defaultValue: "Đánh giá" })} (${reviews.length})` },
+            { id: "reviews", label: `${t("books.tabs.reviews", { defaultValue: "Đánh giá" })} (${reviewCount})` },
           ].map((tab) => (
             <button key={tab.id} type="button" className={activeTab === tab.id ? "is-active" : ""} onClick={() => setActiveTab(tab.id)}>
               {tab.label}

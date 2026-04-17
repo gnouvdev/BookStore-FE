@@ -1824,3 +1824,64 @@
     grid-template-columns: 1fr;
   }
 }
+
+.bookeco-section-badge-row,
+.bookeco-section-badge,
+.bookeco-spotlight-kicker,
+.bookeco-book-accent {
+  display: none !important;
+}
+
+.bookeco-spotlight-card {
+  transition:
+    transform 340ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 340ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms ease !important;
+}
+
+.bookeco-spotlight-image {
+  transition: transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bookeco-spotlight-card:hover {
+  border-color: rgba(119, 90, 25, 0.28);
+  box-shadow: 0 44px 92px rgba(92, 59, 22, 0.22);
+  transform: translateY(-10px);
+}
+
+.bookeco-spotlight-card:hover .bookeco-spotlight-image {
+  transform: scale(1.035);
+}
+
+.bookeco-book-tile-selector {
+  overflow: hidden;
+  position: relative;
+  transition:
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms ease;
+}
+
+.bookeco-book-tile-selector::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(198, 144, 45, 0.95), transparent);
+  opacity: 0;
+  transform: scaleX(0.4);
+  transform-origin: center;
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+
+.bookeco-book-tile-selector:hover {
+  transform: translateY(-6px);
+}
+
+.bookeco-book-tile-selector:hover::after,
+.bookeco-book-tile-selector.is-active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}

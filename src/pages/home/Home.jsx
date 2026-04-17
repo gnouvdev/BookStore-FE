@@ -1,6 +1,6 @@
 ﻿import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, MoveRight, ShoppingBag, Sparkles } from "lucide-react";
+import { ChevronRight, MoveRight, ShoppingBag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useGetBooksQuery } from "../../redux/features/books/booksApi";
 import { useGetCategoriesQuery } from "../../redux/features/categories/categoriesApi";
@@ -89,11 +89,10 @@ const getCategoryRoute = (categoryName) => CATEGORY_ROUTE_MAP[normalizeText(cate
 const pickHeroBook = (books) => [...books].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0] || null;
 const getReviewScore = (book) => Number(book?.rating || book?.averageRating || 0) * 100 + Number(book?.numReviews || book?.reviewCount || 0);
 
-const BookTile = ({ book, compact = false, className = "", accent = "", t }) => {
+const BookTile = ({ book, compact = false, className = "", t }) => {
   if (!book) return null;
   return (
     <Link to={`/books/${book._id}`} className={`bookeco-book-tile ${compact ? "bookeco-book-tile-compact" : ""} ${className}`.trim()}>
-      {accent ? <span className="bookeco-book-accent">{accent}</span> : null}
       <div className="bookeco-book-image-shell">
         <img src={book.coverImage} alt={book.title} className="bookeco-book-image" loading="lazy" />
       </div>
@@ -106,7 +105,7 @@ const BookTile = ({ book, compact = false, className = "", accent = "", t }) => 
   );
 };
 
-const ContextualSwapTile = ({ book, accent = "", active = false, onSelect, t }) => {
+const ContextualSwapTile = ({ book, active = false, onSelect, t }) => {
   if (!book) return null;
 
   return (
@@ -115,7 +114,6 @@ const ContextualSwapTile = ({ book, accent = "", active = false, onSelect, t }) 
       className={`bookeco-book-tile bookeco-book-tile-atmospheric bookeco-book-tile-selector ${active ? "is-active" : ""}`.trim()}
       onClick={() => onSelect?.(book._id)}
     >
-      {accent ? <span className="bookeco-book-accent">{accent}</span> : null}
       <div className="bookeco-book-image-shell">
         <img src={book.coverImage} alt={book.title} className="bookeco-book-image" loading="lazy" />
       </div>
@@ -128,7 +126,7 @@ const ContextualSwapTile = ({ book, accent = "", active = false, onSelect, t }) 
   );
 };
 
-const SpotlightRecommendation = ({ book, kicker, t }) => {
+const SpotlightRecommendation = ({ book, t }) => {
   if (!book) return null;
   const narrative = getSpotlightNarrative(book, t);
 
@@ -139,10 +137,6 @@ const SpotlightRecommendation = ({ book, kicker, t }) => {
         <div className="bookeco-spotlight-overlay" />
       </div>
       <div className="bookeco-spotlight-copy">
-        <span className="bookeco-spotlight-kicker">
-          <Sparkles size={14} />
-          {kicker}
-        </span>
         <div className="bookeco-spotlight-head">
           <h3>{book.title}</h3>
           <p>{book.author?.name || t("books.author", { defaultValue: "Tác giả" })}</p>
@@ -314,10 +308,10 @@ const Home = () => {
         <div className="bookeco-hero-copy">
           <span className="bookeco-kicker">{t("common.new_arrivals", { defaultValue: "Mới cập nhật" })}</span>
           <h1 className="bookeco-hero-title">
-            <span>{t("bookeco.home.hero_line_one", { defaultValue: "Tủ sách dành cho" })}</span>
-            <span className="bookeco-hero-title-italic">{t("bookeco.home.hero_line_two", { defaultValue: "người thích chọn kỹ" })}</span>
+            <span>{t("bookeco.home.hero_line_one", { defaultValue: "Nơi dành cho" })}</span>
+            <span className="bookeco-hero-title-italic">{t("bookeco.home.hero_line_two", { defaultValue: "những cuốn sách đáng giữ lại" })}</span>
           </h1>
-          <p className="bookeco-hero-description">“{t(`bookeco.home.${mood.key}`, { defaultValue: "Có những cuốn sách bước vào đời sống rất khẽ, nhưng ở lại lâu hơn bất kỳ điều gì ồn ào." })}”</p>
+          <p className="bookeco-hero-description">“{t(`bookeco.home.${mood.key}`, { defaultValue: "Một cuốn sách hay không cần ồn ào, chỉ cần đến đúng lúc và ở lại đủ lâu." })}”</p>
           <p className="bookeco-hero-attribution">BookEco Selection</p>
           <div className="bookeco-hero-actions">
             <Link to={featuredBook ? `/books/${featuredBook._id}` : "/product?sort=newest"} className="bookeco-primary-button">
@@ -346,28 +340,18 @@ const Home = () => {
         <section className="bookeco-personalized-section bookeco-personalized-section-contextual">
           <div className="bookeco-section-header">
             <div className="bookeco-section-header-copy">
-              <div className="bookeco-section-badge-row">
-                <span className="bookeco-section-badge bookeco-section-badge-contextual">
-                  {t("bookeco.home.contextual_badge", { defaultValue: "Theo dịp nổi bật" })}
-                </span>
-              </div>
               {contextualKicker ? <span className="bookeco-kicker">{contextualKicker}</span> : null}
               <h2>{contextualLabel}</h2>
             </div>
           </div>
 
           <div className="bookeco-contextual-spotlight">
-            <SpotlightRecommendation
-              book={contextualLeadBook}
-              kicker={t("bookeco.home.contextual_spotlight", { defaultValue: "Chọn nổi bật theo dịp" })}
-              t={t}
-            />
+            <SpotlightRecommendation book={contextualLeadBook} t={t} />
             <div className="bookeco-contextual-side-stack">
               {contextualSideBooks.map((book, index) => (
                 <ContextualSwapTile
                   key={`contextual-${book._id}`}
                   book={book}
-                  accent={index === 0 ? t("bookeco.home.contextual_pick", { defaultValue: "Ưu tiên hôm nay" }) : ""}
                   active={book._id === selectedContextualLeadId}
                   onSelect={setSelectedContextualLeadId}
                   t={t}
@@ -382,11 +366,6 @@ const Home = () => {
         <section className="bookeco-personalized-section bookeco-personalized-section-personal">
           <div className="bookeco-section-header">
             <div className="bookeco-section-header-copy">
-              <div className="bookeco-section-badge-row">
-                <span className="bookeco-section-badge bookeco-section-badge-personal">
-                  {t("bookeco.home.personal_badge", { defaultValue: "Cá nhân hóa cho bạn" })}
-                </span>
-              </div>
               <span className="bookeco-kicker">{t("bookeco.home.for_you", { defaultValue: "Dành cho bạn" })}</span>
               <h2>{t("bookeco.home.personalized_title", { defaultValue: "Những lựa chọn hợp với gu đọc của bạn" })}</h2>
             </div>
@@ -404,7 +383,6 @@ const Home = () => {
                 key={book._id}
                 book={book}
                 className={index === 0 ? "bookeco-book-tile-heroic" : index === 1 ? "bookeco-book-tile-atmospheric" : ""}
-                accent={index === 0 ? t("bookeco.home.personal_top_pick", { defaultValue: "Rất hợp gu của bạn" }) : ""}
                 t={t}
               />
             ))}

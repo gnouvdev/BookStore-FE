@@ -36,17 +36,26 @@
   background: #f2ede4;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
   padding: 48px;
+  display: grid;
+  place-items: center;
 }
 
 .bookeco-single-cover,
 .bookeco-single-miniature img {
   display: block;
-  object-fit: cover;
   width: 100%;
 }
 
 .bookeco-single-cover {
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 5;
+  max-height: 680px;
+  object-fit: contain;
+  object-position: center;
+  background: #f7f2ea;
+}
+
+.bookeco-single-miniature img {
+  object-fit: cover;
 }
 
 .bookeco-single-miniatures {
